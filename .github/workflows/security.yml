@@ -114,7 +114,7 @@ jobs:
 
       - name: Check for vulnerable dependencies
         run: |
-          flutter pub outdated --mode=null-safety
+          flutter pub outdated
           dart pub audit || echo "::warning::Some dependencies may have security advisories"
 
   license-check:
