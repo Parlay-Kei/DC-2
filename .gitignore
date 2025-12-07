@@ -1,6 +1,8 @@
 # Miscellaneous
 *.class
+# Exclude lock files except pubspec.lock
 *.lock
+!pubspec.lock
 *.log
 *.pyc
 *.swp

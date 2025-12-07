@@ -1,0 +1,69 @@
+name: direct_cuts_v2
+description: Direct Cuts - Peer-to-peer barber booking platform
+publish_to: 'none'
+version: 2.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Backend & Auth
+  supabase_flutter: ^2.3.0
+  
+  # State Management
+  flutter_riverpod: ^2.4.9
+  riverpod_annotation: ^2.3.3
+  
+  # Navigation
+  go_router: ^13.2.0
+  
+  # Payments
+  flutter_stripe: ^10.1.1
+  
+  # Maps & Location
+  google_maps_flutter: ^2.5.3
+  geolocator: ^11.0.0
+  geocoding: ^2.1.1
+  
+  # UI Components
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
+  flutter_svg: ^2.0.9
+  
+  # Storage & Security
+  flutter_secure_storage: ^9.0.0
+  shared_preferences: ^2.2.2
+  
+  # Utilities
+  url_launcher: ^6.2.4
+  image_picker: ^1.0.7
+  permission_handler: ^11.3.0
+  
+  # Icons
+  cupertino_icons: ^1.0.6
+  lucide_icons: ^0.257.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+  
+  # Code Generation
+  build_runner: ^2.4.8
+  freezed: ^2.4.6
+  freezed_annotation: ^2.4.1
+  json_serializable: ^6.7.1
+  json_annotation: ^4.8.1
+  riverpod_generator: ^2.3.9
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/icons/
