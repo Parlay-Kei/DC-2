@@ -41,7 +41,29 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: TruffleHog OSS
+      - name: Determine scan range
+        id: scan-range
+        run: |
+          # Get commit count
+          COMMIT_COUNT=$(git rev-list --count HEAD 2>/dev/null || echo "0")
+          echo "commit_count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
+          
+          # For new repos or single commits, scan from root
+          if [ "$COMMIT_COUNT" -le 1 ]; then
+            echo "scan_type=full" >> $GITHUB_OUTPUT
+          else
+            echo "scan_type=incremental" >> $GITHUB_OUTPUT
+          fi
+
+      - name: TruffleHog - Full Scan
+        if: steps.scan-range.outputs.scan_type == 'full'
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          extra_args: --debug --only-verified
+
+      - name: TruffleHog - Incremental Scan
+        if: steps.scan-range.outputs.scan_type == 'incremental'
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
