@@ -181,7 +181,8 @@ class BarberDashboardScreen extends ConsumerWidget {
                 ),
                 child: const Column(
                   children: [
-                    Icon(Icons.event_available, size: 48, color: DCTheme.textMuted),
+                    Icon(Icons.event_available,
+                        size: 48, color: DCTheme.textMuted),
                     SizedBox(height: 12),
                     Text(
                       'No appointments today',

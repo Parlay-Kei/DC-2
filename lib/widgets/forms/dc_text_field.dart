@@ -57,7 +57,8 @@ class DCTextField extends StatelessWidget {
             hintText: hint,
             hintStyle: TextStyle(color: DCTheme.textMuted.withOpacity(0.5)),
             filled: true,
-            fillColor: enabled ? DCTheme.surface : DCTheme.surface.withOpacity(0.5),
+            fillColor:
+                enabled ? DCTheme.surface : DCTheme.surface.withOpacity(0.5),
             suffixIcon: suffixIcon,
             prefixIcon: prefixIcon,
             border: OutlineInputBorder(

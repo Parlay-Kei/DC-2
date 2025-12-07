@@ -17,7 +17,8 @@ final currentUserProvider = Provider<User?>((ref) {
 });
 
 // User profile provider
-final userProfileProvider = FutureProvider.family<Profile?, String>((ref, userId) async {
+final userProfileProvider =
+    FutureProvider.family<Profile?, String>((ref, userId) async {
   try {
     final response = await SupabaseConfig.client
         .from('profiles')
@@ -34,7 +35,7 @@ final userProfileProvider = FutureProvider.family<Profile?, String>((ref, userId
 final currentProfileProvider = FutureProvider<Profile?>((ref) async {
   final user = ref.watch(currentUserProvider);
   if (user == null) return null;
-  
+
   return ref.watch(userProfileProvider(user.id).future);
 });
 

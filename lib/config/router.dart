@@ -30,7 +30,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // Authenticated and on auth route (except splash for role detection)
-      if (isAuthenticated && (state.matchedLocation == '/login' || state.matchedLocation == '/register')) {
+      if (isAuthenticated &&
+          (state.matchedLocation == '/login' ||
+              state.matchedLocation == '/register')) {
         // TODO: Check user role and redirect appropriately
         return '/customer';
       }

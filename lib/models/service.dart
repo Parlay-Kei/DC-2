@@ -50,7 +50,7 @@ class Service {
   }
 
   String get formattedPrice => '\$${price.toStringAsFixed(2)}';
-  
+
   String get formattedDuration {
     if (durationMinutes < 60) {
       return '$durationMinutes min';

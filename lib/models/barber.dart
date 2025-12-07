@@ -58,7 +58,8 @@ class Barber {
       rating: (json['rating'] as num?)?.toDouble() ?? 0,
       totalReviews: json['total_reviews'] as int? ?? 0,
       stripeAccountId: json['stripe_account_id'] as String?,
-      stripeOnboardingComplete: json['stripe_onboarding_complete'] as bool? ?? false,
+      stripeOnboardingComplete:
+          json['stripe_onboarding_complete'] as bool? ?? false,
       onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
       tier: json['tier'] as String? ?? 'beginner',
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -90,7 +91,8 @@ class Barber {
   }
 
   bool get hasLocation => latitude != null && longitude != null;
-  bool get canAcceptPayments => stripeOnboardingComplete && stripeAccountId != null;
+  bool get canAcceptPayments =>
+      stripeOnboardingComplete && stripeAccountId != null;
 
   Barber copyWith({
     String? id,
@@ -129,7 +131,8 @@ class Barber {
       rating: rating ?? this.rating,
       totalReviews: totalReviews ?? this.totalReviews,
       stripeAccountId: stripeAccountId ?? this.stripeAccountId,
-      stripeOnboardingComplete: stripeOnboardingComplete ?? this.stripeOnboardingComplete,
+      stripeOnboardingComplete:
+          stripeOnboardingComplete ?? this.stripeOnboardingComplete,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       tier: tier ?? this.tier,
       createdAt: createdAt ?? this.createdAt,

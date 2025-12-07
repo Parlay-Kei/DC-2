@@ -96,7 +96,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
             ),
-            
+
             // Main content
             SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -106,7 +106,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     SizedBox(height: MediaQuery.of(context).size.height * 0.08),
-                    
+
                     // Logo
                     Center(
                       child: SvgPicture.asset(
@@ -116,7 +116,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Title
                     const Text(
                       'Sign in to your account',
@@ -136,16 +136,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         decoration: BoxDecoration(
                           color: DCTheme.error.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: DCTheme.error.withOpacity(0.3)),
+                          border:
+                              Border.all(color: DCTheme.error.withOpacity(0.3)),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.error_outline, color: DCTheme.error, size: 20),
+                            const Icon(Icons.error_outline,
+                                color: DCTheme.error, size: 20),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 _errorMessage!,
-                                style: const TextStyle(color: DCTheme.error, fontSize: 14),
+                                style: const TextStyle(
+                                    color: DCTheme.error, fontSize: 14),
                               ),
                             ),
                           ],
@@ -209,12 +212,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           style: const TextStyle(color: DCTheme.text),
                           decoration: InputDecoration(
                             hintText: '••••••••',
-                            hintStyle: TextStyle(color: DCTheme.textMuted.withOpacity(0.5)),
+                            hintStyle: TextStyle(
+                                color: DCTheme.textMuted.withOpacity(0.5)),
                             filled: true,
                             fillColor: Colors.white.withOpacity(0.05),
                             suffixIcon: IconButton(
                               icon: Icon(
-                                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
                                 color: DCTheme.textMuted,
                               ),
                               onPressed: () {
@@ -225,15 +231,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                              borderSide: BorderSide(
+                                  color: Colors.white.withOpacity(0.1)),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                              borderSide: BorderSide(
+                                  color: Colors.white.withOpacity(0.1)),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: DCTheme.primary, width: 2),
+                              borderSide: const BorderSide(
+                                  color: DCTheme.primary, width: 2),
                             ),
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 16,
@@ -265,7 +274,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       children: [
                         const Text(
                           'Not a member? ',
-                          style: TextStyle(color: DCTheme.textMuted, fontSize: 14),
+                          style:
+                              TextStyle(color: DCTheme.textMuted, fontSize: 14),
                         ),
                         GestureDetector(
                           onTap: () => context.go('/register'),

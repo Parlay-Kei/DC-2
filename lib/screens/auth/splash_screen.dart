@@ -13,7 +13,7 @@ class SplashScreen extends ConsumerStatefulWidget {
   ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends ConsumerState<SplashScreen> 
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
@@ -22,7 +22,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   @override
   void initState() {
     super.initState();
-    
+
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -54,18 +54,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   Future<void> _checkAuthAndNavigate() async {
     await Future.delayed(const Duration(seconds: 2));
-    
+
     if (!mounted) return;
 
     final authState = ref.read(authStateProvider);
-    
+
     authState.when(
       data: (user) async {
         if (user != null) {
           // User is logged in, check their role
           final profile = await ref.read(currentProfileProvider.future);
           if (!mounted) return;
-          
+
           if (profile?.isBarber == true) {
             context.go('/barber');
           } else {
@@ -107,7 +107,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       height: 140,
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // App name
                     const Text(
                       'Direct Cuts',
@@ -119,7 +119,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       ),
                     ),
                     const SizedBox(height: 8),
-                    
+
                     // Tagline
                     Text(
                       'Book your barber',
@@ -129,7 +129,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       ),
                     ),
                     const SizedBox(height: 48),
-                    
+
                     // Loading indicator
                     SizedBox(
                       width: 24,
