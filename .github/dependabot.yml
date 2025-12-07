@@ -1,0 +1,55 @@
+version: 2
+updates:
+  # Flutter/Dart pub dependencies
+  - package-ecosystem: "pub"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Parlay-Kei"
+    labels:
+      - "dependencies"
+      - "automated"
+    groups:
+      # Group UI-related packages
+      ui-packages:
+        patterns:
+          - "flutter_svg"
+          - "cached_network_image"
+          - "shimmer"
+          - "lucide_icons"
+      # Group state management packages
+      state-management:
+        patterns:
+          - "flutter_riverpod"
+          - "riverpod_*"
+      # Group backend packages
+      backend-packages:
+        patterns:
+          - "supabase_*"
+          - "flutter_stripe"
+      # Group map/location packages
+      location-packages:
+        patterns:
+          - "google_maps_flutter"
+          - "geolocator"
+          - "geocoding"
+      # Group development dependencies
+      dev-dependencies:
+        dependency-type: "development"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automated"

@@ -1,0 +1,25 @@
+# Code Owners for Direct Cuts v2
+# These owners will be automatically requested for review when someone opens a PR
+
+# Global owner - all files
+* @Parlay-Kei
+
+# Flutter/Dart code
+/lib/ @Parlay-Kei
+/test/ @Parlay-Kei
+
+# Configuration files
+pubspec.yaml @Parlay-Kei
+analysis_options.yaml @Parlay-Kei
+
+# Platform-specific code
+/android/ @Parlay-Kei
+/ios/ @Parlay-Kei
+/web/ @Parlay-Kei
+
+# GitHub workflows and templates
+/.github/ @Parlay-Kei
+
+# Documentation
+*.md @Parlay-Kei
+/docs/ @Parlay-Kei
