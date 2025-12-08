@@ -20,7 +20,7 @@ dependencies:
   riverpod_annotation: ^2.3.3
   
   # Navigation
-  go_router: ^13.2.0
+  go_router: ^17.0.0
   
   # Payments
   flutter_stripe: ^10.1.1
