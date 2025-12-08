@@ -19,9 +19,7 @@ class BarberDashboardScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              // TODO: Navigate to notifications
-            },
+            onPressed: () {},
           ),
           IconButton(
             icon: const Icon(Icons.logout),
@@ -41,7 +39,6 @@ class BarberDashboardScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Greeting
               profile.when(
                 data: (p) => Text(
                   'Welcome, ${p?.fullName?.split(' ').first ?? 'Barber'}!',
@@ -69,8 +66,6 @@ class BarberDashboardScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Stats row
               Row(
                 children: [
                   Expanded(
@@ -115,8 +110,6 @@ class BarberDashboardScreen extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 32),
-
-              // Quick actions
               const Text(
                 'Quick Actions',
                 style: TextStyle(
@@ -132,9 +125,7 @@ class BarberDashboardScreen extends ConsumerWidget {
                     child: _ActionTile(
                       icon: Icons.edit_calendar,
                       label: 'Availability',
-                      onTap: () {
-                        // TODO: Navigate to availability
-                      },
+                      onTap: () {},
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -142,9 +133,7 @@ class BarberDashboardScreen extends ConsumerWidget {
                     child: _ActionTile(
                       icon: Icons.list_alt,
                       label: 'Services',
-                      onTap: () {
-                        // TODO: Navigate to services
-                      },
+                      onTap: () {},
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -152,16 +141,12 @@ class BarberDashboardScreen extends ConsumerWidget {
                     child: _ActionTile(
                       icon: Icons.account_balance_wallet,
                       label: 'Earnings',
-                      onTap: () {
-                        // TODO: Navigate to earnings
-                      },
+                      onTap: () {},
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 32),
-
-              // Today's appointments
               const Text(
                 "Today's Appointments",
                 style: TextStyle(
@@ -177,12 +162,17 @@ class BarberDashboardScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: DCTheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.1),
+                  ),
                 ),
                 child: const Column(
                   children: [
-                    Icon(Icons.event_available,
-                        size: 48, color: DCTheme.textMuted),
+                    Icon(
+                      Icons.event_available,
+                      size: 48,
+                      color: DCTheme.textMuted,
+                    ),
                     SizedBox(height: 12),
                     Text(
                       'No appointments today',
@@ -249,7 +239,9 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: DCTheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.1),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,7 +259,7 @@ class _StatCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
+                  color: color.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color, size: 16),
@@ -309,7 +301,9 @@ class _ActionTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: DCTheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.1),
+          ),
         ),
         child: Column(
           children: [

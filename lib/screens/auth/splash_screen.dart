@@ -125,7 +125,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       'Book your barber',
                       style: TextStyle(
                         fontSize: 16,
-                        color: DCTheme.textMuted.withOpacity(0.8),
+                        color: DCTheme.textMuted.withValues(alpha: 0.8),
                       ),
                     ),
                     const SizedBox(height: 48),
@@ -136,7 +136,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       height: 24,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: DCTheme.primary.withOpacity(0.7),
+                        color: DCTheme.primary.withValues(alpha: 0.7),
                       ),
                     ),
                   ],

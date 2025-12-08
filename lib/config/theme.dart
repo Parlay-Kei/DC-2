@@ -74,7 +74,7 @@ class DCTheme {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusLg),
-            side: BorderSide(color: Colors.white.withOpacity(0.1)),
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
           ),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
@@ -117,16 +117,20 @@ class DCTheme {
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Colors.white.withOpacity(0.05),
+          fillColor: Colors.white.withValues(alpha: 0.05),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(radiusMd),
-            borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+            borderSide: BorderSide(
+              color: Colors.white.withValues(alpha: 0.1),
+            ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(radiusMd),
-            borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+            borderSide: BorderSide(
+              color: Colors.white.withValues(alpha: 0.1),
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(radiusMd),
@@ -140,7 +144,7 @@ class DCTheme {
             borderRadius: BorderRadius.circular(radiusMd),
             borderSide: const BorderSide(color: error, width: 2),
           ),
-          hintStyle: TextStyle(color: textMuted.withOpacity(0.5)),
+          hintStyle: TextStyle(color: textMuted.withValues(alpha: 0.5)),
           labelStyle: const TextStyle(color: textMuted),
         ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(

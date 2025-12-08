@@ -69,6 +69,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  void _handleForgotPassword() {
+    // Password reset - coming in future update
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Password reset coming soon'),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -134,21 +143,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: DCTheme.error.withOpacity(0.1),
+                          color: DCTheme.error.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
-                          border:
-                              Border.all(color: DCTheme.error.withOpacity(0.3)),
+                          border: Border.all(
+                            color: DCTheme.error.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.error_outline,
-                                color: DCTheme.error, size: 20),
+                            const Icon(
+                              Icons.error_outline,
+                              color: DCTheme.error,
+                              size: 20,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 _errorMessage!,
                                 style: const TextStyle(
-                                    color: DCTheme.error, fontSize: 14),
+                                  color: DCTheme.error,
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
                           ],
@@ -191,9 +206,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                             ),
                             GestureDetector(
-                              onTap: () {
-                                // TODO: Navigate to forgot password
-                              },
+                              onTap: _handleForgotPassword,
                               child: const Text(
                                 'Forgot password?',
                                 style: TextStyle(
@@ -213,9 +226,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           decoration: InputDecoration(
                             hintText: '••••••••',
                             hintStyle: TextStyle(
-                                color: DCTheme.textMuted.withOpacity(0.5)),
+                              color: DCTheme.textMuted.withValues(alpha: 0.5),
+                            ),
                             filled: true,
-                            fillColor: Colors.white.withOpacity(0.05),
+                            fillColor: Colors.white.withValues(alpha: 0.05),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword
@@ -232,17 +246,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                  color: Colors.white.withOpacity(0.1)),
+                                color: Colors.white.withValues(alpha: 0.1),
+                              ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                  color: Colors.white.withOpacity(0.1)),
+                                color: Colors.white.withValues(alpha: 0.1),
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: const BorderSide(
-                                  color: DCTheme.primary, width: 2),
+                                color: DCTheme.primary,
+                                width: 2,
+                              ),
                             ),
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 16,
@@ -274,8 +292,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       children: [
                         const Text(
                           'Not a member? ',
-                          style:
-                              TextStyle(color: DCTheme.textMuted, fontSize: 14),
+                          style: TextStyle(
+                            color: DCTheme.textMuted,
+                            fontSize: 14,
+                          ),
                         ),
                         GestureDetector(
                           onTap: () => context.go('/register'),
@@ -296,7 +316,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Text(
                       'Want to cut hair? Log in first, then visit Settings → Become a Barber',
                       style: TextStyle(
-                        color: DCTheme.textMuted.withOpacity(0.6),
+                        color: DCTheme.textMuted.withValues(alpha: 0.6),
                         fontSize: 12,
                       ),
                       textAlign: TextAlign.center,

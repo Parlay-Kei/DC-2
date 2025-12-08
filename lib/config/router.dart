@@ -33,7 +33,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (isAuthenticated &&
           (state.matchedLocation == '/login' ||
               state.matchedLocation == '/register')) {
-        // TODO: Check user role and redirect appropriately
+        // Role check happens in splash screen
         return '/customer';
       }
 
@@ -71,14 +71,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const BarberDashboardScreen(),
       ),
 
-      // TODO: Add more routes as screens are built
-      // GoRoute(
-      //   path: '/barber/:id',
-      //   name: 'barberProfile',
-      //   builder: (context, state) => BarberProfileScreen(
-      //     barberId: state.pathParameters['id']!,
-      //   ),
-      // ),
+      // Additional routes will be added as screens are built
     ],
     errorBuilder: (context, state) => Scaffold(
       body: Center(

@@ -55,10 +55,13 @@ class DCTextField extends StatelessWidget {
           style: const TextStyle(color: DCTheme.text),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: DCTheme.textMuted.withOpacity(0.5)),
+            hintStyle: TextStyle(
+              color: DCTheme.textMuted.withValues(alpha: 0.5),
+            ),
             filled: true,
-            fillColor:
-                enabled ? DCTheme.surface : DCTheme.surface.withOpacity(0.5),
+            fillColor: enabled
+                ? DCTheme.surface
+                : DCTheme.surface.withValues(alpha: 0.5),
             suffixIcon: suffixIcon,
             prefixIcon: prefixIcon,
             border: OutlineInputBorder(
@@ -129,7 +132,9 @@ class DCSearchField extends StatelessWidget {
               style: const TextStyle(color: DCTheme.text),
               decoration: InputDecoration(
                 hintText: hint ?? 'Search...',
-                hintStyle: TextStyle(color: DCTheme.textMuted.withOpacity(0.5)),
+                hintStyle: TextStyle(
+                  color: DCTheme.textMuted.withValues(alpha: 0.5),
+                ),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,

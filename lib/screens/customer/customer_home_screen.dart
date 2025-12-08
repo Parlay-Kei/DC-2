@@ -7,14 +7,9 @@ import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 
 // Provider to fetch trending barbers
-// The barbers table should have a user_id FK to profiles
-// We need to get barbers where profiles.role = 'barber'
 final trendingBarbersProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  // Query profiles with role='barber' and join with barbers table
-  // Or query barbers and join with profiles
   try {
-    // First, get profiles that are barbers
     final profilesResponse = await Supabase.instance.client
         .from('profiles')
         .select('id, full_name, avatar_url')
@@ -25,7 +20,6 @@ final trendingBarbersProvider =
 
     if (profiles.isEmpty) return [];
 
-    // Get barber details for these profiles
     final profileIds = profiles.map((p) => p['id'] as String).toList();
 
     final barbersResponse = await Supabase.instance.client
@@ -36,12 +30,10 @@ final trendingBarbersProvider =
 
     final barbers = List<Map<String, dynamic>>.from(barbersResponse);
 
-    // Create lookup map
     final profileMap = Map.fromEntries(
       profiles.map((p) => MapEntry(p['id'] as String, p)),
     );
 
-    // Merge profile data into barbers
     return barbers.map((barber) {
       final profile = profileMap[barber['id']];
       return {
@@ -51,7 +43,6 @@ final trendingBarbersProvider =
       };
     }).toList();
   } catch (e) {
-    // Fallback: just show barbers table data
     final response = await Supabase.instance.client
         .from('barbers')
         .select('*')
@@ -138,6 +129,10 @@ class CustomerHomeScreen extends ConsumerStatefulWidget {
 class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
   int _currentIndex = 0;
 
+  void _navigateToTab(int index) {
+    setState(() => _currentIndex = index);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -145,11 +140,11 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          _HomeTab(),
-          _ExploreTab(),
-          _BookingsTab(),
-          _MessagesTab(),
-          _ProfileTab(),
+          _HomeTab(onNavigate: _navigateToTab),
+          const _ExploreTab(),
+          const _BookingsTab(),
+          const _MessagesTab(),
+          const _ProfileTab(),
         ],
       ),
       bottomNavigationBar: _buildBottomNav(),
@@ -162,7 +157,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
         color: DCTheme.surface,
         border: Border(
           top: BorderSide(
-            color: Colors.white.withOpacity(0.08),
+            color: Colors.white.withValues(alpha: 0.08),
             width: 1,
           ),
         ),
@@ -178,35 +173,35 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                 activeIcon: Icons.home,
                 label: 'Home',
                 isActive: _currentIndex == 0,
-                onTap: () => setState(() => _currentIndex = 0),
+                onTap: () => _navigateToTab(0),
               ),
               _NavItem(
                 icon: Icons.explore_outlined,
                 activeIcon: Icons.explore,
                 label: 'Explore',
                 isActive: _currentIndex == 1,
-                onTap: () => setState(() => _currentIndex = 1),
+                onTap: () => _navigateToTab(1),
               ),
               _NavItem(
                 icon: Icons.calendar_today_outlined,
                 activeIcon: Icons.calendar_today,
                 label: 'Bookings',
                 isActive: _currentIndex == 2,
-                onTap: () => setState(() => _currentIndex = 2),
+                onTap: () => _navigateToTab(2),
               ),
               _NavItem(
                 icon: Icons.chat_bubble_outline,
                 activeIcon: Icons.chat_bubble,
                 label: 'Messages',
                 isActive: _currentIndex == 3,
-                onTap: () => setState(() => _currentIndex = 3),
+                onTap: () => _navigateToTab(3),
               ),
               _NavItem(
                 icon: Icons.person_outline,
                 activeIcon: Icons.person,
                 label: 'Profile',
                 isActive: _currentIndex == 4,
-                onTap: () => setState(() => _currentIndex = 4),
+                onTap: () => _navigateToTab(4),
               ),
             ],
           ),
@@ -218,6 +213,10 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
 
 // ============ HOME TAB ============
 class _HomeTab extends ConsumerWidget {
+  final void Function(int) onNavigate;
+
+  const _HomeTab({required this.onNavigate});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(currentProfileProvider);
@@ -239,7 +238,11 @@ class _HomeTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, WidgetRef ref, AsyncValue profile) {
+  Widget _buildHeader(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue profile,
+  ) {
     return Container(
       decoration: const BoxDecoration(
         color: DCTheme.primary,
@@ -278,7 +281,7 @@ class _HomeTab extends ConsumerWidget {
                         height: 44,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                         ),
                         child: IconButton(
                           icon: const Icon(Icons.notifications_outlined),
@@ -287,7 +290,8 @@ class _HomeTab extends ConsumerWidget {
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                  content: Text('Notifications coming soon')),
+                                content: Text('Notifications coming soon'),
+                              ),
                             );
                           },
                         ),
@@ -307,23 +311,27 @@ class _HomeTab extends ConsumerWidget {
                     loading: () => const Text(
                       'Hey there! 👋',
                       style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white),
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                     error: (_, __) => const Text(
                       'Hey there! 👋',
                       style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white),
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Ready for a fresh cut?',
                     style: TextStyle(
-                        fontSize: 15, color: Colors.white.withOpacity(0.85)),
+                      fontSize: 15,
+                      color: Colors.white.withValues(alpha: 0.85),
+                    ),
                   ),
                 ],
               ),
@@ -340,7 +348,10 @@ class _HomeTab extends ConsumerWidget {
       height: 48,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.3),
+          width: 2,
+        ),
       ),
       child: ClipOval(
         child: profile.when(
@@ -354,7 +365,9 @@ class _HomeTab extends ConsumerWidget {
             }
             return _avatarFallback(p?.fullName);
           },
-          loading: () => Container(color: Colors.white.withOpacity(0.2)),
+          loading: () => Container(
+            color: Colors.white.withValues(alpha: 0.2),
+          ),
           error: (_, __) => _avatarFallback(null),
         ),
       ),
@@ -364,12 +377,15 @@ class _HomeTab extends ConsumerWidget {
   Widget _avatarFallback(String? name) {
     final initials = _getInitials(name);
     return Container(
-      color: Colors.white.withOpacity(0.2),
+      color: Colors.white.withValues(alpha: 0.2),
       child: Center(
         child: Text(
           initials,
           style: const TextStyle(
-              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
         ),
       ),
     );
@@ -387,7 +403,7 @@ class _HomeTab extends ConsumerWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.4),
+                color: Colors.black.withValues(alpha: 0.4),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -399,29 +415,35 @@ class _HomeTab extends ConsumerWidget {
                 Expanded(
                   child: _StatItem(
                     icon: Icons.calendar_today,
-                    iconBgColor: DCTheme.primary.withOpacity(0.2),
+                    iconBgColor: DCTheme.primary.withValues(alpha: 0.2),
                     iconColor: DCTheme.primary,
                     value: '${data['bookings']}',
                     label: 'Bookings',
                   ),
                 ),
                 Container(
-                    width: 1, height: 60, color: Colors.white.withOpacity(0.1)),
+                  width: 1,
+                  height: 60,
+                  color: Colors.white.withValues(alpha: 0.1),
+                ),
                 Expanded(
                   child: _StatItem(
                     icon: Icons.star,
-                    iconBgColor: Colors.amber.withOpacity(0.2),
+                    iconBgColor: Colors.amber.withValues(alpha: 0.2),
                     iconColor: Colors.amber,
                     value: '${data['favorites']}',
                     label: 'Favorites',
                   ),
                 ),
                 Container(
-                    width: 1, height: 60, color: Colors.white.withOpacity(0.1)),
+                  width: 1,
+                  height: 60,
+                  color: Colors.white.withValues(alpha: 0.1),
+                ),
                 Expanded(
                   child: _StatItem(
                     icon: Icons.trending_up,
-                    iconBgColor: DCTheme.info.withOpacity(0.2),
+                    iconBgColor: DCTheme.info.withValues(alpha: 0.2),
                     iconColor: DCTheme.info,
                     value:
                         '\$${((data['spent'] ?? 0) as num).toStringAsFixed(0)}',
@@ -431,34 +453,47 @@ class _HomeTab extends ConsumerWidget {
               ],
             ),
             loading: () => const Center(
-                child: CircularProgressIndicator(color: DCTheme.primary)),
+              child: CircularProgressIndicator(color: DCTheme.primary),
+            ),
             error: (_, __) => Row(
               children: [
                 Expanded(
-                    child: _StatItem(
-                        icon: Icons.calendar_today,
-                        iconBgColor: DCTheme.primary.withOpacity(0.2),
-                        iconColor: DCTheme.primary,
-                        value: '0',
-                        label: 'Bookings')),
+                  child: _StatItem(
+                    icon: Icons.calendar_today,
+                    iconBgColor: DCTheme.primary.withValues(alpha: 0.2),
+                    iconColor: DCTheme.primary,
+                    value: '0',
+                    label: 'Bookings',
+                  ),
+                ),
                 Container(
-                    width: 1, height: 60, color: Colors.white.withOpacity(0.1)),
+                  width: 1,
+                  height: 60,
+                  color: Colors.white.withValues(alpha: 0.1),
+                ),
                 Expanded(
-                    child: _StatItem(
-                        icon: Icons.star,
-                        iconBgColor: Colors.amber.withOpacity(0.2),
-                        iconColor: Colors.amber,
-                        value: '0',
-                        label: 'Favorites')),
+                  child: _StatItem(
+                    icon: Icons.star,
+                    iconBgColor: Colors.amber.withValues(alpha: 0.2),
+                    iconColor: Colors.amber,
+                    value: '0',
+                    label: 'Favorites',
+                  ),
+                ),
                 Container(
-                    width: 1, height: 60, color: Colors.white.withOpacity(0.1)),
+                  width: 1,
+                  height: 60,
+                  color: Colors.white.withValues(alpha: 0.1),
+                ),
                 Expanded(
-                    child: _StatItem(
-                        icon: Icons.trending_up,
-                        iconBgColor: DCTheme.info.withOpacity(0.2),
-                        iconColor: DCTheme.info,
-                        value: '\$0',
-                        label: 'Spent')),
+                  child: _StatItem(
+                    icon: Icons.trending_up,
+                    iconBgColor: DCTheme.info.withValues(alpha: 0.2),
+                    iconColor: DCTheme.info,
+                    value: '\$0',
+                    label: 'Spent',
+                  ),
+                ),
               ],
             ),
           ),
@@ -467,8 +502,10 @@ class _HomeTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildUpcomingSection(BuildContext context,
-      AsyncValue<List<Map<String, dynamic>>> appointments) {
+  Widget _buildUpcomingSection(
+    BuildContext context,
+    AsyncValue<List<Map<String, dynamic>>> appointments,
+  ) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
       child: Column(
@@ -476,24 +513,26 @@ class _HomeTab extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Upcoming',
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: DCTheme.text)),
+              const Text(
+                'Upcoming',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: DCTheme.text,
+                ),
+              ),
               GestureDetector(
-                onTap: () {
-                  final state = context
-                      .findAncestorStateOfType<_CustomerHomeScreenState>();
-                  state?.setState(() => state._currentIndex = 2);
-                },
+                onTap: () => onNavigate(2),
                 child: const Row(
                   children: [
-                    Text('View All',
-                        style: TextStyle(
-                            color: DCTheme.primary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500)),
+                    Text(
+                      'View All',
+                      style: TextStyle(
+                        color: DCTheme.primary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     SizedBox(width: 2),
                     Icon(Icons.chevron_right, color: DCTheme.primary, size: 20),
                   ],
@@ -516,10 +555,12 @@ class _HomeTab extends ConsumerWidget {
             loading: () => Container(
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
-                  color: DCTheme.surface,
-                  borderRadius: BorderRadius.circular(16)),
+                color: DCTheme.surface,
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: const Center(
-                  child: CircularProgressIndicator(color: DCTheme.primary)),
+                child: CircularProgressIndicator(color: DCTheme.primary),
+              ),
             ),
             error: (_, __) => _buildEmptyAppointments(context),
           ),
@@ -533,31 +574,37 @@ class _HomeTab extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
       decoration: BoxDecoration(
-          color: DCTheme.surface, borderRadius: BorderRadius.circular(16)),
+        color: DCTheme.surface,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Column(
         children: [
-          Icon(Icons.calendar_today_outlined,
-              size: 44, color: DCTheme.textMuted.withOpacity(0.3)),
+          Icon(
+            Icons.calendar_today_outlined,
+            size: 44,
+            color: DCTheme.textMuted.withValues(alpha: 0.3),
+          ),
           const SizedBox(height: 16),
-          const Text('No upcoming appointments',
-              style: TextStyle(color: DCTheme.textMuted, fontSize: 15)),
+          const Text(
+            'No upcoming appointments',
+            style: TextStyle(color: DCTheme.textMuted, fontSize: 15),
+          ),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: () {
-              final state =
-                  context.findAncestorStateOfType<_CustomerHomeScreenState>();
-              state?.setState(() => state._currentIndex = 1);
-            },
+            onPressed: () => onNavigate(1),
             style: ElevatedButton.styleFrom(
               backgroundColor: DCTheme.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+                borderRadius: BorderRadius.circular(10),
+              ),
               elevation: 0,
             ),
-            child: const Text('Book Now',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            child: const Text(
+              'Book Now',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+            ),
           ),
         ],
       ),
@@ -565,7 +612,9 @@ class _HomeTab extends ConsumerWidget {
   }
 
   Widget _buildTrendingBarbersSection(
-      BuildContext context, AsyncValue<List<Map<String, dynamic>>> barbers) {
+    BuildContext context,
+    AsyncValue<List<Map<String, dynamic>>> barbers,
+  ) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 28, 0, 0),
       child: Column(
@@ -575,27 +624,32 @@ class _HomeTab extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Trending Barbers',
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: DCTheme.text)),
+                const Text(
+                  'Trending Barbers',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: DCTheme.text,
+                  ),
+                ),
                 GestureDetector(
-                  onTap: () {
-                    final state = context
-                        .findAncestorStateOfType<_CustomerHomeScreenState>();
-                    state?.setState(() => state._currentIndex = 1);
-                  },
+                  onTap: () => onNavigate(1),
                   child: const Row(
                     children: [
-                      Text('See All',
-                          style: TextStyle(
-                              color: DCTheme.primary,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500)),
+                      Text(
+                        'See All',
+                        style: TextStyle(
+                          color: DCTheme.primary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                       SizedBox(width: 2),
-                      Icon(Icons.chevron_right,
-                          color: DCTheme.primary, size: 20),
+                      Icon(
+                        Icons.chevron_right,
+                        color: DCTheme.primary,
+                        size: 20,
+                      ),
                     ],
                   ),
                 ),
@@ -612,16 +666,21 @@ class _HomeTab extends ConsumerWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(32),
                     decoration: BoxDecoration(
-                        color: DCTheme.surface,
-                        borderRadius: BorderRadius.circular(16)),
+                      color: DCTheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     child: Column(
                       children: [
-                        Icon(Icons.person_search,
-                            size: 44,
-                            color: DCTheme.textMuted.withOpacity(0.3)),
+                        Icon(
+                          Icons.person_search,
+                          size: 44,
+                          color: DCTheme.textMuted.withValues(alpha: 0.3),
+                        ),
                         const SizedBox(height: 12),
-                        const Text('No barbers available',
-                            style: TextStyle(color: DCTheme.textMuted)),
+                        const Text(
+                          'No barbers available',
+                          style: TextStyle(color: DCTheme.textMuted),
+                        ),
                       ],
                     ),
                   ),
@@ -637,7 +696,8 @@ class _HomeTab extends ConsumerWidget {
                     final barber = list[index];
                     return Padding(
                       padding: EdgeInsets.only(
-                          right: index < list.length - 1 ? 12 : 0),
+                        right: index < list.length - 1 ? 12 : 0,
+                      ),
                       child: _BarberCard(
                         id: barber['id'] ?? '',
                         name: barber['full_name'] ??
@@ -649,8 +709,10 @@ class _HomeTab extends ConsumerWidget {
                         onTap: () {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                                content: Text(
-                                    'View ${barber['full_name'] ?? barber['shop_name']}\'s profile')),
+                              content: Text(
+                                'View ${barber['full_name'] ?? barber['shop_name']}\'s profile',
+                              ),
+                            ),
                           );
                         },
                       ),
@@ -670,11 +732,15 @@ class _HomeTab extends ConsumerWidget {
                   child: Container(
                     width: 130,
                     decoration: BoxDecoration(
-                        color: DCTheme.surface,
-                        borderRadius: BorderRadius.circular(16)),
+                      color: DCTheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     child: const Center(
-                        child: CircularProgressIndicator(
-                            color: DCTheme.primary, strokeWidth: 2)),
+                      child: CircularProgressIndicator(
+                        color: DCTheme.primary,
+                        strokeWidth: 2,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -684,10 +750,13 @@ class _HomeTab extends ConsumerWidget {
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                    color: DCTheme.surface,
-                    borderRadius: BorderRadius.circular(16)),
-                child: Text('Error: $e',
-                    style: const TextStyle(color: DCTheme.error, fontSize: 12)),
+                  color: DCTheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  'Error: $e',
+                  style: const TextStyle(color: DCTheme.error, fontSize: 12),
+                ),
               ),
             ),
           ),
@@ -724,6 +793,8 @@ class _HomeTab extends ConsumerWidget {
 
 // ============ EXPLORE TAB ============
 class _ExploreTab extends StatelessWidget {
+  const _ExploreTab();
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -732,14 +803,19 @@ class _ExploreTab extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Explore',
-                style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: DCTheme.text)),
+            const Text(
+              'Explore',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: DCTheme.text,
+              ),
+            ),
             const SizedBox(height: 8),
-            const Text('Find your perfect barber',
-                style: TextStyle(color: DCTheme.textMuted, fontSize: 15)),
+            const Text(
+              'Find your perfect barber',
+              style: TextStyle(color: DCTheme.textMuted, fontSize: 15),
+            ),
             const SizedBox(height: 24),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -768,12 +844,17 @@ class _ExploreTab extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.map_outlined,
-                          size: 64, color: DCTheme.textMuted.withOpacity(0.3)),
+                      Icon(
+                        Icons.map_outlined,
+                        size: 64,
+                        color: DCTheme.textMuted.withValues(alpha: 0.3),
+                      ),
                       const SizedBox(height: 16),
-                      const Text('Map View Coming Soon',
-                          style: TextStyle(
-                              color: DCTheme.textMuted, fontSize: 16)),
+                      const Text(
+                        'Map View Coming Soon',
+                        style:
+                            TextStyle(color: DCTheme.textMuted, fontSize: 16),
+                      ),
                     ],
                   ),
                 ),
@@ -788,6 +869,8 @@ class _ExploreTab extends StatelessWidget {
 
 // ============ BOOKINGS TAB ============
 class _BookingsTab extends StatelessWidget {
+  const _BookingsTab();
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -796,23 +879,33 @@ class _BookingsTab extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Bookings',
-                style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: DCTheme.text)),
+            const Text(
+              'Bookings',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: DCTheme.text,
+              ),
+            ),
             const SizedBox(height: 8),
-            const Text('Your appointments',
-                style: TextStyle(color: DCTheme.textMuted, fontSize: 15)),
+            const Text(
+              'Your appointments',
+              style: TextStyle(color: DCTheme.textMuted, fontSize: 15),
+            ),
             const Spacer(),
             Center(
               child: Column(
                 children: [
-                  Icon(Icons.calendar_today_outlined,
-                      size: 64, color: DCTheme.textMuted.withOpacity(0.3)),
+                  Icon(
+                    Icons.calendar_today_outlined,
+                    size: 64,
+                    color: DCTheme.textMuted.withValues(alpha: 0.3),
+                  ),
                   const SizedBox(height: 16),
-                  const Text('No bookings yet',
-                      style: TextStyle(color: DCTheme.textMuted, fontSize: 16)),
+                  const Text(
+                    'No bookings yet',
+                    style: TextStyle(color: DCTheme.textMuted, fontSize: 16),
+                  ),
                 ],
               ),
             ),
@@ -826,6 +919,8 @@ class _BookingsTab extends StatelessWidget {
 
 // ============ MESSAGES TAB ============
 class _MessagesTab extends StatelessWidget {
+  const _MessagesTab();
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -834,23 +929,33 @@ class _MessagesTab extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Messages',
-                style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: DCTheme.text)),
+            const Text(
+              'Messages',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: DCTheme.text,
+              ),
+            ),
             const SizedBox(height: 8),
-            const Text('Chat with barbers',
-                style: TextStyle(color: DCTheme.textMuted, fontSize: 15)),
+            const Text(
+              'Chat with barbers',
+              style: TextStyle(color: DCTheme.textMuted, fontSize: 15),
+            ),
             const Spacer(),
             Center(
               child: Column(
                 children: [
-                  Icon(Icons.chat_bubble_outline,
-                      size: 64, color: DCTheme.textMuted.withOpacity(0.3)),
+                  Icon(
+                    Icons.chat_bubble_outline,
+                    size: 64,
+                    color: DCTheme.textMuted.withValues(alpha: 0.3),
+                  ),
                   const SizedBox(height: 16),
-                  const Text('No messages yet',
-                      style: TextStyle(color: DCTheme.textMuted, fontSize: 16)),
+                  const Text(
+                    'No messages yet',
+                    style: TextStyle(color: DCTheme.textMuted, fontSize: 16),
+                  ),
                 ],
               ),
             ),
@@ -864,6 +969,8 @@ class _MessagesTab extends StatelessWidget {
 
 // ============ PROFILE TAB ============
 class _ProfileTab extends ConsumerWidget {
+  const _ProfileTab();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(currentProfileProvider);
@@ -891,9 +998,10 @@ class _ProfileTab extends ConsumerWidget {
                             child: Text(
                               _getInitials(p?.fullName),
                               style: const TextStyle(
-                                  color: DCTheme.text,
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold),
+                                color: DCTheme.text,
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -903,15 +1011,22 @@ class _ProfileTab extends ConsumerWidget {
                 width: 100,
                 height: 100,
                 decoration: const BoxDecoration(
-                    shape: BoxShape.circle, color: DCTheme.surface),
+                  shape: BoxShape.circle,
+                  color: DCTheme.surface,
+                ),
               ),
               error: (_, __) => Container(
                 width: 100,
                 height: 100,
                 decoration: const BoxDecoration(
-                    shape: BoxShape.circle, color: DCTheme.surface),
-                child: const Icon(Icons.person,
-                    size: 48, color: DCTheme.textMuted),
+                  shape: BoxShape.circle,
+                  color: DCTheme.surface,
+                ),
+                child: const Icon(
+                  Icons.person,
+                  size: 48,
+                  color: DCTheme.textMuted,
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -919,34 +1034,46 @@ class _ProfileTab extends ConsumerWidget {
               data: (p) => Text(
                 p?.fullName ?? 'Guest',
                 style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: DCTheme.text),
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: DCTheme.text,
+                ),
               ),
-              loading: () => const Text('Loading...',
-                  style: TextStyle(color: DCTheme.textMuted)),
-              error: (_, __) =>
-                  const Text('Error', style: TextStyle(color: DCTheme.error)),
+              loading: () => const Text(
+                'Loading...',
+                style: TextStyle(color: DCTheme.textMuted),
+              ),
+              error: (_, __) => const Text(
+                'Error',
+                style: TextStyle(color: DCTheme.error),
+              ),
             ),
             const SizedBox(height: 32),
             _ProfileMenuItem(
-                icon: Icons.person_outline,
-                label: 'Edit Profile',
-                onTap: () {}),
+              icon: Icons.person_outline,
+              label: 'Edit Profile',
+              onTap: () {},
+            ),
             _ProfileMenuItem(
-                icon: Icons.favorite_outline, label: 'Favorites', onTap: () {}),
+              icon: Icons.favorite_outline,
+              label: 'Favorites',
+              onTap: () {},
+            ),
             _ProfileMenuItem(
-                icon: Icons.payment_outlined,
-                label: 'Payment Methods',
-                onTap: () {}),
+              icon: Icons.payment_outlined,
+              label: 'Payment Methods',
+              onTap: () {},
+            ),
             _ProfileMenuItem(
-                icon: Icons.notifications_outlined,
-                label: 'Notifications',
-                onTap: () {}),
+              icon: Icons.notifications_outlined,
+              label: 'Notifications',
+              onTap: () {},
+            ),
             _ProfileMenuItem(
-                icon: Icons.help_outline,
-                label: 'Help & Support',
-                onTap: () {}),
+              icon: Icons.help_outline,
+              label: 'Help & Support',
+              onTap: () {},
+            ),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
@@ -955,13 +1082,16 @@ class _ProfileTab extends ConsumerWidget {
                   await Supabase.instance.client.auth.signOut();
                 },
                 icon: const Icon(Icons.logout, color: DCTheme.error),
-                label: const Text('Sign Out',
-                    style: TextStyle(color: DCTheme.error)),
+                label: const Text(
+                  'Sign Out',
+                  style: TextStyle(color: DCTheme.error),
+                ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: DCTheme.error),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
@@ -984,8 +1114,11 @@ class _ProfileMenuItem extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _ProfileMenuItem(
-      {required this.icon, required this.label, required this.onTap});
+  const _ProfileMenuItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1028,19 +1161,28 @@ class _StatItem extends StatelessWidget {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-              color: iconBgColor, borderRadius: BorderRadius.circular(14)),
+            color: iconBgColor,
+            borderRadius: BorderRadius.circular(14),
+          ),
           child: Icon(icon, color: iconColor, size: 22),
         ),
         const SizedBox(height: 10),
-        Text(value,
-            style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: DCTheme.text)),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: DCTheme.text,
+          ),
+        ),
         const SizedBox(height: 2),
-        Text(label,
-            style: TextStyle(
-                fontSize: 12, color: DCTheme.textMuted.withOpacity(0.8))),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: DCTheme.textMuted.withValues(alpha: 0.8),
+          ),
+        ),
       ],
     );
   }
@@ -1071,9 +1213,11 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(isActive ? activeIcon : icon,
-                color: isActive ? DCTheme.primary : DCTheme.textMuted,
-                size: 24),
+            Icon(
+              isActive ? activeIcon : icon,
+              color: isActive ? DCTheme.primary : DCTheme.textMuted,
+              size: 24,
+            ),
             const SizedBox(height: 4),
             Text(
               label,
@@ -1115,7 +1259,9 @@ class _BarberCard extends StatelessWidget {
         width: 130,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-            color: DCTheme.surface, borderRadius: BorderRadius.circular(16)),
+          color: DCTheme.surface,
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -1128,37 +1274,50 @@ class _BarberCard extends StatelessWidget {
               ),
               child: ClipOval(
                 child: avatarUrl != null && avatarUrl!.isNotEmpty
-                    ? Image.network(avatarUrl!,
+                    ? Image.network(
+                        avatarUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _fallback())
+                        errorBuilder: (_, __, ___) => _fallback(),
+                      )
                     : _fallback(),
               ),
             ),
             const SizedBox(height: 14),
-            Text(name,
-                style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: DCTheme.text),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis),
+            Text(
+              name,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: DCTheme.text,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Icon(Icons.star, color: Colors.amber, size: 14),
                 const SizedBox(width: 4),
-                Text(rating.toStringAsFixed(1),
-                    style: const TextStyle(
-                        fontSize: 12, color: DCTheme.textMuted)),
+                Text(
+                  rating.toStringAsFixed(1),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: DCTheme.textMuted,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 4),
-            Text(specialty,
-                style: TextStyle(
-                    fontSize: 11, color: DCTheme.textMuted.withOpacity(0.7)),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis),
+            Text(
+              specialty,
+              style: TextStyle(
+                fontSize: 11,
+                color: DCTheme.textMuted.withValues(alpha: 0.7),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),
@@ -1169,7 +1328,8 @@ class _BarberCard extends StatelessWidget {
     return Container(
       color: DCTheme.surfaceSecondary,
       child: const Center(
-          child: Icon(Icons.content_cut, color: DCTheme.textMuted, size: 28)),
+        child: Icon(Icons.content_cut, color: DCTheme.textMuted, size: 28),
+      ),
     );
   }
 }
@@ -1187,14 +1347,18 @@ class _AppointmentCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-          color: DCTheme.surface, borderRadius: BorderRadius.circular(16)),
+        color: DCTheme.surface,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Row(
         children: [
           Container(
             width: 50,
             height: 50,
             decoration: const BoxDecoration(
-                shape: BoxShape.circle, color: DCTheme.surfaceSecondary),
+              shape: BoxShape.circle,
+              color: DCTheme.surfaceSecondary,
+            ),
             child: const Icon(Icons.content_cut, color: DCTheme.textMuted),
           ),
           const SizedBox(width: 12),
@@ -1202,14 +1366,20 @@ class _AppointmentCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Appointment',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w600, color: DCTheme.text)),
+                const Text(
+                  'Appointment',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: DCTheme.text,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   '${appointment['date']} at ${appointment['time']}',
-                  style:
-                      const TextStyle(color: DCTheme.textMuted, fontSize: 13),
+                  style: const TextStyle(
+                    color: DCTheme.textMuted,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -1218,8 +1388,8 @@ class _AppointmentCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: status == 'confirmed'
-                  ? DCTheme.success.withOpacity(0.2)
-                  : Colors.amber.withOpacity(0.2),
+                  ? DCTheme.success.withValues(alpha: 0.2)
+                  : Colors.amber.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(

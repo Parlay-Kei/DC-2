@@ -1,4 +1,3 @@
-# DC-2
 # Direct Cuts v2 (Flutter)
 
 Native mobile application for the Direct Cuts barber booking platform.
@@ -13,11 +12,12 @@ Native mobile application for the Direct Cuts barber booking platform.
 - **Maps:** Google Maps Flutter
 
 ## Getting Started
+
 ```bash
 # Install dependencies
 flutter pub get
 
-# Generate models
+# Generate models (if using Freezed)
 dart run build_runner build --delete-conflicting-outputs
 
 # Run on device
@@ -25,18 +25,56 @@ flutter run
 ```
 
 ## Project Structure
+
 ```
 lib/
-├── config/       # App configuration
-├── models/       # Data classes (Freezed)
-├── providers/    # Riverpod providers
-├── services/     # API/backend services
-├── screens/      # Full-page views
-├── widgets/      # Reusable components
-└── utils/        # Helpers, constants
+├── main.dart           # App entry point
+├── config/             # App configuration
+│   ├── router.dart     # go_router setup
+│   ├── theme.dart      # DC design system
+│   └── supabase_config.dart
+├── models/             # Data classes
+│   ├── profile.dart
+│   ├── barber.dart
+│   ├── booking.dart
+│   └── service.dart
+├── providers/          # Riverpod providers
+│   └── auth_provider.dart
+├── services/           # API/backend services
+├── screens/            # Full-page views
+│   ├── auth/
+│   ├── customer/
+│   └── barber/
+├── widgets/            # Reusable components
+│   ├── common/
+│   ├── forms/
+│   └── cards/
+└── utils/              # Helpers, constants
+```
+
+## Configuration
+
+Before running, update `lib/config/supabase_config.dart` with your Supabase credentials:
+
+```dart
+static const String url = 'YOUR_SUPABASE_URL';
+static const String anonKey = 'YOUR_ANON_KEY';
+```
+
+## Build Commands
+
+```bash
+# Android APK
+flutter build apk
+
+# Android App Bundle (Play Store)
+flutter build appbundle
+
+# iOS
+flutter build ios
 ```
 
 ## Related
 
-- [DC-1 (React PWA)](https://github.com/YOUR_USERNAME/Direct-Cuts) — Production web app
+- [DC-1 (React PWA)](https://github.com/Parlay-Kei/Direct-Cuts) — Production web app
 - [Notion Project](https://notion.so/2c213b428aa78136b676eddb36cd7d54) — Development tracker

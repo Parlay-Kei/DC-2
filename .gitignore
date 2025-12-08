@@ -3,6 +3,21 @@
 # Exclude lock files except pubspec.lock
 *.lock
 !pubspec.lock
+
+# IDE/Editor
+.idea/
+.vscode/
+*.iml
+
+# Claude Code
+.claude/
+
+# Duplicate/test folders
+direct_cuts_v2/
+test-write.txt
+
+# Flutter metadata
+.metadata
 *.log
 *.pyc
 *.swp

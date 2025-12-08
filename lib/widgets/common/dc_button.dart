@@ -26,7 +26,7 @@ class DCPrimaryButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: DCTheme.primary,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: DCTheme.primary.withOpacity(0.5),
+          disabledBackgroundColor: DCTheme.primary.withValues(alpha: 0.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),

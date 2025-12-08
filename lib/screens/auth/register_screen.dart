@@ -150,14 +150,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: DCTheme.error.withOpacity(0.1),
+                      color: DCTheme.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: DCTheme.error.withOpacity(0.3)),
+                      border: Border.all(
+                        color: DCTheme.error.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.error_outline,
-                            color: DCTheme.error, size: 20),
+                        const Icon(
+                          Icons.error_outline,
+                          color: DCTheme.error,
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -316,11 +321,14 @@ class _RoleOption extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color:
-              isSelected ? DCTheme.primary.withOpacity(0.2) : DCTheme.surface,
+          color: isSelected
+              ? DCTheme.primary.withValues(alpha: 0.2)
+              : DCTheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? DCTheme.primary : Colors.white.withOpacity(0.1),
+            color: isSelected
+                ? DCTheme.primary
+                : Colors.white.withValues(alpha: 0.1),
             width: isSelected ? 2 : 1,
           ),
         ),
