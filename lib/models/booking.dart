@@ -17,6 +17,14 @@ class Booking {
   final double? longitude;
   final String? notes;
   final DateTime createdAt;
+  
+  // Joined fields from related tables (populated when fetching with joins)
+  final String? customerName;
+  final String? customerAvatar;
+  final String? customerPhone;
+  final String? serviceName;
+  final int? durationMinutes;
+  final bool hasReview;
 
   Booking({
     required this.id,
@@ -37,9 +45,43 @@ class Booking {
     this.longitude,
     this.notes,
     required this.createdAt,
+    this.customerName,
+    this.customerAvatar,
+    this.customerPhone,
+    this.serviceName,
+    this.durationMinutes,
+    this.hasReview = false,
   });
 
   factory Booking.fromJson(Map<String, dynamic> json) {
+    // Handle joined customer profile data
+    String? customerName;
+    String? customerAvatar;
+    String? customerPhone;
+    if (json['customer'] != null && json['customer'] is Map) {
+      customerName = json['customer']['full_name'] as String?;
+      customerAvatar = json['customer']['avatar_url'] as String?;
+      customerPhone = json['customer']['phone'] as String?;
+    }
+    
+    // Handle joined service data
+    String? serviceName;
+    int? durationMinutes;
+    if (json['service'] != null && json['service'] is Map) {
+      serviceName = json['service']['name'] as String?;
+      durationMinutes = json['service']['duration'] as int?;
+    }
+    
+    // Handle review existence
+    bool hasReview = false;
+    if (json['reviews'] != null) {
+      if (json['reviews'] is List) {
+        hasReview = (json['reviews'] as List).isNotEmpty;
+      } else if (json['reviews'] is Map) {
+        hasReview = true;
+      }
+    }
+    
     return Booking(
       id: json['id'] as String,
       customerId: json['customer_id'] as String,
@@ -59,6 +101,12 @@ class Booking {
       longitude: (json['longitude'] as num?)?.toDouble(),
       notes: json['notes'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
+      customerName: customerName ?? json['customer_name'] as String?,
+      customerAvatar: customerAvatar ?? json['customer_avatar'] as String?,
+      customerPhone: customerPhone ?? json['customer_phone'] as String?,
+      serviceName: serviceName ?? json['service_name'] as String?,
+      durationMinutes: durationMinutes ?? json['service_duration'] as int?,
+      hasReview: hasReview,
     );
   }
 
@@ -117,6 +165,12 @@ class Booking {
     double? longitude,
     String? notes,
     DateTime? createdAt,
+    String? customerName,
+    String? customerAvatar,
+    String? customerPhone,
+    String? serviceName,
+    int? durationMinutes,
+    bool? hasReview,
   }) {
     return Booking(
       id: id ?? this.id,
@@ -137,6 +191,12 @@ class Booking {
       longitude: longitude ?? this.longitude,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
+      customerName: customerName ?? this.customerName,
+      customerAvatar: customerAvatar ?? this.customerAvatar,
+      customerPhone: customerPhone ?? this.customerPhone,
+      serviceName: serviceName ?? this.serviceName,
+      durationMinutes: durationMinutes ?? this.durationMinutes,
+      hasReview: hasReview ?? this.hasReview,
     );
   }
 }

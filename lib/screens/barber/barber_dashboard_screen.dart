@@ -66,7 +66,7 @@ class BarberDashboardScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              Row(
+              const Row(
                 children: [
                   Expanded(
                     child: _StatCard(
@@ -76,7 +76,7 @@ class BarberDashboardScreen extends ConsumerWidget {
                       color: DCTheme.secondary,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: _StatCard(
                       title: 'Appointments',
@@ -88,7 +88,7 @@ class BarberDashboardScreen extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              Row(
+              const Row(
                 children: [
                   Expanded(
                     child: _StatCard(
@@ -98,7 +98,7 @@ class BarberDashboardScreen extends ConsumerWidget {
                       color: Colors.amber,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: _StatCard(
                       title: 'Reviews',

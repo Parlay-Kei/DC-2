@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
+import 'barber_list_screen.dart';
+import 'bookings_tab.dart';
+import 'messages_tab.dart';
 
 // Provider to fetch trending barbers
 final trendingBarbersProvider =
@@ -707,13 +711,7 @@ class _HomeTab extends ConsumerWidget {
                         rating: ((barber['rating'] ?? 0) as num).toDouble(),
                         specialty: barber['shop_name'] ?? 'Barber',
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'View ${barber['full_name'] ?? barber['shop_name']}\'s profile',
-                              ),
-                            ),
-                          );
+                          context.push('/barber/${barber['id']}');
                         },
                       ),
                     );
@@ -797,73 +795,7 @@ class _ExploreTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Explore',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: DCTheme.text,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Find your perfect barber',
-              style: TextStyle(color: DCTheme.textMuted, fontSize: 15),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: DCTheme.surface,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const TextField(
-                style: TextStyle(color: DCTheme.text),
-                decoration: InputDecoration(
-                  icon: Icon(Icons.search, color: DCTheme.textMuted),
-                  hintText: 'Search barbers...',
-                  hintStyle: TextStyle(color: DCTheme.textMuted),
-                  border: InputBorder.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: DCTheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.map_outlined,
-                        size: 64,
-                        color: DCTheme.textMuted.withValues(alpha: 0.3),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Map View Coming Soon',
-                        style:
-                            TextStyle(color: DCTheme.textMuted, fontSize: 16),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return const BarberListScreen();
   }
 }
 
@@ -873,47 +805,7 @@ class _BookingsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Bookings',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: DCTheme.text,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Your appointments',
-              style: TextStyle(color: DCTheme.textMuted, fontSize: 15),
-            ),
-            const Spacer(),
-            Center(
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.calendar_today_outlined,
-                    size: 64,
-                    color: DCTheme.textMuted.withValues(alpha: 0.3),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No bookings yet',
-                    style: TextStyle(color: DCTheme.textMuted, fontSize: 16),
-                  ),
-                ],
-              ),
-            ),
-            const Spacer(),
-          ],
-        ),
-      ),
-    );
+    return const BookingsTab();
   }
 }
 
@@ -923,13 +815,13 @@ class _MessagesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
+    return const SafeArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
+            child: Text(
               'Messages',
               style: TextStyle(
                 fontSize: 28,
@@ -937,31 +829,17 @@ class _MessagesTab extends StatelessWidget {
                 color: DCTheme.text,
               ),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Chat with barbers',
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              'Chat with your barbers',
               style: TextStyle(color: DCTheme.textMuted, fontSize: 15),
             ),
-            const Spacer(),
-            Center(
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.chat_bubble_outline,
-                    size: 64,
-                    color: DCTheme.textMuted.withValues(alpha: 0.3),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No messages yet',
-                    style: TextStyle(color: DCTheme.textMuted, fontSize: 16),
-                  ),
-                ],
-              ),
-            ),
-            const Spacer(),
-          ],
-        ),
+          ),
+          SizedBox(height: 8),
+          Expanded(child: CustomerMessagesTab()),
+        ],
       ),
     );
   }

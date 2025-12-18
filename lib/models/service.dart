@@ -49,6 +49,9 @@ class Service {
     };
   }
 
+  // Alias for durationMinutes for convenience
+  int get duration => durationMinutes;
+
   String get formattedPrice => '\$${price.toStringAsFixed(2)}';
 
   String get formattedDuration {

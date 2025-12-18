@@ -74,7 +74,7 @@ class DCLogoWatermark extends StatelessWidget {
         'assets/images/dc_logo.svg',
         width: size,
         height: size,
-        colorFilter: ColorFilter.mode(
+        colorFilter: const ColorFilter.mode(
           DCTheme.text,
           BlendMode.srcIn,
         ),
