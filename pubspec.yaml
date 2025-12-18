@@ -34,6 +34,7 @@ dependencies:
   cached_network_image: ^3.3.1
   shimmer: ^3.0.0
   flutter_svg: ^2.0.9
+  fl_chart: ^0.68.0
   
   # Storage & Security
   flutter_secure_storage: ^9.0.0
@@ -43,6 +44,15 @@ dependencies:
   url_launcher: ^6.2.4
   image_picker: ^1.0.7
   permission_handler: ^11.3.0
+  intl: ^0.20.2
+  timezone: ^0.9.4
+  
+  # Push Notifications
+  onesignal_flutter: ^5.1.6
+  flutter_local_notifications: ^17.0.0
+  
+  # Splash Screen
+  flutter_native_splash: ^2.3.10
   
   # Icons
   cupertino_icons: ^1.0.6
@@ -60,6 +70,36 @@ dev_dependencies:
   json_serializable: ^6.7.1
   json_annotation: ^4.8.1
   riverpod_generator: ^2.3.9
+  
+  # App Icon Generation
+  flutter_launcher_icons: ^0.13.1
+
+# App Icon Configuration
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon.png"
+  adaptive_icon_background: "#E63946"
+  adaptive_icon_foreground: "assets/images/app_icon_foreground.png"
+  min_sdk_android: 23
+  remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: "assets/images/app_icon.png"
+  windows:
+    generate: true
+    image_path: "assets/images/app_icon.png"
+
+# Native Splash Screen Configuration
+flutter_native_splash:
+  color: "#121212"
+  image: "assets/images/splash_logo.png"
+  android_12:
+    color: "#121212"
+    icon_background_color: "#121212"
+    image: "assets/images/splash_logo.png"
+  ios: true
+  android: true
 
 flutter:
   uses-material-design: true
