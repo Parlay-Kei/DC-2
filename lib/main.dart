@@ -33,8 +33,8 @@ void main() async {
     anonKey: SupabaseConfig.anonKey,
   );
 
-  // Initialize Push Notifications
-  await NotificationService.instance.initialize();
+  // Initialize Push Notifications (non-blocking, errors handled internally)
+  NotificationService.instance.initialize();
 
   runApp(
     const ProviderScope(

@@ -8,12 +8,14 @@ class DCTheme {
 
   static const Color secondary = Color(0xFFB20000); // Deep red (logo accent)
 
-  // Background hierarchy (from DC-1)
-  static const Color background = Color(0xFF121212); // surface-base
-  static const Color surface = Color(0xFF1A1A1A); // surface-primary
-  static const Color surfaceSecondary = Color(0xFF2D2D2D); // surface-secondary
-  static const Color surfaceElevated = Color(0xFF3D3D3D); // surface-elevated
-  static const Color surfaceOverlay = Color(0xFF4D4D4D); // surface-overlay
+  // Background hierarchy (from DC-1 tailwind - dark mode)
+  // Web uses: bg-gray-50 dark:bg-gray-900 for page background
+  // gray-900 = #111827, but DC-1 uses custom surface-base = #121212
+  static const Color background = Color(0xFF111827); // gray-900 (page bg)
+  static const Color surface = Color(0xFF1F2937); // gray-800 (cards/surfaces)
+  static const Color surfaceSecondary = Color(0xFF374151); // gray-700
+  static const Color surfaceElevated = Color(0xFF4B5563); // gray-600
+  static const Color surfaceOverlay = Color(0xFF6B7280); // gray-500
 
   static const Color text = Color(0xFFFFFFFF); // Primary text
   static const Color textMuted = Color(0xFF9CA3AF); // Secondary text (gray-400)

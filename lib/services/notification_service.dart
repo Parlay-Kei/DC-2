@@ -38,46 +38,40 @@ class NotificationService {
   Stream<OSNotificationWillDisplayEvent> get onNotificationReceived =>
       _notificationReceivedController.stream;
 
-  /// Initialize OneSignal and local notifications
+  /// Initialize local notifications only (OneSignal disabled for now)
   Future<void> initialize() async {
     if (_initialized) return;
+    _initialized = true;
 
     try {
       // Initialize timezone data
       tz_data.initializeTimeZones();
       
-      // Initialize OneSignal
-      OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
-      OneSignal.initialize(_oneSignalAppId);
-
-      // Request permission
-      await OneSignal.Notifications.requestPermission(true);
-
-      // Set up notification handlers
-      _setupNotificationHandlers();
-
-      // Initialize local notifications for foreground
+      // Initialize local notifications only
       await _initializeLocalNotifications();
-
-      _initialized = true;
-      debugPrint('NotificationService initialized successfully');
-
-      // Get player ID and register with backend
-      _playerId = OneSignal.User.pushSubscription.id;
-      if (_playerId != null) {
-        await registerDeviceToken(_playerId!);
-      }
-
-      // Listen for subscription changes
-      OneSignal.User.pushSubscription.addObserver((state) {
-        final newId = state.current.id;
-        if (newId != null && newId != _playerId) {
-          _playerId = newId;
-          registerDeviceToken(newId);
-        }
-      });
+      
+      debugPrint('NotificationService: Local notifications ready (OneSignal disabled)');
     } catch (e) {
       debugPrint('NotificationService init error: $e');
+    }
+    
+    // OneSignal completely disabled - uncomment when you have a real app ID
+    // _initializeOneSignal();
+  }
+  
+  /// OneSignal initialization (disabled)
+  Future<void> _initializeOneSignal() async {
+    if (_oneSignalAppId == 'YOUR_ONESIGNAL_APP_ID') return;
+    
+    try {
+      OneSignal.Debug.setLogLevel(OSLogLevel.none);
+      OneSignal.initialize(_oneSignalAppId);
+      OneSignal.Notifications.requestPermission(true);
+      _setupNotificationHandlers();
+      _playerId = OneSignal.User.pushSubscription.id;
+      if (_playerId != null) registerDeviceToken(_playerId!);
+    } catch (e) {
+      debugPrint('OneSignal init failed: $e');
     }
   }
 

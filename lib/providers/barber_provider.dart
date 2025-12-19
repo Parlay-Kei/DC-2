@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -7,8 +8,7 @@ import '../models/barber.dart';
 import '../models/service.dart';
 import '../models/review.dart';
 
-// Service providers
-final barberServiceProvider = Provider((ref) => BarberService());
+// Location service provider
 final locationServiceProvider = Provider((ref) => LocationService());
 
 // Get a single barber by ID
@@ -58,12 +58,15 @@ final userLocationProvider = StateNotifierProvider<UserLocationNotifier, AsyncVa
 
 class UserLocationNotifier extends StateNotifier<AsyncValue<Position?>> {
   final LocationService _locationService;
+  bool _initialized = false;
 
-  UserLocationNotifier(this._locationService) : super(const AsyncValue.loading()) {
-    _init();
+  UserLocationNotifier(this._locationService) : super(const AsyncValue.data(null)) {
+    // Don't auto-init - let UI trigger when needed
   }
 
-  Future<void> _init() async {
+  Future<void> initIfNeeded() async {
+    if (_initialized) return;
+    _initialized = true;
     await refresh();
   }
 
@@ -88,17 +91,30 @@ class UserLocationNotifier extends StateNotifier<AsyncValue<Position?>> {
   }
 }
 
-// Nearby barbers (depends on user location)
-final nearbyBarbersProvider = FutureProvider<List<BarberWithDistance>>((ref) async {
-  final locationAsync = ref.watch(userLocationProvider);
-  
-  final position = locationAsync.valueOrNull;
-  if (position == null) return [];
+// Las Vegas coordinates (our launch market)
+const _lasVegasLat = 36.1699;
+const _lasVegasLng = -115.1398;
 
-  return ref.read(barberServiceProvider).getNearbyBarbers(
-    latitude: position.latitude,
-    longitude: position.longitude,
+// Search location state - allows UI to override default
+final searchLocationProvider = StateProvider<({double lat, double lng})>((ref) {
+  return (lat: _lasVegasLat, lng: _lasVegasLng);
+});
+
+// Nearby barbers - uses searchLocationProvider for coordinates
+// This ensures we only search once per location change
+final nearbyBarbersProvider = FutureProvider<List<BarberWithDistance>>((ref) async {
+  final location = ref.watch(searchLocationProvider);
+  
+  debugPrint('NearbyBarbersProvider: Searching near (${location.lat}, ${location.lng})');
+  
+  final results = await ref.read(barberServiceProvider).getNearbyBarbers(
+    latitude: location.lat,
+    longitude: location.lng,
+    radiusMiles: 100, // Wide radius to catch all Vegas barbers
   );
+  
+  debugPrint('NearbyBarbersProvider: Found ${results.length} barbers');
+  return results;
 });
 
 // Search state for explore screen

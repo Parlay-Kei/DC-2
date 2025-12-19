@@ -78,6 +78,11 @@ class _BarberListScreenState extends ConsumerState<BarberListScreen> {
     final nearbyAsync = ref.watch(nearbyBarbersProvider);
     final locationAsync = ref.watch(userLocationProvider);
 
+    // Trigger location init when this tab is shown
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(userLocationProvider.notifier).initIfNeeded();
+    });
+
     return locationAsync.when(
       data: (position) {
         if (position == null) {

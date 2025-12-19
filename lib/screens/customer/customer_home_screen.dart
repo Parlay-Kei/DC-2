@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
-import 'barber_list_screen.dart';
+import 'nearby_map_screen.dart';
 import 'bookings_tab.dart';
 import 'messages_tab.dart';
 
@@ -14,51 +14,42 @@ import 'messages_tab.dart';
 final trendingBarbersProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
   try {
-    final profilesResponse = await Supabase.instance.client
-        .from('profiles')
-        .select('id, full_name, avatar_url')
-        .eq('role', 'barber')
-        .limit(10);
-
-    final profiles = List<Map<String, dynamic>>.from(profilesResponse);
-
-    if (profiles.isEmpty) return [];
-
-    final profileIds = profiles.map((p) => p['id'] as String).toList();
-
-    final barbersResponse = await Supabase.instance.client
-        .from('barbers')
-        .select('*')
-        .inFilter('id', profileIds)
-        .eq('is_active', true);
-
-    final barbers = List<Map<String, dynamic>>.from(barbersResponse);
-
-    final profileMap = Map.fromEntries(
-      profiles.map((p) => MapEntry(p['id'] as String, p)),
-    );
-
-    return barbers.map((barber) {
-      final profile = profileMap[barber['id']];
-      return {
-        ...barber,
-        'full_name': profile?['full_name'] ?? 'Unknown Barber',
-        'avatar_url': profile?['avatar_url'],
-      };
-    }).toList();
-  } catch (e) {
+    // Query barbers table - rating is calculated from reviews, not stored in table
     final response = await Supabase.instance.client
         .from('barbers')
         .select('*')
         .eq('is_active', true)
+        .eq('is_verified', true)
         .limit(10);
 
-    return List<Map<String, dynamic>>.from(response).map((b) {
+    final barbers = List<Map<String, dynamic>>.from(response);
+    
+    // Get user profiles for names
+    if (barbers.isEmpty) return [];
+    
+    final userIds = barbers.map((b) => b['id'] as String).toList();
+    final usersResponse = await Supabase.instance.client
+        .from('users')
+        .select('id, full_name, avatar_url')
+        .inFilter('id', userIds);
+    
+    final userMap = <String, Map<String, dynamic>>{};
+    for (final user in usersResponse as List) {
+      userMap[user['id'] as String] = user;
+    }
+    
+    return barbers.map((b) {
+      final user = userMap[b['id']];
       return {
         ...b,
-        'full_name': b['shop_name'] ?? 'Unknown Barber',
+        'full_name': user?['full_name'] ?? b['shop_name'] ?? 'Unknown Barber',
+        'avatar_url': user?['avatar_url'],
+        'rating': 4.5, // Default rating until we fetch from reviews
       };
     }).toList();
+  } catch (e) {
+    print('DEBUG: Error fetching barbers: $e');
+    return [];
   }
 });
 
@@ -110,14 +101,19 @@ final upcomingAppointmentsProvider =
 
     final response = await Supabase.instance.client
         .from('appointments')
-        .select('id, date, time, status, barber_id')
+        .select('id, scheduled_date, scheduled_time, status, barber_id')
         .eq('customer_id', user.id)
         .inFilter('status', ['pending', 'confirmed'])
-        .gte('date', today)
-        .order('date', ascending: true)
+        .gte('scheduled_date', today)
+        .order('scheduled_date', ascending: true)
         .limit(3);
 
-    return List<Map<String, dynamic>>.from(response);
+    // Map to expected format for backwards compatibility
+    return List<Map<String, dynamic>>.from(response).map((apt) => {
+      ...apt,
+      'date': apt['scheduled_date'],
+      'time': apt['scheduled_time'],
+    }).toList();
   } catch (e) {
     return [];
   }
@@ -132,24 +128,37 @@ class CustomerHomeScreen extends ConsumerStatefulWidget {
 
 class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
   int _currentIndex = 0;
+  // Cache built tabs for smoother navigation
+  final Map<int, Widget> _cachedTabs = {};
 
   void _navigateToTab(int index) {
     setState(() => _currentIndex = index);
+  }
+
+  Widget _buildCurrentTab() {
+    // Use lazy loading - only build the current tab
+    if (!_cachedTabs.containsKey(_currentIndex)) {
+      _cachedTabs[_currentIndex] = switch (_currentIndex) {
+        0 => _HomeTab(onNavigate: _navigateToTab),
+        1 => const _ExploreTab(),
+        2 => const _FavoritesTab(),
+        3 => const _ProfileTab(),
+        _ => const SizedBox.shrink(),
+      };
+    }
+    return _cachedTabs[_currentIndex]!;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: DCTheme.background,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: [
-          _HomeTab(onNavigate: _navigateToTab),
-          const _ExploreTab(),
-          const _BookingsTab(),
-          const _MessagesTab(),
-          const _ProfileTab(),
-        ],
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        child: KeyedSubtree(
+          key: ValueKey(_currentIndex),
+          child: _buildCurrentTab(),
+        ),
       ),
       bottomNavigationBar: _buildBottomNav(),
     );
@@ -180,32 +189,54 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                 onTap: () => _navigateToTab(0),
               ),
               _NavItem(
-                icon: Icons.explore_outlined,
-                activeIcon: Icons.explore,
-                label: 'Explore',
+                icon: Icons.location_on_outlined,
+                activeIcon: Icons.location_on,
+                label: 'Nearby',
                 isActive: _currentIndex == 1,
                 onTap: () => _navigateToTab(1),
               ),
-              _NavItem(
-                icon: Icons.calendar_today_outlined,
-                activeIcon: Icons.calendar_today,
-                label: 'Bookings',
-                isActive: _currentIndex == 2,
-                onTap: () => _navigateToTab(2),
+              // Center FAB - Barber Pole
+              GestureDetector(
+                onTap: () => _navigateToTab(1), // Go to Explore/Book
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFFEF4444), // red-500
+                        Color(0xFFDC2626), // red-600
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFEF4444).withValues(alpha: 0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: _BarberPoleIcon(),
+                  ),
+                ),
               ),
               _NavItem(
-                icon: Icons.chat_bubble_outline,
-                activeIcon: Icons.chat_bubble,
-                label: 'Messages',
-                isActive: _currentIndex == 3,
-                onTap: () => _navigateToTab(3),
+                icon: Icons.star_outline,
+                activeIcon: Icons.star,
+                label: 'Favorites',
+                isActive: _currentIndex == 2,
+                onTap: () => _navigateToTab(2),
               ),
               _NavItem(
                 icon: Icons.person_outline,
                 activeIcon: Icons.person,
                 label: 'Profile',
-                isActive: _currentIndex == 4,
-                onTap: () => _navigateToTab(4),
+                isActive: _currentIndex == 3,
+                onTap: () => _navigateToTab(3),
               ),
             ],
           ),
@@ -251,20 +282,25 @@ class _HomeTab extends ConsumerWidget {
       decoration: const BoxDecoration(
         color: DCTheme.primary,
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
       ),
       child: Stack(
         children: [
+          // Large Watermark Logo - matching web opacity-20
           Positioned.fill(
             child: Center(
               child: Opacity(
                 opacity: 0.2,
                 child: SvgPicture.asset(
                   'assets/images/dc_logo.svg',
-                  width: 200,
-                  height: 200,
+                  width: 180,
+                  height: 180,
+                  colorFilter: const ColorFilter.mode(
+                    Colors.white,
+                    BlendMode.srcIn,
+                  ),
                 ),
               ),
             ),
@@ -272,17 +308,63 @@ class _HomeTab extends ConsumerWidget {
           SafeArea(
             bottom: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Top row with avatar and notification
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      // Avatar - matching web w-12 h-12
                       _buildAvatar(profile),
+                      const SizedBox(width: 12),
+                      // Title and subtitle
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            profile.when(
+                              data: (p) => Text(
+                                _getGreeting(p?.fullName?.split(' ').first),
+                                style: const TextStyle(
+                                  fontSize: 20, // text-xl
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              loading: () => const Text(
+                                'Hey there!',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              error: (_, __) => const Text(
+                                'Hey there!',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              _getSubtitle(),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white.withValues(alpha: 0.8), // text-red-100
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Notification button
                       Container(
-                        width: 44,
-                        height: 44,
+                        width: 40,
+                        height: 40,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: Colors.white.withValues(alpha: 0.1),
@@ -290,7 +372,8 @@ class _HomeTab extends ConsumerWidget {
                         child: IconButton(
                           icon: const Icon(Icons.notifications_outlined),
                           color: Colors.white,
-                          iconSize: 22,
+                          iconSize: 20,
+                          padding: EdgeInsets.zero,
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -301,41 +384,6 @@ class _HomeTab extends ConsumerWidget {
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 20),
-                  profile.when(
-                    data: (p) => Text(
-                      _getGreeting(p?.fullName?.split(' ').first),
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    loading: () => const Text(
-                      'Hey there! 👋',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    error: (_, __) => const Text(
-                      'Hey there! 👋',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Ready for a fresh cut?',
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.white.withValues(alpha: 0.85),
-                    ),
                   ),
                 ],
               ),
@@ -353,9 +401,16 @@ class _HomeTab extends ConsumerWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.3),
+          color: Colors.white,
           width: 2,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: ClipOval(
         child: profile.when(
@@ -369,9 +424,7 @@ class _HomeTab extends ConsumerWidget {
             }
             return _avatarFallback(p?.fullName);
           },
-          loading: () => Container(
-            color: Colors.white.withValues(alpha: 0.2),
-          ),
+          loading: () => _avatarFallback(null),
           error: (_, __) => _avatarFallback(null),
         ),
       ),
@@ -381,7 +434,7 @@ class _HomeTab extends ConsumerWidget {
   Widget _avatarFallback(String? name) {
     final initials = _getInitials(name);
     return Container(
-      color: Colors.white.withValues(alpha: 0.2),
+      color: const Color(0xFF2A2A2A),
       child: Center(
         child: Text(
           initials,
@@ -397,19 +450,20 @@ class _HomeTab extends ConsumerWidget {
 
   Widget _buildStatsCard(AsyncValue<Map<String, dynamic>> stats) {
     return Transform.translate(
-      offset: const Offset(0, -24),
+      offset: const Offset(0, -16),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFF1F1F1F),
-            borderRadius: BorderRadius.circular(20),
+            // gray-800 with 90% opacity - matching web bg-gray-800/90
+            color: const Color(0xFF1F2937).withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -427,8 +481,8 @@ class _HomeTab extends ConsumerWidget {
                 ),
                 Container(
                   width: 1,
-                  height: 60,
-                  color: Colors.white.withValues(alpha: 0.1),
+                  height: 50,
+                  color: const Color(0xFF374151), // border-gray-700
                 ),
                 Expanded(
                   child: _StatItem(
@@ -441,8 +495,8 @@ class _HomeTab extends ConsumerWidget {
                 ),
                 Container(
                   width: 1,
-                  height: 60,
-                  color: Colors.white.withValues(alpha: 0.1),
+                  height: 50,
+                  color: const Color(0xFF374151), // border-gray-700
                 ),
                 Expanded(
                   child: _StatItem(
@@ -472,8 +526,8 @@ class _HomeTab extends ConsumerWidget {
                 ),
                 Container(
                   width: 1,
-                  height: 60,
-                  color: Colors.white.withValues(alpha: 0.1),
+                  height: 50,
+                  color: const Color(0xFF374151),
                 ),
                 Expanded(
                   child: _StatItem(
@@ -486,8 +540,8 @@ class _HomeTab extends ConsumerWidget {
                 ),
                 Container(
                   width: 1,
-                  height: 60,
-                  color: Colors.white.withValues(alpha: 0.1),
+                  height: 50,
+                  color: const Color(0xFF374151),
                 ),
                 Expanded(
                   child: _StatItem(
@@ -676,13 +730,13 @@ class _HomeTab extends ConsumerWidget {
                     child: Column(
                       children: [
                         Icon(
-                          Icons.person_search,
+                          Icons.location_on_outlined,
                           size: 44,
                           color: DCTheme.textMuted.withValues(alpha: 0.3),
                         ),
                         const SizedBox(height: 12),
                         const Text(
-                          'No barbers available',
+                          'No barbers found nearby',
                           style: TextStyle(color: DCTheme.textMuted),
                         ),
                       ],
@@ -776,16 +830,27 @@ class _HomeTab extends ConsumerWidget {
     final hour = DateTime.now().hour;
     String timeGreeting;
     if (hour < 12) {
-      timeGreeting = 'Good morning';
+      timeGreeting = 'Bright and early';
     } else if (hour < 17) {
-      timeGreeting = 'Good afternoon';
+      timeGreeting = "What's good";
     } else {
       timeGreeting = 'Good evening';
     }
     if (firstName != null && firstName.isNotEmpty) {
-      return '$timeGreeting, $firstName! 👋';
+      return '$timeGreeting, $firstName!';
     }
-    return 'Hey there! 👋';
+    return 'Hey there!';
+  }
+
+  String _getSubtitle() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Precision cuts await';
+    } else if (hour < 17) {
+      return 'Your next look awaits';
+    } else {
+      return 'End your day sharp';
+    }
   }
 }
 
@@ -795,7 +860,7 @@ class _ExploreTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const BarberListScreen();
+    return const NearbyMapScreen();
   }
 }
 
@@ -1036,19 +1101,19 @@ class _StatItem extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 44,
-          height: 44,
+          width: 40, // w-10
+          height: 40, // h-10
           decoration: BoxDecoration(
             color: iconBgColor,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12), // rounded-xl
           ),
-          child: Icon(icon, color: iconColor, size: 22),
+          child: Icon(icon, color: iconColor, size: 20),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Text(
           value,
           style: const TextStyle(
-            fontSize: 24,
+            fontSize: 24, // text-2xl
             fontWeight: FontWeight.bold,
             color: DCTheme.text,
           ),
@@ -1056,9 +1121,9 @@ class _StatItem extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            color: DCTheme.textMuted.withValues(alpha: 0.8),
+          style: const TextStyle(
+            fontSize: 12, // text-xs
+            color: Color(0xFF9CA3AF), // text-gray-400
           ),
         ),
       ],
@@ -1283,4 +1348,222 @@ class _AppointmentCard extends StatelessWidget {
       ),
     );
   }
+}
+
+// ============ FAVORITES TAB ============
+class _FavoritesTab extends StatelessWidget {
+  const _FavoritesTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
+            child: Text(
+              'Favorites',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: DCTheme.text,
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              'Your favorite barbers',
+              style: TextStyle(color: DCTheme.textMuted, fontSize: 15),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.star_outline,
+                    size: 64,
+                    color: DCTheme.textMuted.withValues(alpha: 0.3),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No favorites yet',
+                    style: TextStyle(
+                      color: DCTheme.textMuted,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Tap the heart on a barber to add them here',
+                    style: TextStyle(
+                      color: DCTheme.textMuted,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============ BARBER POLE ICON ============
+class _BarberPoleIcon extends StatelessWidget {
+  const _BarberPoleIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    // Match DC-1 web barber pole SVG exactly
+    return SizedBox(
+      width: 30,
+      height: 30,
+      child: CustomPaint(
+        painter: _BarberPolePainter(),
+      ),
+    );
+  }
+}
+
+class _BarberPolePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Scale factor for 30x30 from 32x32 viewBox
+    final scale = size.width / 32;
+    
+    // Main pole body - white/gray gradient cylinder
+    final poleRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(13 * scale, 4 * scale, 6 * scale, 24 * scale),
+      Radius.circular(3 * scale),
+    );
+    
+    // Pole gradient (light 3D effect)
+    final polePaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [
+          const Color(0xFFE8E8E8),
+          const Color(0xFFFFFFFF),
+          const Color(0xFFD0D0D0),
+        ],
+      ).createShader(poleRect.outerRect);
+    canvas.drawRRect(poleRect, polePaint);
+    
+    // Clip to pole shape for stripes
+    canvas.save();
+    canvas.clipRRect(poleRect);
+    
+    // Red spiral stripes - matching web SVG paths
+    final redPaint1 = Paint()..color = const Color(0xFFDC2626).withValues(alpha: 0.95);
+    final redPaint2 = Paint()..color = const Color(0xFFEF4444).withValues(alpha: 0.9);
+    
+    // Stripe 1
+    final path1 = Path()
+      ..moveTo(13 * scale, 6 * scale)
+      ..lineTo(19 * scale, 9 * scale)
+      ..lineTo(19 * scale, 12 * scale)
+      ..lineTo(13 * scale, 9 * scale)
+      ..close();
+    canvas.drawPath(path1, redPaint1);
+    
+    // Stripe 2
+    final path2 = Path()
+      ..moveTo(13 * scale, 10 * scale)
+      ..lineTo(19 * scale, 13 * scale)
+      ..lineTo(19 * scale, 16 * scale)
+      ..lineTo(13 * scale, 13 * scale)
+      ..close();
+    canvas.drawPath(path2, redPaint2);
+    
+    // Stripe 3
+    final path3 = Path()
+      ..moveTo(13 * scale, 14 * scale)
+      ..lineTo(19 * scale, 17 * scale)
+      ..lineTo(19 * scale, 20 * scale)
+      ..lineTo(13 * scale, 17 * scale)
+      ..close();
+    canvas.drawPath(path3, redPaint1);
+    
+    // Stripe 4
+    final path4 = Path()
+      ..moveTo(13 * scale, 18 * scale)
+      ..lineTo(19 * scale, 21 * scale)
+      ..lineTo(19 * scale, 24 * scale)
+      ..lineTo(13 * scale, 21 * scale)
+      ..close();
+    canvas.drawPath(path4, redPaint2);
+    
+    // Stripe 5
+    final path5 = Path()
+      ..moveTo(13 * scale, 22 * scale)
+      ..lineTo(19 * scale, 25 * scale)
+      ..lineTo(19 * scale, 27 * scale)
+      ..lineTo(13 * scale, 24 * scale)
+      ..close();
+    canvas.drawPath(path5, redPaint1);
+    
+    // Glossy highlight
+    final highlightPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.4);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(17.5 * scale, 5 * scale, 0.8 * scale, 22 * scale),
+        Radius.circular(0.4 * scale),
+      ),
+      highlightPaint,
+    );
+    
+    canvas.restore();
+    
+    // Top cap (ellipse)
+    final topCapPaint1 = Paint()..color = const Color(0xFFF3F4F6);
+    final topCapPaint2 = Paint()..color = const Color(0xFFFFFFFF);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(16 * scale, 4 * scale),
+        width: 7 * scale,
+        height: 3.6 * scale,
+      ),
+      topCapPaint1,
+    );
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(16 * scale, 4 * scale),
+        width: 5 * scale,
+        height: 2.4 * scale,
+      ),
+      topCapPaint2,
+    );
+    
+    // Bottom cap (ellipse)
+    final bottomCapPaint1 = Paint()..color = const Color(0xFFD1D5DB);
+    final bottomCapPaint2 = Paint()..color = const Color(0xFFE5E7EB);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(16 * scale, 28 * scale),
+        width: 7 * scale,
+        height: 3.6 * scale,
+      ),
+      bottomCapPaint1,
+    );
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(16 * scale, 28 * scale),
+        width: 5 * scale,
+        height: 2.4 * scale,
+      ),
+      bottomCapPaint2,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

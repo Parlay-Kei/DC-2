@@ -20,23 +20,68 @@ final currentUserProvider = Provider<User?>((ref) {
 final userProfileProvider =
     FutureProvider.family<Profile?, String>((ref, userId) async {
   try {
+    print('DEBUG: Querying profiles table for id: $userId');
     final response = await SupabaseConfig.client
         .from('profiles')
         .select()
         .eq('id', userId)
         .single();
+    print('DEBUG: Raw profile response: $response');
     return Profile.fromJson(response);
   } catch (e) {
+    print('DEBUG: Profile query error: $e');
     return null;
   }
 });
 
-// Current user's profile
+// Current user's profile - try getting from auth metadata first
 final currentProfileProvider = FutureProvider<Profile?>((ref) async {
   final user = ref.watch(currentUserProvider);
-  if (user == null) return null;
-
-  return ref.watch(userProfileProvider(user.id).future);
+  if (user == null) {
+    print('DEBUG: No current user found');
+    return null;
+  }
+  
+  print('DEBUG: User ID: ${user.id}');
+  print('DEBUG: User email: ${user.email}');
+  print('DEBUG: User metadata: ${user.userMetadata}');
+  
+  // Try to build profile from auth metadata first
+  final metadata = user.userMetadata;
+  if (metadata != null && metadata.isNotEmpty) {
+    final fullName = metadata['full_name'] as String? ?? metadata['name'] as String?;
+    if (fullName != null && fullName.isNotEmpty) {
+      print('DEBUG: Building profile from auth metadata: $fullName');
+      return Profile(
+        id: user.id,
+        fullName: fullName,
+        email: user.email,
+        avatarUrl: metadata['avatar_url'] as String? ?? metadata['picture'] as String?,
+        phone: metadata['phone'] as String?,
+        role: metadata['role'] as String? ?? 'customer',
+        createdAt: user.createdAt != null ? DateTime.parse(user.createdAt!) : DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
+  
+  // Fallback: try database query
+  print('DEBUG: Trying database query for profile');
+  try {
+    final profile = await ref.watch(userProfileProvider(user.id).future);
+    print('DEBUG: Profile from DB: ${profile?.fullName}');
+    return profile;
+  } catch (e) {
+    print('DEBUG: Profile fetch error: $e');
+    // Return minimal profile from auth
+    return Profile(
+      id: user.id,
+      email: user.email,
+      role: 'customer',
+      createdAt: user.createdAt != null ? DateTime.parse(user.createdAt!) : DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
 });
 
 // Auth service provider

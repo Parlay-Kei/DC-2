@@ -57,32 +57,46 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     if (!mounted) return;
 
-    final authState = ref.read(authStateProvider);
+    try {
+      final authState = ref.read(authStateProvider);
 
-    authState.when(
-      data: (user) async {
-        if (user != null) {
-          // User is logged in, check their role
-          final profile = await ref.read(currentProfileProvider.future);
-          if (!mounted) return;
+      authState.when(
+        data: (user) async {
+          if (user != null) {
+            // User is logged in, check their role
+            try {
+              final profile = await ref.read(currentProfileProvider.future);
+              if (!mounted) return;
 
-          if (profile?.isBarber == true) {
-            context.go('/barber');
+              if (profile?.isBarber == true) {
+                context.go('/barber-dashboard');
+              } else {
+                context.go('/customer');
+              }
+            } catch (e) {
+              // Profile fetch failed, default to customer
+              if (!mounted) return;
+              context.go('/customer');
+            }
           } else {
-            context.go('/customer');
+            // Not logged in
+            if (!mounted) return;
+            context.go('/login');
           }
-        } else {
-          // Not logged in
+        },
+        loading: () {
+          // Still loading, retry after a short delay
+          Future.delayed(const Duration(milliseconds: 500), _checkAuthAndNavigate);
+        },
+        error: (_, __) {
+          if (!mounted) return;
           context.go('/login');
-        }
-      },
-      loading: () {
-        // Still loading, wait
-      },
-      error: (_, __) {
-        context.go('/login');
-      },
-    );
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      context.go('/login');
+    }
   }
 
   @override
