@@ -17,7 +17,7 @@
         android:label="Direct Cuts"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="false">
         
         <activity
             android:name=".MainActivity"
@@ -81,6 +81,11 @@
         <meta-data
             android:name="com.google.android.gms.wallet.api.enabled"
             android:value="true"/>
+
+        <!-- Mapbox Access Token -->
+        <meta-data
+            android:name="com.mapbox.token"
+            android:value="@string/mapbox_access_token"/>
     </application>
     
     <queries>
