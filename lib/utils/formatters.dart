@@ -41,10 +41,10 @@ class Formatters {
   static String timeFromString(String time) {
     final parts = time.split(':');
     if (parts.length < 2) return time;
-    
+
     final hour = int.tryParse(parts[0]) ?? 0;
     final minute = int.tryParse(parts[1]) ?? 0;
-    
+
     final dateTime = DateTime(2000, 1, 1, hour, minute);
     return _timeFormat.format(dateTime);
   }
@@ -98,14 +98,14 @@ class Formatters {
     if (minutes < 60) {
       return '${minutes}m';
     }
-    
+
     final hours = minutes ~/ 60;
     final mins = minutes % 60;
-    
+
     if (mins == 0) {
       return '${hours}h';
     }
-    
+
     return '${hours}h ${mins}m';
   }
 
@@ -124,17 +124,17 @@ class Formatters {
   static String phone(String phone) {
     // Remove all non-digits
     final digits = phone.replaceAll(RegExp(r'\D'), '');
-    
+
     // US format: (XXX) XXX-XXXX
     if (digits.length == 10) {
       return '(${digits.substring(0, 3)}) ${digits.substring(3, 6)}-${digits.substring(6)}';
     }
-    
+
     // With country code: +1 (XXX) XXX-XXXX
     if (digits.length == 11 && digits.startsWith('1')) {
       return '+1 (${digits.substring(1, 4)}) ${digits.substring(4, 7)}-${digits.substring(7)}';
     }
-    
+
     return phone;
   }
 

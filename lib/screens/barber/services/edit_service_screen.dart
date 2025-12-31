@@ -22,7 +22,7 @@ class _EditServiceScreenState extends ConsumerState<EditServiceScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
-  
+
   String _selectedCategory = 'Haircut';
   int _duration = 30;
   bool _isLoading = false;
@@ -70,10 +70,12 @@ class _EditServiceScreenState extends ConsumerState<EditServiceScreen> {
       ),
       body: servicesAsync.when(
         data: (services) {
-          final service = services.where((s) => s.id == widget.serviceId).firstOrNull;
+          final service =
+              services.where((s) => s.id == widget.serviceId).firstOrNull;
           if (service == null) {
             return const Center(
-              child: Text('Service not found', style: TextStyle(color: DCTheme.textMuted)),
+              child: Text('Service not found',
+                  style: TextStyle(color: DCTheme.textMuted)),
             );
           }
           _initializeForm(service);
@@ -83,7 +85,8 @@ class _EditServiceScreenState extends ConsumerState<EditServiceScreen> {
           child: CircularProgressIndicator(color: DCTheme.primary),
         ),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: const TextStyle(color: DCTheme.error)),
+          child:
+              Text('Error: $e', style: const TextStyle(color: DCTheme.error)),
         ),
       ),
     );
@@ -195,7 +198,8 @@ class _EditServiceScreenState extends ConsumerState<EditServiceScreen> {
             return GestureDetector(
               onTap: () => setState(() => _selectedCategory = category),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: isSelected ? DCTheme.primary : DCTheme.surface,
                   borderRadius: BorderRadius.circular(20),
@@ -204,7 +208,8 @@ class _EditServiceScreenState extends ConsumerState<EditServiceScreen> {
                   category,
                   style: TextStyle(
                     color: isSelected ? Colors.white : DCTheme.text,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
               ),
@@ -289,7 +294,8 @@ class _EditServiceScreenState extends ConsumerState<EditServiceScreen> {
             return GestureDetector(
               onTap: () => setState(() => _duration = duration),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: isSelected ? DCTheme.primary : DCTheme.surface,
                   borderRadius: BorderRadius.circular(20),
@@ -298,7 +304,8 @@ class _EditServiceScreenState extends ConsumerState<EditServiceScreen> {
                   _formatDuration(duration),
                   style: TextStyle(
                     color: isSelected ? Colors.white : DCTheme.text,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
               ),
@@ -321,7 +328,8 @@ class _EditServiceScreenState extends ConsumerState<EditServiceScreen> {
             ? const SizedBox(
                 height: 20,
                 width: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white),
               )
             : const Text('Save Changes', style: TextStyle(fontSize: 16)),
       ),
@@ -347,7 +355,7 @@ class _EditServiceScreenState extends ConsumerState<EditServiceScreen> {
       );
 
       ref.invalidate(myServicesProvider);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

@@ -87,7 +87,7 @@ class PaymentService {
 
       // Present payment sheet
       await Stripe.instance.presentPaymentSheet();
-      
+
       return PaymentResult.success();
     } on StripeException catch (e) {
       if (e.error.code == FailureCode.Canceled) {
@@ -186,8 +186,7 @@ class PaymentService {
       if (isDefault) {
         await _client
             .from('customer_payment_methods')
-            .update({'is_default': false})
-            .eq('customer_id', customerId);
+            .update({'is_default': false}).eq('customer_id', customerId);
       }
 
       await _client.from('customer_payment_methods').insert({
@@ -212,8 +211,7 @@ class PaymentService {
     try {
       await _client
           .from('customer_payment_methods')
-          .update({'is_active': false})
-          .eq('id', paymentMethodId);
+          .update({'is_active': false}).eq('id', paymentMethodId);
       return true;
     } catch (e) {
       return false;
@@ -229,14 +227,12 @@ class PaymentService {
       // Unset all defaults
       await _client
           .from('customer_payment_methods')
-          .update({'is_default': false})
-          .eq('customer_id', customerId);
+          .update({'is_default': false}).eq('customer_id', customerId);
 
       // Set new default
       await _client
           .from('customer_payment_methods')
-          .update({'is_default': true})
-          .eq('id', paymentMethodId);
+          .update({'is_default': true}).eq('id', paymentMethodId);
 
       return true;
     } catch (e) {
@@ -258,9 +254,7 @@ class PaymentService {
           .order('paid_at', ascending: false)
           .limit(limit);
 
-      return (response as List)
-          .map((p) => PaymentRecord.fromJson(p))
-          .toList();
+      return (response as List).map((p) => PaymentRecord.fromJson(p)).toList();
     } catch (e) {
       return [];
     }
@@ -289,10 +283,12 @@ class PaymentResult {
 
   PaymentResult._({required this.status, this.errorMessage});
 
-  factory PaymentResult.success() => PaymentResult._(status: PaymentResultStatus.success);
-  factory PaymentResult.cancelled() => PaymentResult._(status: PaymentResultStatus.cancelled);
-  factory PaymentResult.failed(String message) => 
-      PaymentResult._(status: PaymentResultStatus.failed, errorMessage: message);
+  factory PaymentResult.success() =>
+      PaymentResult._(status: PaymentResultStatus.success);
+  factory PaymentResult.cancelled() =>
+      PaymentResult._(status: PaymentResultStatus.cancelled);
+  factory PaymentResult.failed(String message) => PaymentResult._(
+      status: PaymentResultStatus.failed, errorMessage: message);
 
   bool get isSuccess => status == PaymentResultStatus.success;
   bool get isCancelled => status == PaymentResultStatus.cancelled;
@@ -315,7 +311,8 @@ class RefundResult {
     this.errorMessage,
   });
 
-  factory RefundResult.success({required String refundId, required double amount}) =>
+  factory RefundResult.success(
+          {required String refundId, required double amount}) =>
       RefundResult._(isSuccess: true, refundId: refundId, amount: amount);
 
   factory RefundResult.failed(String message) =>
@@ -399,8 +396,8 @@ class PaymentRecord {
       bookingId: json['id'] as String,
       amount: (json['total_price'] as num).toDouble(),
       status: json['payment_status'] as String,
-      paidAt: json['paid_at'] != null 
-          ? DateTime.parse(json['paid_at'] as String) 
+      paidAt: json['paid_at'] != null
+          ? DateTime.parse(json['paid_at'] as String)
           : null,
       scheduledDate: DateTime.parse(json['scheduled_date'] as String),
     );

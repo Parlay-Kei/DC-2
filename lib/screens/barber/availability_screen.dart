@@ -6,10 +6,11 @@ import '../../config/supabase_config.dart';
 import '../../models/availability.dart' show Availability;
 import '../../services/availability_service.dart';
 
-final barberAvailabilityProvider = FutureProvider<List<Availability>>((ref) async {
+final barberAvailabilityProvider =
+    FutureProvider<List<Availability>>((ref) async {
   final barberId = SupabaseConfig.currentUserId;
   if (barberId == null) return [];
-  
+
   final service = AvailabilityService();
   return service.getBarberAvailability(barberId);
 });
@@ -52,7 +53,8 @@ class _AvailabilityScreenState extends ConsumerState<AvailabilityScreen> {
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
                     )
                   : const Text('Save'),
             ),
@@ -72,7 +74,8 @@ class _AvailabilityScreenState extends ConsumerState<AvailabilityScreen> {
             children: [
               const Icon(Icons.error_outline, color: DCTheme.error, size: 48),
               const SizedBox(height: 16),
-              Text('Error: $e', style: const TextStyle(color: DCTheme.textMuted)),
+              Text('Error: $e',
+                  style: const TextStyle(color: DCTheme.textMuted)),
               TextButton(
                 onPressed: () => ref.invalidate(barberAvailabilityProvider),
                 child: const Text('Retry'),
@@ -87,7 +90,8 @@ class _AvailabilityScreenState extends ConsumerState<AvailabilityScreen> {
   void _initializeSchedule(List<Availability> availability) {
     if (_schedule.isEmpty) {
       for (int i = 0; i < 7; i++) {
-        final dayAvail = availability.where((a) => a.dayOfWeek == i).firstOrNull;
+        final dayAvail =
+            availability.where((a) => a.dayOfWeek == i).firstOrNull;
         if (dayAvail != null) {
           _schedule[i] = BarberDaySchedule(
             isOpen: dayAvail.isActive,
@@ -132,7 +136,8 @@ class _AvailabilityScreenState extends ConsumerState<AvailabilityScreen> {
           Expanded(
             child: Text(
               'Set your working hours for each day. Customers can only book during these times.',
-              style: TextStyle(color: DCTheme.info.withValues(alpha: 0.9), fontSize: 13),
+              style: TextStyle(
+                  color: DCTheme.info.withValues(alpha: 0.9), fontSize: 13),
             ),
           ),
         ],
@@ -141,8 +146,9 @@ class _AvailabilityScreenState extends ConsumerState<AvailabilityScreen> {
   }
 
   Widget _buildDayCard(int dayIndex) {
-    final schedule = _schedule[dayIndex] ?? BarberDaySchedule(isOpen: false, openTime: '09:00', closeTime: '17:00');
-    
+    final schedule = _schedule[dayIndex] ??
+        BarberDaySchedule(isOpen: false, openTime: '09:00', closeTime: '17:00');
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -193,7 +199,8 @@ class _AvailabilityScreenState extends ConsumerState<AvailabilityScreen> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                const Icon(Icons.arrow_forward, color: DCTheme.textMuted, size: 20),
+                const Icon(Icons.arrow_forward,
+                    color: DCTheme.textMuted, size: 20),
                 const SizedBox(width: 16),
                 Expanded(
                   child: _TimeSelector(
@@ -201,7 +208,8 @@ class _AvailabilityScreenState extends ConsumerState<AvailabilityScreen> {
                     time: schedule.closeTime,
                     onChanged: (time) {
                       setState(() {
-                        _schedule[dayIndex] = schedule.copyWith(closeTime: time);
+                        _schedule[dayIndex] =
+                            schedule.copyWith(closeTime: time);
                         _hasChanges = true;
                       });
                     },
@@ -230,7 +238,7 @@ class _AvailabilityScreenState extends ConsumerState<AvailabilityScreen> {
       if (barberId == null) throw Exception('Not authenticated');
 
       final service = AvailabilityService();
-      
+
       for (final entry in _schedule.entries) {
         final schedule = entry.value;
         await service.setAvailability(
@@ -280,7 +288,8 @@ class BarberDaySchedule {
     required this.closeTime,
   });
 
-  BarberDaySchedule copyWith({bool? isOpen, String? openTime, String? closeTime}) {
+  BarberDaySchedule copyWith(
+      {bool? isOpen, String? openTime, String? closeTime}) {
     return BarberDaySchedule(
       isOpen: isOpen ?? this.isOpen,
       openTime: openTime ?? this.openTime,
@@ -354,7 +363,8 @@ class _TimeSelector extends StatelessWidget {
     );
 
     if (picked != null) {
-      final newTime = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+      final newTime =
+          '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
       onChanged(newTime);
     }
   }

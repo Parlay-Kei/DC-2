@@ -1,8 +1,18 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// Load key.properties file for release signing
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
@@ -28,13 +38,27 @@ android {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
+    // Signing configurations
+    signingConfigs {
+        // Release signing config - uses key.properties file
+        // Create this file using: scripts/mobile/create_keystore.sh
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
+        }
+    }
+
     defaultConfig {
         applicationId = "com.directcuts.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        
+
         // Required for Stripe SDK and multidex
         multiDexEnabled = true
     }
@@ -48,14 +72,31 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+
+            // Use release signing config if available, otherwise fall back to debug
+            // For production builds, always use release signing config
+            signingConfig = if (keystorePropertiesFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                // WARNING: Debug signing is only for development!
+                // Run scripts/mobile/create_keystore.sh to create production keystore
+                signingConfigs.getByName("debug")
+            }
+
+            // Disable debug logging in release builds
+            buildConfigField("boolean", "ENABLE_DEBUG_LOGGING", "false")
         }
         debug {
             isMinifyEnabled = false
+
+            // Enable debug logging in debug builds
+            buildConfigField("boolean", "ENABLE_DEBUG_LOGGING", "true")
         }
+    }
+
+    // Enable BuildConfig generation
+    buildFeatures {
+        buildConfig = true
     }
 }
 

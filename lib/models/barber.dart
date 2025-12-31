@@ -1,6 +1,7 @@
 class Barber {
   final String id;
-  final String? visibleName; // Display name from profiles table join, or shop_name fallback
+  final String?
+      visibleName; // Display name from profiles table join, or shop_name fallback
   final String? bio;
   final String? phone;
   final String? profileImageUrl;
@@ -58,16 +59,16 @@ class Barber {
     // Handle joined profile data if present
     String? visibleName;
     String? avatarUrl;
-    
+
     final profiles = json['profiles'];
     if (profiles != null && profiles is Map<String, dynamic>) {
       visibleName = profiles['full_name'] as String?;
       avatarUrl = profiles['avatar_url'] as String?;
     }
-    
+
     // Fallback to display_name if it exists (for backwards compatibility)
     visibleName ??= json['display_name'] as String?;
-    
+
     return Barber(
       id: json['id'] as String,
       visibleName: visibleName,
@@ -89,10 +90,11 @@ class Barber {
       rating: (json['rating'] as num?)?.toDouble() ?? 0,
       totalReviews: json['total_reviews'] as int? ?? 0,
       stripeAccountId: json['stripe_account_id'] as String?,
-      stripeOnboardingComplete: json['stripe_onboarding_complete'] as bool? ?? false,
+      stripeOnboardingComplete:
+          json['stripe_onboarding_complete'] as bool? ?? false,
       onboardingComplete: json['onboarding_complete'] as bool? ?? false,
       subscriptionTier: json['subscription_tier'] as String? ?? 'free',
-      createdAt: json['created_at'] != null 
+      createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
     );
@@ -129,7 +131,7 @@ class Barber {
   bool get hasLocation => latitude != null && longitude != null;
   bool get canAcceptPayments =>
       stripeOnboardingComplete && stripeAccountId != null;
-  
+
   // Tier helpers using actual column name
   String get tier => subscriptionTier;
   bool get isPro => subscriptionTier == 'pro';
@@ -182,7 +184,8 @@ class Barber {
       rating: rating ?? this.rating,
       totalReviews: totalReviews ?? this.totalReviews,
       stripeAccountId: stripeAccountId ?? this.stripeAccountId,
-      stripeOnboardingComplete: stripeOnboardingComplete ?? this.stripeOnboardingComplete,
+      stripeOnboardingComplete:
+          stripeOnboardingComplete ?? this.stripeOnboardingComplete,
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
       subscriptionTier: subscriptionTier ?? this.subscriptionTier,
       createdAt: createdAt ?? this.createdAt,

@@ -48,14 +48,16 @@ final currentProfileProvider = FutureProvider<Profile?>((ref) async {
   // Try to build profile from auth metadata first
   final metadata = user.userMetadata;
   if (metadata != null && metadata.isNotEmpty) {
-    final fullName = metadata['full_name'] as String? ?? metadata['name'] as String?;
+    final fullName =
+        metadata['full_name'] as String? ?? metadata['name'] as String?;
     if (fullName != null && fullName.isNotEmpty) {
       Logger.debug('Building profile from auth metadata');
       return Profile(
         id: user.id,
         fullName: fullName,
         email: user.email,
-        avatarUrl: metadata['avatar_url'] as String? ?? metadata['picture'] as String?,
+        avatarUrl:
+            metadata['avatar_url'] as String? ?? metadata['picture'] as String?,
         phone: metadata['phone'] as String?,
         role: metadata['role'] as String? ?? 'customer',
         createdAt: DateTime.parse(user.createdAt!),

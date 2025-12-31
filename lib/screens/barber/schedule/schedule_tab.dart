@@ -95,12 +95,14 @@ class _ScheduleTabState extends ConsumerState<ScheduleTab> {
         controller: _pageController,
         onPageChanged: (index) {
           final offset = index - 500;
-          final weekStart = _getWeekStart(DateTime.now()).add(Duration(days: offset * 7));
+          final weekStart =
+              _getWeekStart(DateTime.now()).add(Duration(days: offset * 7));
           setState(() => _selectedDate = weekStart);
         },
         itemBuilder: (context, index) {
           final offset = index - 500;
-          final weekStart = _getWeekStart(DateTime.now()).add(Duration(days: offset * 7));
+          final weekStart =
+              _getWeekStart(DateTime.now()).add(Duration(days: offset * 7));
           return _buildWeekDays(weekStart);
         },
       ),
@@ -206,7 +208,8 @@ class _ScheduleTabState extends ConsumerState<ScheduleTab> {
             const SizedBox(height: 16),
             Text('Error: $e', style: const TextStyle(color: DCTheme.textMuted)),
             TextButton(
-              onPressed: () => ref.invalidate(barberUpcomingAppointmentsProvider),
+              onPressed: () =>
+                  ref.invalidate(barberUpcomingAppointmentsProvider),
               child: const Text('Retry'),
             ),
           ],
@@ -216,8 +219,9 @@ class _ScheduleTabState extends ConsumerState<ScheduleTab> {
   }
 
   Widget _buildEmptyDay() {
-    final isPast = _selectedDate.isBefore(DateTime.now().subtract(const Duration(days: 1)));
-    
+    final isPast = _selectedDate
+        .isBefore(DateTime.now().subtract(const Duration(days: 1)));
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -231,7 +235,9 @@ class _ScheduleTabState extends ConsumerState<ScheduleTab> {
             ),
             const SizedBox(height: 16),
             Text(
-              isPast ? 'No appointments on this day' : 'No appointments scheduled',
+              isPast
+                  ? 'No appointments on this day'
+                  : 'No appointments scheduled',
               style: const TextStyle(
                 color: DCTheme.textMuted,
                 fontSize: 16,
@@ -255,7 +261,8 @@ class _ScheduleTabState extends ConsumerState<ScheduleTab> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: DCTheme.surface,
-        title: const Text('Complete Appointment?', style: TextStyle(color: DCTheme.text)),
+        title: const Text('Complete Appointment?',
+            style: TextStyle(color: DCTheme.text)),
         content: const Text(
           'Mark this appointment as completed?',
           style: TextStyle(color: DCTheme.textMuted),
@@ -287,7 +294,8 @@ class _ScheduleTabState extends ConsumerState<ScheduleTab> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: DCTheme.surface,
-        title: const Text('Mark as No-Show?', style: TextStyle(color: DCTheme.text)),
+        title: const Text('Mark as No-Show?',
+            style: TextStyle(color: DCTheme.text)),
         content: const Text(
           'This will mark the customer as a no-show.',
           style: TextStyle(color: DCTheme.textMuted),
@@ -328,15 +336,46 @@ class _ScheduleTabState extends ConsumerState<ScheduleTab> {
 
   String _formatMonthYear(DateTime date) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return '${months[date.month - 1]} ${date.year}';
   }
 
   String _formatFullDate(DateTime date) {
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday'
+    ];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     return '${days[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
   }
 }
@@ -392,7 +431,8 @@ class _ScheduleAppointmentCard extends StatelessWidget {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: onComplete,
-                      style: ElevatedButton.styleFrom(backgroundColor: DCTheme.success),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: DCTheme.success),
                       child: const Text('Complete'),
                     ),
                   ),
@@ -471,7 +511,8 @@ class _ScheduleAppointmentCard extends StatelessWidget {
                     ),
                     Text(
                       booking.serviceName ?? 'Service',
-                      style: const TextStyle(color: DCTheme.textMuted, fontSize: 13),
+                      style: const TextStyle(
+                          color: DCTheme.textMuted, fontSize: 13),
                     ),
                   ],
                 ),
@@ -493,7 +534,8 @@ class _ScheduleAppointmentCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       booking.notes!,
-                      style: const TextStyle(color: DCTheme.textMuted, fontSize: 12),
+                      style: const TextStyle(
+                          color: DCTheme.textMuted, fontSize: 12),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -551,7 +593,8 @@ class _ScheduleAppointmentCard extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600),
+        style:
+            TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600),
       ),
     );
   }

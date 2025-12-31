@@ -1,0 +1,28 @@
+#===============================================================================
+# Direct Cuts - Fastlane Pluginfile
+#===============================================================================
+# This file contains the Fastlane plugins used by Direct Cuts.
+#
+# Install plugins: bundle exec fastlane install_plugins
+# Update plugins:  bundle exec fastlane update_plugins
+#
+# Documentation: https://docs.fastlane.tools/plugins/available-plugins/
+#===============================================================================
+
+# Flutter version management
+# gem 'fastlane-plugin-flutter_version'
+
+# Increment version code
+# gem 'fastlane-plugin-increment_version_code'
+
+# Firebase App Distribution (alternative to TestFlight/Play Internal)
+# gem 'fastlane-plugin-firebase_app_distribution'
+
+# Versioning helper
+# gem 'fastlane-plugin-versioning'
+
+# Badge icons with version info (for beta builds)
+# gem 'fastlane-plugin-badge'
+
+# Changelog generation from Git
+# gem 'fastlane-plugin-changelog'

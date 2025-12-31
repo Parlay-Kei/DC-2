@@ -200,8 +200,11 @@ class _InviteOption extends StatelessWidget {
         ),
         child: Icon(icon, color: DCTheme.primary),
       ),
-      title: Text(title, style: const TextStyle(color: DCTheme.text, fontWeight: FontWeight.w600)),
-      subtitle: Text(subtitle, style: const TextStyle(color: DCTheme.textMuted, fontSize: 12)),
+      title: Text(title,
+          style: const TextStyle(
+              color: DCTheme.text, fontWeight: FontWeight.w600)),
+      subtitle: Text(subtitle,
+          style: const TextStyle(color: DCTheme.textMuted, fontSize: 12)),
       trailing: const Icon(Icons.chevron_right, color: DCTheme.textMuted),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       shape: RoundedRectangleBorder(

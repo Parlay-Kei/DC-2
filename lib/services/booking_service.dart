@@ -1,4 +1,3 @@
-
 import '../config/supabase_config.dart';
 import '../models/booking.dart';
 import '../models/service.dart';
@@ -77,10 +76,8 @@ class BookingService {
     if (customerId == null) return [];
 
     try {
-      var query = _client
-          .from('appointments')
-          .select()
-          .eq('customer_id', customerId);
+      var query =
+          _client.from('appointments').select().eq('customer_id', customerId);
 
       if (status != null) {
         query = query.eq('status', status);
@@ -111,17 +108,16 @@ class BookingService {
     if (barberId == null) return [];
 
     try {
-      var query = _client
-          .from('appointments')
-          .select()
-          .eq('barber_id', barberId);
+      var query =
+          _client.from('appointments').select().eq('barber_id', barberId);
 
       if (status != null) {
         query = query.eq('status', status);
       }
 
       if (todayOnly || date != null) {
-        final targetDate = (date ?? DateTime.now()).toIso8601String().split('T')[0];
+        final targetDate =
+            (date ?? DateTime.now()).toIso8601String().split('T')[0];
         query = query.eq('scheduled_date', targetDate);
       }
 
@@ -136,16 +132,12 @@ class BookingService {
   /// Get a single booking with details
   Future<BookingWithDetails?> getBookingDetails(String bookingId) async {
     try {
-      final response = await _client
-          .from('appointments')
-          .select('''
+      final response = await _client.from('appointments').select('''
             *,
             barber:barber_id(id, display_name, phone, profile_image_url),
             customer:customer_id(id, full_name, phone, avatar_url),
             service:service_id(id, name, price, duration_minutes)
-          ''')
-          .eq('id', bookingId)
-          .single();
+          ''').eq('id', bookingId).single();
 
       return BookingWithDetails.fromJson(response);
     } catch (e) {
@@ -158,8 +150,7 @@ class BookingService {
     try {
       await _client
           .from('appointments')
-          .update({'status': status})
-          .eq('id', bookingId);
+          .update({'status': status}).eq('id', bookingId);
       return true;
     } catch (e) {
       return false;
@@ -244,7 +235,7 @@ class BookingService {
   ) async {
     try {
       final dateStr = date.toIso8601String().split('T')[0];
-      
+
       final response = await _client
           .from('appointments')
           .select('id')
@@ -282,8 +273,10 @@ class BookingWithDetails {
     );
   }
 
-  String get barberName => barber?['display_name'] as String? ?? 'Unknown Barber';
-  String get customerName => customer?['full_name'] as String? ?? 'Unknown Customer';
+  String get barberName =>
+      barber?['display_name'] as String? ?? 'Unknown Barber';
+  String get customerName =>
+      customer?['full_name'] as String? ?? 'Unknown Customer';
   String get serviceName => service?['name'] as String? ?? 'Service';
   int get serviceDuration => service?['duration_minutes'] as int? ?? 30;
 }

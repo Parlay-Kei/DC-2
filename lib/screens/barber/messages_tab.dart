@@ -64,9 +64,11 @@ class BarberMessagesTab extends ConsumerWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, color: DCTheme.error, size: 48),
+                    const Icon(Icons.error_outline,
+                        color: DCTheme.error, size: 48),
                     const SizedBox(height: 16),
-                    const Text('Error loading messages', style: TextStyle(color: DCTheme.textMuted)),
+                    const Text('Error loading messages',
+                        style: TextStyle(color: DCTheme.textMuted)),
                     TextButton(
                       onPressed: () => ref.invalidate(conversationsProvider),
                       child: const Text('Retry'),
@@ -128,7 +130,7 @@ class _ConversationTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       child: Material(
-        color: conversation.hasUnread 
+        color: conversation.hasUnread
             ? DCTheme.primary.withValues(alpha: 0.08)
             : DCTheme.surface,
         borderRadius: BorderRadius.circular(12),
@@ -144,13 +146,16 @@ class _ConversationTile extends StatelessWidget {
                     CircleAvatar(
                       radius: 28,
                       backgroundColor: DCTheme.surfaceSecondary,
-                      backgroundImage: conversation.otherParticipantAvatar != null
+                      backgroundImage: conversation.otherParticipantAvatar !=
+                              null
                           ? NetworkImage(conversation.otherParticipantAvatar!)
                           : null,
                       child: conversation.otherParticipantAvatar == null
                           ? Text(
-                              conversation.otherParticipantName?.isNotEmpty == true
-                                  ? conversation.otherParticipantName![0].toUpperCase()
+                              conversation.otherParticipantName?.isNotEmpty ==
+                                      true
+                                  ? conversation.otherParticipantName![0]
+                                      .toUpperCase()
                                   : 'C',
                               style: const TextStyle(
                                 color: DCTheme.text,
@@ -170,11 +175,14 @@ class _ConversationTile extends StatelessWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: DCTheme.primary,
-                            border: Border.all(color: DCTheme.surface, width: 2),
+                            border:
+                                Border.all(color: DCTheme.surface, width: 2),
                           ),
                           child: Center(
                             child: Text(
-                              conversation.unreadCount > 9 ? '9+' : '${conversation.unreadCount}',
+                              conversation.unreadCount > 9
+                                  ? '9+'
+                                  : '${conversation.unreadCount}',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,

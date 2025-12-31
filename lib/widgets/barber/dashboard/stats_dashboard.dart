@@ -71,9 +71,8 @@ class DailyBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxValue = values.isNotEmpty
-        ? values.reduce((a, b) => a > b ? a : b)
-        : 100.0;
+    final maxValue =
+        values.isNotEmpty ? values.reduce((a, b) => a > b ? a : b) : 100.0;
     final chartMax = maxValue > 0 ? maxValue * 1.2 : 100.0;
 
     return Container(
@@ -120,7 +119,8 @@ class DailyBarChart extends StatelessWidget {
                   enabled: true,
                   touchTooltipData: BarTouchTooltipData(
                     getTooltipColor: (group) => DCTheme.surfaceSecondary,
-                    tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    tooltipPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     tooltipMargin: 8,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       return BarTooltipItem(
@@ -297,7 +297,8 @@ class _StatsDashboardState extends State<StatsDashboard> {
         ),
         _MiniStatCard(
           label: 'Revenue',
-          value: '\$${(_showWeekly ? widget.weekRevenue : widget.todayRevenue).toStringAsFixed(0)}',
+          value:
+              '\$${(_showWeekly ? widget.weekRevenue : widget.todayRevenue).toStringAsFixed(0)}',
           subtitle: _showWeekly ? 'This week' : 'Today',
           icon: Icons.attach_money,
           color: DCTheme.success,
@@ -313,7 +314,8 @@ class _StatsDashboardState extends State<StatsDashboard> {
         ),
         _MiniStatCard(
           label: 'Tips',
-          value: '\$${(_showWeekly ? widget.weekTips : widget.todayTips).toStringAsFixed(0)}',
+          value:
+              '\$${(_showWeekly ? widget.weekTips : widget.todayTips).toStringAsFixed(0)}',
           subtitle: _showWeekly ? 'This week' : 'Today',
           icon: Icons.volunteer_activism,
           color: Colors.amber,

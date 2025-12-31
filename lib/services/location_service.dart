@@ -10,11 +10,11 @@ class LocationService {
   /// Request location permission
   Future<LocationPermission> requestPermission() async {
     LocationPermission permission = await Geolocator.checkPermission();
-    
+
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
-    
+
     return permission;
   }
 
@@ -27,7 +27,7 @@ class LocationService {
   Future<Position?> getCurrentPosition() async {
     try {
       final permission = await requestPermission();
-      
+
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
         return null;
@@ -58,12 +58,12 @@ class LocationService {
   ) async {
     try {
       final placemarks = await placemarkFromCoordinates(latitude, longitude);
-      
+
       if (placemarks.isEmpty) return null;
-      
+
       final place = placemarks.first;
       final parts = <String>[];
-      
+
       if (place.street != null && place.street!.isNotEmpty) {
         parts.add(place.street!);
       }
@@ -77,7 +77,7 @@ class LocationService {
       if (place.postalCode != null && place.postalCode!.isNotEmpty) {
         parts.add(place.postalCode!);
       }
-      
+
       return parts.join(', ');
     } catch (e) {
       return null;
@@ -88,9 +88,9 @@ class LocationService {
   Future<LocationCoords?> getCoordinatesFromAddress(String address) async {
     try {
       final locations = await locationFromAddress(address);
-      
+
       if (locations.isEmpty) return null;
-      
+
       return LocationCoords(
         latitude: locations.first.latitude,
         longitude: locations.first.longitude,

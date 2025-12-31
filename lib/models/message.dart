@@ -163,8 +163,8 @@ class Conversation {
       createdAt: DateTime.parse(json['created_at'] as String),
       customerName: customer?['full_name'] as String?,
       customerAvatar: customer?['avatar_url'] as String?,
-      barberName: barber?['full_name'] as String? ??
-          barber?['display_name'] as String?,
+      barberName:
+          barber?['full_name'] as String? ?? barber?['display_name'] as String?,
       barberAvatar:
           barber?['avatar_url'] as String? ?? barber?['profile_image_url'],
     );

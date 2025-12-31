@@ -34,7 +34,8 @@ class ProfileHeader extends StatelessWidget {
               if (onSettings != null)
                 IconButton(
                   onPressed: onSettings,
-                  icon: const Icon(Icons.settings_outlined, color: DCTheme.text),
+                  icon:
+                      const Icon(Icons.settings_outlined, color: DCTheme.text),
                 )
               else
                 const SizedBox(width: 48),
@@ -76,7 +77,8 @@ class ProfileHeader extends StatelessWidget {
               CircleAvatar(
                 radius: 50,
                 backgroundColor: DCTheme.surfaceSecondary,
-                backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl!) : null,
+                backgroundImage:
+                    avatarUrl != null ? NetworkImage(avatarUrl!) : null,
                 child: avatarUrl == null
                     ? Text(
                         name.isNotEmpty ? name[0].toUpperCase() : '?',
@@ -213,8 +215,18 @@ class SubscriptionCard extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day} ${date.year}';
   }

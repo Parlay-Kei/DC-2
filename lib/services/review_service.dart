@@ -151,10 +151,14 @@ class ReviewService {
     if (barberId == null) return false;
 
     try {
-      await _client.from('reviews').update({
-        'barber_response': response,
-        'responded_at': DateTime.now().toIso8601String(),
-      }).eq('id', reviewId).eq('barber_id', barberId);
+      await _client
+          .from('reviews')
+          .update({
+            'barber_response': response,
+            'responded_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', reviewId)
+          .eq('barber_id', barberId);
 
       return true;
     } catch (e) {

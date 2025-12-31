@@ -28,7 +28,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scrollController = ScrollController();
   final _focusNode = FocusNode();
   final _imagePicker = ImagePicker();
-  
+
   List<Message> _messages = [];
   bool _isLoading = true;
   bool _isSending = false;
@@ -67,13 +67,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _onTypingChanged() {
     final isTyping = _messageController.text.isNotEmpty;
-    
+
     // Only send if state changed
     if (isTyping != _lastTypingState) {
       _lastTypingState = isTyping;
       _sendTypingIndicator(isTyping);
     }
-    
+
     // Reset debounce timer
     _typingDebounce?.cancel();
     if (isTyping) {
@@ -95,28 +95,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Future<void> _loadMessages() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final service = ref.read(messageServiceProvider);
       final messages = await service.getMessages(widget.conversationId);
-      
+
       // Get conversation details for recipient info
       final conversations = await service.getConversations();
-      final convo = conversations.where((c) => c.id == widget.conversationId).firstOrNull;
-      
+      final convo =
+          conversations.where((c) => c.id == widget.conversationId).firstOrNull;
+
       if (convo != null) {
         _recipientName = convo.otherParticipantName;
         _recipientAvatar = convo.otherParticipantAvatar;
       }
-      
+
       // Mark as read
       await service.markAsRead(widget.conversationId);
-      
+
       setState(() {
         _messages = messages;
         _isLoading = false;
       });
-      
+
       _scrollToBottom();
     } catch (e) {
       setState(() => _isLoading = false);
@@ -125,7 +126,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _subscribeToMessages() {
     final service = ref.read(messageServiceProvider);
-    _messageSubscription = service.subscribeToMessages(widget.conversationId).listen((message) {
+    _messageSubscription =
+        service.subscribeToMessages(widget.conversationId).listen((message) {
       if (!_messages.any((m) => m.id == message.id)) {
         setState(() => _messages = [..._messages, message]);
         _scrollToBottom();
@@ -136,7 +138,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _subscribeToTyping() {
     final service = ref.read(messageServiceProvider);
-    _typingSubscription = service.subscribeToTyping(widget.conversationId).listen((indicator) {
+    _typingSubscription =
+        service.subscribeToTyping(widget.conversationId).listen((indicator) {
       setState(() {
         _otherUserTyping = indicator.isTyping;
         _typingUserName = indicator.userName;
@@ -176,7 +179,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         setState(() => _messages = [..._messages, message]);
         _scrollToBottom();
       }
-      
+
       // Refresh conversations list
       ref.invalidate(conversationsProvider);
     } catch (e) {
@@ -454,16 +457,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         final message = _messages[index];
         final showDate = index == 0 ||
             !_isSameDay(_messages[index - 1].createdAt, message.createdAt);
-        
+
         return Column(
           children: [
             if (showDate) _buildDateDivider(message.createdAt),
             _MessageBubble(
               message: message,
-              showAvatar: !message.isMe && (
-                index == _messages.length - 1 ||
-                _messages[index + 1].senderId != message.senderId
-              ),
+              showAvatar: !message.isMe &&
+                  (index == _messages.length - 1 ||
+                      _messages[index + 1].senderId != message.senderId),
             ),
           ],
         );
@@ -476,7 +478,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Row(
         children: [
-          Expanded(child: Divider(color: DCTheme.border.withValues(alpha: 0.3))),
+          Expanded(
+              child: Divider(color: DCTheme.border.withValues(alpha: 0.3))),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
@@ -487,7 +490,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             ),
           ),
-          Expanded(child: Divider(color: DCTheme.border.withValues(alpha: 0.3))),
+          Expanded(
+              child: Divider(color: DCTheme.border.withValues(alpha: 0.3))),
         ],
       ),
     );
@@ -628,7 +632,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     onTap: () {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Location sharing coming soon')),
+                        const SnackBar(
+                            content: Text('Location sharing coming soon')),
                       );
                     },
                   ),
@@ -664,7 +669,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.search, color: DCTheme.text),
-              title: const Text('Search in chat', style: TextStyle(color: DCTheme.text)),
+              title: const Text('Search in chat',
+                  style: TextStyle(color: DCTheme.text)),
               onTap: () {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -673,8 +679,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.notifications_off_outlined, color: DCTheme.text),
-              title: const Text('Mute notifications', style: TextStyle(color: DCTheme.text)),
+              leading: const Icon(Icons.notifications_off_outlined,
+                  color: DCTheme.text),
+              title: const Text('Mute notifications',
+                  style: TextStyle(color: DCTheme.text)),
               onTap: () {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -684,7 +692,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.block, color: DCTheme.error),
-              title: const Text('Block user', style: TextStyle(color: DCTheme.error)),
+              title: const Text('Block user',
+                  style: TextStyle(color: DCTheme.error)),
               onTap: () {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -711,10 +720,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     if (messageDate == today) return 'Today';
     if (messageDate == yesterday) return 'Yesterday';
-    
+
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+
     return '${days[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
   }
 }
@@ -735,7 +757,8 @@ class _MessageBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe && showAvatar)
@@ -762,7 +785,7 @@ class _MessageBubble extends StatelessWidget {
               constraints: BoxConstraints(
                 maxWidth: MediaQuery.of(context).size.width * 0.75,
               ),
-              padding: message.hasMedia 
+              padding: message.hasMedia
                   ? const EdgeInsets.all(4)
                   : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
@@ -815,7 +838,7 @@ class _MessageBubble extends StatelessWidget {
                     ),
                   if (!message.hasMedia || message.content != '📷 Photo')
                     Padding(
-                      padding: message.hasMedia 
+                      padding: message.hasMedia
                           ? const EdgeInsets.fromLTRB(10, 8, 10, 0)
                           : EdgeInsets.zero,
                       child: Text(
@@ -848,7 +871,8 @@ class _MessageBubble extends StatelessWidget {
                             child: Text(
                               message.translatedContent!,
                               style: TextStyle(
-                                color: isMe ? Colors.white70 : DCTheme.textMuted,
+                                color:
+                                    isMe ? Colors.white70 : DCTheme.textMuted,
                                 fontSize: 13,
                                 fontStyle: FontStyle.italic,
                               ),
@@ -859,7 +883,7 @@ class _MessageBubble extends StatelessWidget {
                     ),
                   ],
                   Padding(
-                    padding: message.hasMedia 
+                    padding: message.hasMedia
                         ? const EdgeInsets.fromLTRB(10, 4, 10, 6)
                         : const EdgeInsets.only(top: 4),
                     child: Row(
@@ -877,7 +901,9 @@ class _MessageBubble extends StatelessWidget {
                           Icon(
                             message.isRead ? Icons.done_all : Icons.done,
                             size: 14,
-                            color: message.isRead ? Colors.lightBlueAccent : Colors.white60,
+                            color: message.isRead
+                                ? Colors.lightBlueAccent
+                                : Colors.white60,
                           ),
                         ],
                       ],

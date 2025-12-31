@@ -5,7 +5,8 @@ import '../../config/theme.dart';
 import '../../services/notification_service.dart';
 
 /// Provider for notifications
-final notificationsProvider = FutureProvider<List<AppNotification>>((ref) async {
+final notificationsProvider =
+    FutureProvider<List<AppNotification>>((ref) async {
   return NotificationService.instance.getPendingNotifications();
 });
 
@@ -28,8 +29,10 @@ class NotificationsScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => _markAllAsRead(context, ref),
-            child: const Text('Mark all read',
-                style: TextStyle(color: DCTheme.primary),),
+            child: const Text(
+              'Mark all read',
+              style: TextStyle(color: DCTheme.primary),
+            ),
           ),
         ],
       ),
@@ -43,8 +46,10 @@ class NotificationsScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, size: 48, color: DCTheme.error),
               const SizedBox(height: 16),
-              Text('Error: $error',
-                  style: const TextStyle(color: DCTheme.textMuted),),
+              Text(
+                'Error: $error',
+                style: const TextStyle(color: DCTheme.textMuted),
+              ),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => ref.invalidate(notificationsProvider),
@@ -70,7 +75,8 @@ class NotificationsScreen extends ConsumerWidget {
                 final notification = notifications[index];
                 return _NotificationTile(
                   notification: notification,
-                  onTap: () => _handleNotificationTap(context, ref, notification),
+                  onTap: () =>
+                      _handleNotificationTap(context, ref, notification),
                   onDismiss: () => _dismissNotification(ref, notification.id),
                 );
               },
@@ -116,13 +122,15 @@ class NotificationsScreen extends ConsumerWidget {
 
   Future<void> _markAllAsRead(BuildContext context, WidgetRef ref) async {
     final success = await NotificationService.instance.markAllAsRead();
-    
+
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success
-              ? 'All notifications marked as read'
-              : 'Failed to mark notifications',),
+          content: Text(
+            success
+                ? 'All notifications marked as read'
+                : 'Failed to mark notifications',
+          ),
           backgroundColor: success ? DCTheme.success : DCTheme.error,
         ),
       );
@@ -176,7 +184,8 @@ class NotificationsScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _dismissNotification(WidgetRef ref, String notificationId) async {
+  Future<void> _dismissNotification(
+      WidgetRef ref, String notificationId) async {
     await NotificationService.instance.markAsRead(notificationId);
     ref.invalidate(notificationsProvider);
     ref.invalidate(unreadNotificationCountProvider);
@@ -222,7 +231,8 @@ class _NotificationTile extends StatelessWidget {
             notification.title,
             style: TextStyle(
               color: DCTheme.text,
-              fontWeight: notification.isRead ? FontWeight.normal : FontWeight.w600,
+              fontWeight:
+                  notification.isRead ? FontWeight.normal : FontWeight.w600,
             ),
           ),
           subtitle: Column(

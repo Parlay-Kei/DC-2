@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../config/theme.dart';
 import '../../models/booking.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/booking_provider.dart';
+import '../../widgets/common/branded_header.dart';
 
 class BookingsTab extends ConsumerStatefulWidget {
   const BookingsTab({super.key});
@@ -29,66 +31,226 @@ class _BookingsTabState extends ConsumerState<BookingsTab>
     super.dispose();
   }
 
+  // Greeting arrays matching web greetingUtils.ts
+  static const _morningGreetings = [
+    'Good morning',
+    'Morning',
+    'Hey there',
+    "What's good",
+    'Hello'
+  ];
+  static const _afternoonGreetings = [
+    'Good afternoon',
+    'Hey there',
+    "What's up",
+    'Afternoon',
+    'Hey',
+    "What's good"
+  ];
+  static const _eveningGreetings = [
+    'Good evening',
+    'Evening',
+    'Hey there',
+    "What's good"
+  ];
+  static const _lateNightGreetings = [
+    'Hey there',
+    "What's good",
+    'Still up',
+    'Hey night owl'
+  ];
+
+  static const _subtexts = [
+    'Ready for a fresh cut?',
+    "Let's get you looking sharp",
+    'Fresh cuts, fresh starts',
+    'Your next look awaits',
+    'Stay sharp, stay fresh',
+    'The chair is waiting',
+    'Confidence starts here',
+    'Sharp lines, sharp mind',
+    'Your style, elevated',
+    'Precision cuts await',
+  ];
+
+  String _getGreeting(String? firstName) {
+    final hour = DateTime.now().hour;
+    List<String> greetings;
+    if (hour < 12) {
+      greetings = _morningGreetings;
+    } else if (hour < 17) {
+      greetings = _afternoonGreetings;
+    } else if (hour < 21) {
+      greetings = _eveningGreetings;
+    } else {
+      greetings = _lateNightGreetings;
+    }
+    // Use a seeded random based on current minute to have some consistency during a session
+    final randomIndex = DateTime.now().minute % greetings.length;
+    final greeting = greetings[randomIndex];
+    if (firstName != null && firstName.isNotEmpty)
+      return '$greeting, $firstName!';
+    return 'Hey there!';
+  }
+
+  String _getSubtitle() {
+    // Use a seeded random based on current minute
+    final randomIndex = DateTime.now().minute % _subtexts.length;
+    return _subtexts[randomIndex];
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 20, 20, 0),
-            child: Text(
-              'Bookings',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: DCTheme.text,
+    final profile = ref.watch(currentProfileProvider);
+    final upcomingBookings = ref.watch(upcomingBookingsProvider);
+    final bookingHistory = ref.watch(bookingHistoryProvider);
+
+    // Get counts from the providers
+    final upcomingCount = upcomingBookings.maybeWhen(
+      data: (bookings) => bookings.length,
+      orElse: () => 0,
+    );
+    final historyCount = bookingHistory.maybeWhen(
+      data: (bookings) => bookings.length,
+      orElse: () => 0,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Branded header with personalized greeting - matching web PageHeader
+        profile.when(
+          data: (p) => BrandedHeader(
+            title: _getGreeting(p?.fullName?.split(' ').first),
+            subtitle: _getSubtitle(),
+          ),
+          loading: () => BrandedHeader(
+            title: 'Hey there!',
+            subtitle: _getSubtitle(),
+          ),
+          error: (_, __) => BrandedHeader(
+            title: 'Hey there!',
+            subtitle: _getSubtitle(),
+          ),
+        ),
+
+        // Section title - matching web "Upcoming Appointments" title
+        const Padding(
+          padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
+          child: Text(
+            'Upcoming Appointments',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: DCTheme.text,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Tabs - matching web dark background with white active pill
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20),
+          decoration: BoxDecoration(
+            color: DCTheme.surface, // gray-800 equivalent
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.all(4),
+          child: Row(
+            children: [
+              // Upcoming Tab
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _tabController.animateTo(0),
+                  child: AnimatedBuilder(
+                    animation: _tabController,
+                    builder: (context, _) {
+                      final isActive = _tabController.index == 0;
+                      return Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isActive ? Colors.white : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: isActive
+                              ? [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.1),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Text(
+                          'Upcoming ($upcomingCount)',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: isActive
+                                ? const Color(0xFF1F2937)
+                                : DCTheme.textMuted,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Text(
-              'Your appointments',
-              style: TextStyle(color: DCTheme.textMuted, fontSize: 15),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            decoration: BoxDecoration(
-              color: DCTheme.surface,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: TabBar(
-              controller: _tabController,
-              labelColor: DCTheme.primary,
-              unselectedLabelColor: DCTheme.textMuted,
-              indicatorSize: TabBarIndicatorSize.tab,
-              indicator: BoxDecoration(
-                color: DCTheme.primary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(12),
+              // Past Tab
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _tabController.animateTo(1),
+                  child: AnimatedBuilder(
+                    animation: _tabController,
+                    builder: (context, _) {
+                      final isActive = _tabController.index == 1;
+                      return Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isActive ? Colors.white : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: isActive
+                              ? [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.1),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Text(
+                          'Past ($historyCount)',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: isActive
+                                ? const Color(0xFF1F2937)
+                                : DCTheme.textMuted,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
-              dividerColor: Colors.transparent,
-              tabs: const [
-                Tab(text: 'Upcoming'),
-                Tab(text: 'History'),
-              ],
-            ),
+            ],
           ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: const [
-                _UpcomingBookings(),
-                _BookingHistory(),
-              ],
-            ),
+        ),
+        const SizedBox(height: 16),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: const [
+              _UpcomingBookings(),
+              _BookingHistory(),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -109,7 +271,7 @@ class _UpcomingBookings extends ConsumerWidget {
             title: 'No upcoming appointments',
             subtitle: 'Book your next haircut today!',
             buttonLabel: 'Find a Barber',
-            onPressed: () => context.push('/barbers'),
+            onPressed: () => context.push('/nearby'),
           );
         }
         return RefreshIndicator(
@@ -133,7 +295,8 @@ class _UpcomingBookings extends ConsumerWidget {
           children: [
             const Icon(Icons.error_outline, color: DCTheme.error, size: 48),
             const SizedBox(height: 16),
-            const Text('Error loading bookings', style: TextStyle(color: DCTheme.textMuted)),
+            const Text('Error loading bookings',
+                style: TextStyle(color: DCTheme.textMuted)),
             TextButton(
               onPressed: () => ref.invalidate(upcomingBookingsProvider),
               child: const Text('Retry'),
@@ -183,7 +346,8 @@ class _BookingHistory extends ConsumerWidget {
           children: [
             const Icon(Icons.error_outline, color: DCTheme.error, size: 48),
             const SizedBox(height: 16),
-            const Text('Error loading history', style: TextStyle(color: DCTheme.textMuted)),
+            const Text('Error loading history',
+                style: TextStyle(color: DCTheme.textMuted)),
             TextButton(
               onPressed: () => ref.invalidate(bookingHistoryProvider),
               child: const Text('Retry'),
@@ -209,31 +373,57 @@ Widget _buildEmptyState(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            size: 64,
-            color: DCTheme.textMuted.withValues(alpha: 0.3),
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: DCTheme.surface,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
+              icon,
+              size: 40,
+              color: DCTheme.textMuted.withValues(alpha: 0.5),
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           Text(
             title,
             style: const TextStyle(
-              color: DCTheme.textMuted,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+              color: DCTheme.text,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             subtitle,
-            style: const TextStyle(color: DCTheme.textDark),
+            style: const TextStyle(
+              color: DCTheme.textMuted,
+              fontSize: 14,
+            ),
             textAlign: TextAlign.center,
           ),
           if (buttonLabel != null && onPressed != null) ...[
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: onPressed,
-              child: Text(buttonLabel),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: DCTheme.primary,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                buttonLabel,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
+              ),
             ),
           ],
         ],
@@ -444,7 +634,8 @@ class _BookingCard extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: DCTheme.surface,
-        title: const Text('Cancel Booking?', style: TextStyle(color: DCTheme.text)),
+        title: const Text('Cancel Booking?',
+            style: TextStyle(color: DCTheme.text)),
         content: const Text(
           'Are you sure you want to cancel this appointment? This action cannot be undone.',
           style: TextStyle(color: DCTheme.textMuted),
@@ -483,7 +674,20 @@ class _BookingCard extends ConsumerWidget {
   }
 
   String _formatDate(DateTime date) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     return '${months[date.month - 1]} ${date.day}';
   }
 

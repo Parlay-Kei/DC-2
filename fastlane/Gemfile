@@ -1,0 +1,19 @@
+#===============================================================================
+# Direct Cuts - Fastlane Gemfile
+#===============================================================================
+# Ruby dependencies for Fastlane.
+#
+# Install: bundle install
+# Update:  bundle update
+#
+# Note: Run Fastlane commands via: bundle exec fastlane <lane>
+#===============================================================================
+
+source "https://rubygems.org"
+
+# Fastlane - Mobile deployment automation
+gem "fastlane", "~> 2.220"
+
+# Load plugins from Pluginfile
+plugins_path = File.join(File.dirname(__FILE__), 'Pluginfile')
+eval_gemfile(plugins_path) if File.exist?(plugins_path)

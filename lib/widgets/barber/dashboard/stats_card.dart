@@ -43,7 +43,8 @@ class StatsCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: (iconColor ?? DCTheme.primary).withValues(alpha: 0.1),
+                    color:
+                        (iconColor ?? DCTheme.primary).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(

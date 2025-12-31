@@ -1,0 +1,1 @@
+barber,haircut,booking,fade,appointment,barbershop,grooming,mens,hair,trim

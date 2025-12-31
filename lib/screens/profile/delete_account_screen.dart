@@ -66,13 +66,17 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel',
-                style: TextStyle(color: DCTheme.textMuted),),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: DCTheme.textMuted),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete Forever',
-                style: TextStyle(color: DCTheme.error),),
+            child: const Text(
+              'Delete Forever',
+              style: TextStyle(color: DCTheme.error),
+            ),
           ),
         ],
       ),
@@ -130,8 +134,11 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.warning_amber_rounded,
-                      color: DCTheme.error, size: 32,),
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    color: DCTheme.error,
+                    size: 32,
+                  ),
                   SizedBox(width: 16),
                   Expanded(
                     child: Column(
@@ -300,8 +307,11 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          const Icon(Icons.remove_circle_outline,
-              size: 18, color: DCTheme.error,),
+          const Icon(
+            Icons.remove_circle_outline,
+            size: 18,
+            color: DCTheme.error,
+          ),
           const SizedBox(width: 12),
           Text(text, style: const TextStyle(color: DCTheme.textMuted)),
         ],

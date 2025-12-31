@@ -1,0 +1,733 @@
+#===============================================================================
+# Direct Cuts - Mobile Release Pipeline
+#===============================================================================
+# Production release pipeline triggered by version tags (v*.*.*)
+# Handles full signing, store deployment, and GitHub release creation.
+#
+# Target: < 30 minutes total execution time
+#
+# Jobs:
+#   1. validate         - Version and environment validation
+#   2. test             - Full test suite (gate check)
+#   3. build-android    - Signed AAB/APK for Play Store
+#   4. build-ios        - Signed IPA for TestFlight (when configured)
+#   5. deploy-android   - Upload to Google Play via Fastlane
+#   6. deploy-ios       - Upload to TestFlight via Fastlane (when configured)
+#   7. github-release   - Create GitHub Release with artifacts
+#   8. notify           - Post-release notifications
+#
+# This pipeline is idempotent - re-running will not create duplicate uploads.
+#===============================================================================
+
+name: Mobile Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+  # Manual trigger for re-runs or custom versions
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 2.0.1, without v prefix)'
+        required: true
+        type: string
+      skip_store_upload:
+        description: 'Skip store uploads (build only)'
+        required: false
+        default: false
+        type: boolean
+      skip_ios:
+        description: 'Skip iOS build (save macOS minutes)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  FLUTTER_VERSION: '3.27.0'
+  JAVA_VERSION: '17'
+  RUBY_VERSION: '3.2'
+
+jobs:
+  #=============================================================================
+  # Job 1: Version Validation
+  #=============================================================================
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_number: ${{ steps.version.outputs.build_number }}
+      is_prerelease: ${{ steps.version.outputs.is_prerelease }}
+      tag_name: ${{ steps.version.outputs.tag_name }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          # Get version from tag or input
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+            TAG_NAME="v${VERSION}"
+          else
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
+            VERSION="${TAG_NAME#v}"
+          fi
+
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION (tag: $TAG_NAME)"
+
+          # Read pubspec version
+          PUBSPEC_VERSION=$(grep -E "^version:" pubspec.yaml | sed 's/version: //' | tr -d '[:space:]')
+          PUBSPEC_VERSION_NAME=$(echo "$PUBSPEC_VERSION" | cut -d'+' -f1)
+          PUBSPEC_BUILD_NUMBER=$(echo "$PUBSPEC_VERSION" | cut -d'+' -f2)
+
+          echo "Pubspec version: $PUBSPEC_VERSION_NAME (build $PUBSPEC_BUILD_NUMBER)"
+
+          # Validate version matches pubspec
+          if [ "$VERSION" != "$PUBSPEC_VERSION_NAME" ]; then
+            echo "::error::Tag version ($VERSION) does not match pubspec.yaml version ($PUBSPEC_VERSION_NAME)"
+            echo "Please update pubspec.yaml before tagging, or use the correct tag."
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_number=$PUBSPEC_BUILD_NUMBER" >> $GITHUB_OUTPUT
+
+          # Check if prerelease (contains alpha, beta, rc)
+          if [[ "$VERSION" =~ (alpha|beta|rc) ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate git tag
+        run: |
+          TAG="${{ steps.version.outputs.tag_name }}"
+
+          # Check if this is an annotated tag
+          if git cat-file -t "$TAG" 2>/dev/null | grep -q "tag"; then
+            echo "Valid annotated tag: $TAG"
+            git tag -v "$TAG" 2>/dev/null || echo "Tag is not GPG signed (optional)"
+          else
+            echo "::warning::Tag $TAG is not annotated. Consider using annotated tags for releases."
+          fi
+
+      - name: Check for existing release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag_name }}"
+
+          # Check if GitHub release already exists
+          if gh release view "$TAG" &>/dev/null; then
+            echo "::warning::Release $TAG already exists. This run will update the existing release."
+          else
+            echo "No existing release found for $TAG"
+          fi
+
+  #=============================================================================
+  # Job 2: Test Suite (Release Gate)
+  #=============================================================================
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: validate
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Run code generation
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Run tests
+        run: flutter test --reporter expanded
+
+      - name: Static analysis
+        run: flutter analyze --no-fatal-infos
+
+  #=============================================================================
+  # Job 3: Build Android Release (Signed)
+  #=============================================================================
+  build-android:
+    name: Build Android Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [validate, test]
+
+    outputs:
+      aab_path: ${{ steps.build.outputs.aab_path }}
+      apk_path: ${{ steps.build.outputs.apk_path }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'gradle'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Run code generation
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Decode keystore
+        if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' }}
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+          echo "Keystore decoded successfully"
+
+      - name: Create key.properties
+        if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' }}
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          cat > android/key.properties << EOF
+          storeFile=release.keystore
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+          echo "key.properties created"
+
+      - name: Build Android App Bundle (AAB)
+        id: build
+        env:
+          ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
+          MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          BUILD_NUMBER="${{ needs.validate.outputs.build_number }}"
+
+          # Build AAB for Play Store
+          flutter build appbundle --release \
+            --build-name="$VERSION" \
+            --build-number="$BUILD_NUMBER" \
+            --dart-define=ONESIGNAL_APP_ID="${ONESIGNAL_APP_ID:-placeholder}" \
+            --dart-define=MAPBOX_ACCESS_TOKEN="${MAPBOX_ACCESS_TOKEN:-placeholder}" \
+            --dart-define=DEBUG_MODE=false
+
+          # Build APK for direct distribution
+          flutter build apk --release \
+            --build-name="$VERSION" \
+            --build-number="$BUILD_NUMBER" \
+            --dart-define=ONESIGNAL_APP_ID="${ONESIGNAL_APP_ID:-placeholder}" \
+            --dart-define=MAPBOX_ACCESS_TOKEN="${MAPBOX_ACCESS_TOKEN:-placeholder}" \
+            --dart-define=DEBUG_MODE=false
+
+          # Prepare artifacts
+          mkdir -p artifacts/android
+
+          AAB_SOURCE="build/app/outputs/bundle/release/app-release.aab"
+          APK_SOURCE="build/app/outputs/flutter-apk/app-release.apk"
+
+          AAB_DEST="artifacts/android/direct-cuts-${VERSION}.aab"
+          APK_DEST="artifacts/android/direct-cuts-${VERSION}.apk"
+
+          cp "$AAB_SOURCE" "$AAB_DEST"
+          cp "$APK_SOURCE" "$APK_DEST"
+
+          echo "aab_path=$AAB_DEST" >> $GITHUB_OUTPUT
+          echo "apk_path=$APK_DEST" >> $GITHUB_OUTPUT
+
+          # Generate checksums
+          cd artifacts/android
+          sha256sum *.aab *.apk > checksums-android.sha256
+          cd ../..
+
+          echo "Android artifacts:"
+          ls -lh artifacts/android/
+
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release
+          path: artifacts/android/
+          retention-days: 90
+          if-no-files-found: error
+
+  #=============================================================================
+  # Job 4: Build iOS Release (Signed)
+  #=============================================================================
+  build-ios:
+    name: Build iOS Release
+    runs-on: macos-latest
+    timeout-minutes: 45
+    needs: [validate, test]
+    if: ${{ github.event.inputs.skip_ios != 'true' }}
+
+    outputs:
+      ipa_path: ${{ steps.build.outputs.ipa_path }}
+      build_success: ${{ steps.build.outputs.success }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Run code generation
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Setup CocoaPods cache
+        uses: actions/cache@v4
+        with:
+          path: ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install --repo-update
+          cd ..
+
+      - name: Setup Ruby for Fastlane
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+          bundler-cache: true
+          working-directory: fastlane
+
+      - name: Install Fastlane
+        run: |
+          cd fastlane
+          bundle install
+          cd ..
+
+      # iOS signing setup (when Apple account is configured)
+      - name: Setup iOS signing
+        if: ${{ env.APP_STORE_CONNECT_API_KEY_ID != '' }}
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        run: |
+          echo "iOS signing configured via Fastlane Match"
+
+      - name: Build iOS
+        id: build
+        env:
+          ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
+          MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          BUILD_NUMBER="${{ needs.validate.outputs.build_number }}"
+
+          mkdir -p artifacts/ios
+
+          # Check if we have signing configured
+          if [ -n "$APP_STORE_CONNECT_API_KEY_ID" ]; then
+            echo "Building with code signing..."
+
+            # Build IPA with signing via Fastlane
+            cd fastlane
+            bundle exec fastlane ios build skip_certificates:false
+            cd ..
+
+            # Copy IPA if created
+            IPA_PATH="artifacts/mobile/${VERSION}/ios/DirectCuts-${VERSION}.ipa"
+            if [ -f "$IPA_PATH" ]; then
+              cp "$IPA_PATH" "artifacts/ios/DirectCuts-${VERSION}.ipa"
+              echo "ipa_path=artifacts/ios/DirectCuts-${VERSION}.ipa" >> $GITHUB_OUTPUT
+              echo "success=true" >> $GITHUB_OUTPUT
+
+              # Generate checksum
+              cd artifacts/ios
+              shasum -a 256 *.ipa > checksums-ios.sha256
+              cd ../..
+            else
+              echo "::warning::IPA not found at expected path"
+              echo "success=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "Building without code signing (Apple account not configured)..."
+
+            flutter build ios --release --no-codesign \
+              --build-name="$VERSION" \
+              --build-number="$BUILD_NUMBER" \
+              --dart-define=ONESIGNAL_APP_ID="${ONESIGNAL_APP_ID:-placeholder}" \
+              --dart-define=MAPBOX_ACCESS_TOKEN="${MAPBOX_ACCESS_TOKEN:-placeholder}" \
+              --dart-define=DEBUG_MODE=false
+
+            # Create build info
+            cat > artifacts/ios/ios-build-info.json << EOF
+          {
+            "version": "$VERSION",
+            "build_number": "$BUILD_NUMBER",
+            "codesigned": false,
+            "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "note": "Built without code signing. Configure Apple credentials for TestFlight deployment."
+          }
+          EOF
+            echo "success=true" >> $GITHUB_OUTPUT
+            echo "ipa_path=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload iOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-release
+          path: artifacts/ios/
+          retention-days: 90
+
+  #=============================================================================
+  # Job 5: Deploy to Google Play
+  #=============================================================================
+  deploy-android:
+    name: Deploy to Google Play
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [validate, build-android]
+    if: ${{ github.event.inputs.skip_store_upload != 'true' && secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Android artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release
+          path: artifacts/android/
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+          bundler-cache: true
+          working-directory: fastlane
+
+      - name: Install Fastlane
+        run: |
+          cd fastlane
+          bundle install
+
+      - name: Create service account JSON
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          echo "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" > google-play-key.json
+          echo "GOOGLE_PLAY_JSON_KEY=$(pwd)/google-play-key.json" >> $GITHUB_ENV
+
+      - name: Upload to Google Play Internal
+        env:
+          GOOGLE_PLAY_JSON_KEY: ${{ env.GOOGLE_PLAY_JSON_KEY }}
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          AAB_PATH="artifacts/android/direct-cuts-${VERSION}.aab"
+
+          cd fastlane
+
+          # Create release notes
+          cat > metadata/android/en-US/changelogs/default.txt << EOF
+          Version $VERSION
+
+          See release notes at:
+          https://github.com/${{ github.repository }}/releases/tag/v$VERSION
+          EOF
+
+          # Upload via Fastlane
+          bundle exec fastlane android beta skip_metadata:true
+
+      - name: Cleanup credentials
+        if: always()
+        run: rm -f google-play-key.json
+
+  #=============================================================================
+  # Job 6: Deploy to TestFlight
+  #=============================================================================
+  deploy-ios:
+    name: Deploy to TestFlight
+    runs-on: macos-latest
+    timeout-minutes: 20
+    needs: [validate, build-ios]
+    if: ${{ github.event.inputs.skip_store_upload != 'true' && needs.build-ios.outputs.ipa_path != '' && secrets.APP_STORE_CONNECT_API_KEY_ID != '' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download iOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-release
+          path: artifacts/ios/
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+          bundler-cache: true
+          working-directory: fastlane
+
+      - name: Install Fastlane
+        run: |
+          cd fastlane
+          bundle install
+
+      - name: Upload to TestFlight
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+
+          cd fastlane
+          bundle exec fastlane ios beta \
+            skip_waiting:true \
+            changelog:"Version $VERSION - See GitHub release for details"
+
+  #=============================================================================
+  # Job 7: Create GitHub Release
+  #=============================================================================
+  github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [validate, build-android, build-ios]
+    if: always() && needs.validate.result == 'success' && needs.build-android.result == 'success'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Android artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release
+          path: artifacts/android/
+
+      - name: Download iOS artifacts
+        if: needs.build-ios.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-release
+          path: artifacts/ios/
+        continue-on-error: true
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          TAG="${{ needs.validate.outputs.tag_name }}"
+          VERSION="${{ needs.validate.outputs.version }}"
+
+          # Get previous tag
+          PREVIOUS_TAG=$(git describe --abbrev=0 --tags $(git rev-list --tags --skip=1 --max-count=1) 2>/dev/null || echo "")
+
+          echo "## What's Changed" > changelog.md
+          echo "" >> changelog.md
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            git log --pretty=format:"- %s (%h)" --no-merges >> changelog.md
+          else
+            git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges >> changelog.md
+          fi
+
+          echo "" >> changelog.md
+          echo "" >> changelog.md
+          echo "## Downloads" >> changelog.md
+          echo "" >> changelog.md
+          echo "| Platform | File | Notes |" >> changelog.md
+          echo "|----------|------|-------|" >> changelog.md
+          echo "| Android | \`direct-cuts-${VERSION}.apk\` | Universal APK for direct install |" >> changelog.md
+          echo "| Android | \`direct-cuts-${VERSION}.aab\` | App Bundle for Play Store |" >> changelog.md
+
+          if [ -f "artifacts/ios/DirectCuts-${VERSION}.ipa" ]; then
+            echo "| iOS | \`DirectCuts-${VERSION}.ipa\` | For TestFlight |" >> changelog.md
+          else
+            echo "| iOS | - | Available on TestFlight (when configured) |" >> changelog.md
+          fi
+
+          echo "" >> changelog.md
+          echo "## Checksums" >> changelog.md
+          echo "" >> changelog.md
+          echo "\`\`\`" >> changelog.md
+          cat artifacts/android/checksums-android.sha256 >> changelog.md
+          if [ -f "artifacts/ios/checksums-ios.sha256" ]; then
+            cat artifacts/ios/checksums-ios.sha256 >> changelog.md
+          fi
+          echo "\`\`\`" >> changelog.md
+
+          echo "" >> changelog.md
+          echo "---" >> changelog.md
+          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREVIOUS_TAG}...${TAG}" >> changelog.md
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ needs.validate.outputs.tag_name }}"
+          VERSION="${{ needs.validate.outputs.version }}"
+          PRERELEASE="${{ needs.validate.outputs.is_prerelease }}"
+
+          # Collect assets
+          ASSETS=""
+          for f in artifacts/android/*.apk artifacts/android/*.aab artifacts/android/*.sha256; do
+            [ -f "$f" ] && ASSETS="$ASSETS $f"
+          done
+          for f in artifacts/ios/*.ipa artifacts/ios/*.sha256; do
+            [ -f "$f" ] && ASSETS="$ASSETS $f"
+          done
+
+          # Create or update release
+          if gh release view "$TAG" &>/dev/null; then
+            echo "Updating existing release..."
+            gh release edit "$TAG" \
+              --title "Direct Cuts $VERSION" \
+              --notes-file changelog.md \
+              --prerelease=$PRERELEASE
+
+            # Upload assets (will fail silently if they already exist)
+            for asset in $ASSETS; do
+              gh release upload "$TAG" "$asset" --clobber || true
+            done
+          else
+            echo "Creating new release..."
+            gh release create "$TAG" \
+              --title "Direct Cuts $VERSION" \
+              --notes-file changelog.md \
+              --prerelease=$PRERELEASE \
+              $ASSETS
+          fi
+
+  #=============================================================================
+  # Job 8: Release Summary
+  #=============================================================================
+  notify:
+    name: Release Summary
+    runs-on: ubuntu-latest
+    needs: [validate, build-android, build-ios, deploy-android, deploy-ios, github-release]
+    if: always()
+
+    steps:
+      - name: Generate release summary
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          TAG="${{ needs.validate.outputs.tag_name }}"
+
+          echo "# Release Summary: $TAG" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** $VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "## Build Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Step | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          # Validation
+          if [ "${{ needs.validate.result }}" == "success" ]; then
+            echo "| Validation | Passed |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Validation | Failed |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Android build
+          if [ "${{ needs.build-android.result }}" == "success" ]; then
+            echo "| Android Build | Success |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Android Build | Failed |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # iOS build
+          if [ "${{ needs.build-ios.result }}" == "success" ]; then
+            echo "| iOS Build | Success |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.build-ios.result }}" == "skipped" ]; then
+            echo "| iOS Build | Skipped |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| iOS Build | Failed |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Google Play
+          if [ "${{ needs.deploy-android.result }}" == "success" ]; then
+            echo "| Google Play | Uploaded |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.deploy-android.result }}" == "skipped" ]; then
+            echo "| Google Play | Skipped (not configured) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Google Play | Failed |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # TestFlight
+          if [ "${{ needs.deploy-ios.result }}" == "success" ]; then
+            echo "| TestFlight | Uploaded |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.deploy-ios.result }}" == "skipped" ]; then
+            echo "| TestFlight | Skipped (not configured) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| TestFlight | Failed |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # GitHub Release
+          if [ "${{ needs.github-release.result }}" == "success" ]; then
+            echo "| GitHub Release | Created |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| GitHub Release | Failed |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Links" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- [GitHub Release](https://github.com/${{ github.repository }}/releases/tag/$TAG)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Google Play Console](https://play.google.com/console)" >> $GITHUB_STEP_SUMMARY
+          echo "- [App Store Connect](https://appstoreconnect.apple.com)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check for failures
+        if: needs.validate.result != 'success' || needs.build-android.result != 'success'
+        run: |
+          echo "::error::Release pipeline had failures. Please review the logs."
+          exit 1

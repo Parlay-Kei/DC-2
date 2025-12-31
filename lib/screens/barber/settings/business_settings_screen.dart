@@ -101,14 +101,17 @@ class _BusinessSettingsScreenState
                       color: DCTheme.primary,
                     ),
                   )
-                : const Text('Save',
-                    style: TextStyle(color: DCTheme.primary),),
+                : const Text(
+                    'Save',
+                    style: TextStyle(color: DCTheme.primary),
+                  ),
           ),
         ],
       ),
       body: crmState.isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: DCTheme.primary),)
+              child: CircularProgressIndicator(color: DCTheme.primary),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Form(
@@ -182,9 +185,7 @@ class _BusinessSettingsScreenState
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  isComplete
-                      ? 'Profile Complete!'
-                      : 'Complete Your Profile',
+                  isComplete ? 'Profile Complete!' : 'Complete Your Profile',
                   style: TextStyle(
                     color: isComplete ? DCTheme.success : DCTheme.primary,
                     fontWeight: FontWeight.bold,
@@ -256,7 +257,8 @@ class _BusinessSettingsScreenState
               labelText: 'Display Name *',
               labelStyle: const TextStyle(color: DCTheme.textMuted),
               hintText: 'How clients will see your name',
-              hintStyle: TextStyle(color: DCTheme.textMuted.withValues(alpha: 0.5)),
+              hintStyle:
+                  TextStyle(color: DCTheme.textMuted.withValues(alpha: 0.5)),
               prefixIcon: const Icon(Icons.person, color: DCTheme.textMuted),
               filled: true,
               fillColor: DCTheme.background,
@@ -280,7 +282,8 @@ class _BusinessSettingsScreenState
               labelText: 'Shop/Business Name',
               labelStyle: const TextStyle(color: DCTheme.textMuted),
               hintText: 'e.g., "Elite Cuts Barbershop"',
-              hintStyle: TextStyle(color: DCTheme.textMuted.withValues(alpha: 0.5)),
+              hintStyle:
+                  TextStyle(color: DCTheme.textMuted.withValues(alpha: 0.5)),
               prefixIcon: const Icon(Icons.store, color: DCTheme.textMuted),
               filled: true,
               fillColor: DCTheme.background,
@@ -299,8 +302,11 @@ class _BusinessSettingsScreenState
             ),
             child: Row(
               children: [
-                Icon(Icons.lightbulb_outline,
-                    color: DCTheme.info.withValues(alpha: 0.8), size: 20,),
+                Icon(
+                  Icons.lightbulb_outline,
+                  color: DCTheme.info.withValues(alpha: 0.8),
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 const Expanded(
                   child: Text(
@@ -336,7 +342,8 @@ class _BusinessSettingsScreenState
               labelText: 'Business Phone',
               labelStyle: const TextStyle(color: DCTheme.textMuted),
               hintText: '(555) 123-4567',
-              hintStyle: TextStyle(color: DCTheme.textMuted.withValues(alpha: 0.5)),
+              hintStyle:
+                  TextStyle(color: DCTheme.textMuted.withValues(alpha: 0.5)),
               prefixIcon: const Icon(Icons.phone, color: DCTheme.textMuted),
               filled: true,
               fillColor: DCTheme.background,
@@ -355,8 +362,11 @@ class _BusinessSettingsScreenState
             ),
             child: Row(
               children: [
-                Icon(Icons.privacy_tip_outlined,
-                    color: DCTheme.warning.withValues(alpha: 0.8), size: 20,),
+                Icon(
+                  Icons.privacy_tip_outlined,
+                  color: DCTheme.warning.withValues(alpha: 0.8),
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 const Expanded(
                   child: Text(
@@ -395,7 +405,8 @@ class _BusinessSettingsScreenState
               labelStyle: const TextStyle(color: DCTheme.textMuted),
               hintText:
                   'Tell clients about your experience, specialties, and what makes you unique...',
-              hintStyle: TextStyle(color: DCTheme.textMuted.withValues(alpha: 0.5)),
+              hintStyle:
+                  TextStyle(color: DCTheme.textMuted.withValues(alpha: 0.5)),
               alignLabelWithHint: true,
               filled: true,
               fillColor: DCTheme.background,
@@ -416,9 +427,12 @@ class _BusinessSettingsScreenState
             ),
           ),
           const SizedBox(height: 8),
-          _buildBioTip(Icons.check_circle_outline, 'Mention your years of experience'),
-          _buildBioTip(Icons.check_circle_outline, 'List your specialties (fades, beard work, etc.)'),
-          _buildBioTip(Icons.check_circle_outline, 'Share what you love about barbering'),
+          _buildBioTip(
+              Icons.check_circle_outline, 'Mention your years of experience'),
+          _buildBioTip(Icons.check_circle_outline,
+              'List your specialties (fades, beard work, etc.)'),
+          _buildBioTip(Icons.check_circle_outline,
+              'Share what you love about barbering'),
         ],
       ),
     );

@@ -15,7 +15,15 @@ class BarberListScreen extends ConsumerStatefulWidget {
 
 class _BarberListScreenState extends ConsumerState<BarberListScreen> {
   final _searchController = TextEditingController();
-  bool _showNearby = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize location on screen load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(userLocationProvider.notifier).initIfNeeded();
+    });
+  }
 
   @override
   void dispose() {
@@ -27,95 +35,128 @@ class _BarberListScreenState extends ConsumerState<BarberListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: DCTheme.background,
-      appBar: AppBar(
-        title: const Text('Find a Barber'),
-        actions: [
-          IconButton(
-            icon: Icon(_showNearby ? Icons.near_me : Icons.list),
-            onPressed: () => setState(() => _showNearby = !_showNearby),
-            tooltip: _showNearby ? 'Show all' : 'Show nearby',
-          ),
-        ],
-      ),
       body: Column(
         children: [
-          _buildSearchBar(),
-          Expanded(
-            child: _showNearby ? _buildNearbyList() : _buildAllBarbersList(),
-          ),
+          _buildHeader(),
+          Expanded(child: _buildBarberList()),
         ],
       ),
     );
   }
 
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: TextField(
-        controller: _searchController,
-        style: const TextStyle(color: DCTheme.text),
-        decoration: InputDecoration(
-          hintText: 'Search barbers...',
-          prefixIcon: const Icon(Icons.search, color: DCTheme.textMuted),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear, color: DCTheme.textMuted),
-                  onPressed: () {
-                    _searchController.clear();
-                    ref.read(searchQueryProvider.notifier).state = '';
+  Widget _buildHeader() {
+    return Container(
+      color: DCTheme.background,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: Column(
+            children: [
+              // Title row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Find a Barber',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: DCTheme.text,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.navigation, color: DCTheme.text),
+                    onPressed: () async {
+                      await ref
+                          .read(userLocationProvider.notifier)
+                          .requestPermission();
+                    },
+                    tooltip: 'Get my location',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Search bar
+              Container(
+                decoration: BoxDecoration(
+                  color: DCTheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  style: const TextStyle(color: DCTheme.text),
+                  decoration: InputDecoration(
+                    hintText: 'Search barbers...',
+                    hintStyle: const TextStyle(color: DCTheme.textMuted),
+                    prefixIcon:
+                        const Icon(Icons.search, color: DCTheme.textMuted),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear,
+                                color: DCTheme.textMuted),
+                            onPressed: () {
+                              _searchController.clear();
+                              ref.read(searchQueryProvider.notifier).state = '';
+                              setState(() {});
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
+                  ),
+                  onChanged: (value) {
+                    ref.read(searchQueryProvider.notifier).state = value;
+                    setState(() {});
                   },
-                )
-              : null,
+                ),
+              ),
+            ],
+          ),
         ),
-        onChanged: (value) {
-          ref.read(searchQueryProvider.notifier).state = value;
-        },
       ),
     );
   }
 
-  Widget _buildNearbyList() {
-    final nearbyAsync = ref.watch(nearbyBarbersProvider);
+  Widget _buildBarberList() {
+    final searchQuery = ref.watch(searchQueryProvider);
     final locationAsync = ref.watch(userLocationProvider);
+    final nearbyAsync = ref.watch(nearbyBarbersProvider);
 
-    // Trigger location init when this tab is shown
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(userLocationProvider.notifier).initIfNeeded();
-    });
+    // If searching, show search results
+    if (searchQuery.isNotEmpty) {
+      final searchResults = ref.watch(barberSearchProvider(searchQuery));
+      return searchResults.when(
+        data: (barbers) => _buildBarberListView(barbers),
+        loading: () => _buildLoadingList(),
+        error: (e, _) => _buildError(e.toString()),
+      );
+    }
 
+    // Otherwise show nearby barbers
     return locationAsync.when(
       data: (position) {
         if (position == null) {
           return _buildLocationPermissionPrompt();
         }
         return nearbyAsync.when(
-          data: (barbers) => _buildBarberGrid(
+          data: (barbers) => _buildBarberListView(
             barbers.map((b) => b.barber).toList(),
-            distances: {for (var b in barbers) b.barber.id: b.formattedDistance},
+            distances: {
+              for (var b in barbers) b.barber.id: b.formattedDistance
+            },
           ),
-          loading: () => _buildLoadingGrid(),
+          loading: () => _buildLoadingList(),
           error: (e, _) => _buildError(e.toString()),
         );
       },
-      loading: () => _buildLoadingGrid(),
+      loading: () => _buildLoadingList(),
       error: (e, _) => _buildLocationPermissionPrompt(),
     );
   }
 
-  Widget _buildAllBarbersList() {
-    final searchQuery = ref.watch(searchQueryProvider);
-    final barbersAsync = searchQuery.isEmpty
-        ? ref.watch(activeBarbersProvider)
-        : ref.watch(barberSearchProvider(searchQuery));
-
-    return barbersAsync.when(
-      data: (barbers) => _buildBarberGrid(barbers),
-      loading: () => _buildLoadingGrid(),
-      error: (e, _) => _buildError(e.toString()),
-    );
-  }
-
-  Widget _buildBarberGrid(
+  Widget _buildBarberListView(
     List<Barber> barbers, {
     Map<String, String>? distances,
   }) {
@@ -134,18 +175,24 @@ class _BarberListScreenState extends ConsumerState<BarberListScreen> {
               'No barbers found',
               style: TextStyle(color: DCTheme.textMuted, fontSize: 16),
             ),
+            const SizedBox(height: 8),
+            const Text(
+              'Try adjusting your search or location',
+              style: TextStyle(color: DCTheme.textMuted, fontSize: 14),
+            ),
           ],
         ),
       );
     }
 
     return RefreshIndicator(
+      color: DCTheme.primary,
       onRefresh: () async {
         ref.invalidate(activeBarbersProvider);
         ref.invalidate(nearbyBarbersProvider);
       },
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
         itemCount: barbers.length,
         itemBuilder: (context, index) {
           final barber = barbers[index];
@@ -159,9 +206,9 @@ class _BarberListScreenState extends ConsumerState<BarberListScreen> {
     );
   }
 
-  Widget _buildLoadingGrid() {
+  Widget _buildLoadingList() {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       itemCount: 5,
       itemBuilder: (_, __) => const _BarberListTileSkeleton(),
     );
@@ -179,11 +226,15 @@ class _BarberListScreenState extends ConsumerState<BarberListScreen> {
             style: TextStyle(color: DCTheme.textMuted),
           ),
           const SizedBox(height: 8),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
               ref.invalidate(activeBarbersProvider);
               ref.invalidate(nearbyBarbersProvider);
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: DCTheme.primary,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Retry'),
           ),
         ],
@@ -221,15 +272,18 @@ class _BarberListScreenState extends ConsumerState<BarberListScreen> {
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () async {
-                await ref.read(userLocationProvider.notifier).requestPermission();
+                await ref
+                    .read(userLocationProvider.notifier)
+                    .requestPermission();
               },
               icon: const Icon(Icons.location_on),
               label: const Text('Enable Location'),
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () => setState(() => _showNearby = false),
-              child: const Text('Browse All Barbers'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: DCTheme.primary,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
             ),
           ],
         ),
@@ -300,7 +354,9 @@ class _BarberListTile extends StatelessWidget {
       color: DCTheme.surfaceSecondary,
       child: Center(
         child: Text(
-          barber.displayName.isNotEmpty ? barber.displayName[0].toUpperCase() : 'B',
+          barber.displayName.isNotEmpty
+              ? barber.displayName[0].toUpperCase()
+              : 'B',
           style: const TextStyle(
             color: DCTheme.text,
             fontSize: 24,
@@ -372,15 +428,17 @@ class _BarberListTile extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ],
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            if (barber.isMobile)
-              _buildTag('Mobile', Icons.directions_car, DCTheme.info),
-            if (barber.tier == 'professional')
-              _buildTag('Pro', Icons.workspace_premium, DCTheme.gold),
-          ],
-        ),
+        if (barber.isMobile || barber.tier == 'professional') ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              if (barber.isMobile)
+                _buildTag('Mobile', Icons.directions_car, DCTheme.info),
+              if (barber.tier == 'professional')
+                _buildTag('Pro', Icons.workspace_premium, DCTheme.gold),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -400,7 +458,8 @@ class _BarberListTile extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w500),
+            style: TextStyle(
+                color: color, fontSize: 11, fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -446,6 +505,15 @@ class _BarberListTileSkeleton extends StatelessWidget {
                 const SizedBox(height: 8),
                 Container(
                   width: 80,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: DCTheme.surfaceSecondary,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: 160,
                   height: 12,
                   decoration: BoxDecoration(
                     color: DCTheme.surfaceSecondary,

@@ -392,22 +392,22 @@ class AsyncValueWidget<T> extends StatelessWidget {
     if (snapshot.connectionState == ConnectionState.waiting) {
       return loading ?? const Center(child: LoadingIndicator());
     }
-    
+
     if (snapshot.hasError) {
-      return error?.call(snapshot.error!) ?? 
+      return error?.call(snapshot.error!) ??
           ErrorState(
             message: snapshot.error.toString(),
             onRetry: null,
           );
     }
-    
+
     if (!snapshot.hasData) {
       return const EmptyState(
         icon: Icons.inbox_outlined,
         title: 'No data',
       );
     }
-    
+
     return data(snapshot.data as T);
   }
 }

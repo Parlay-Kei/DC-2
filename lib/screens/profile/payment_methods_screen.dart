@@ -33,8 +33,10 @@ class PaymentMethodsScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, size: 48, color: DCTheme.error),
               const SizedBox(height: 16),
-              Text('Error: $error',
-                  style: const TextStyle(color: DCTheme.textMuted),),
+              Text(
+                'Error: $error',
+                style: const TextStyle(color: DCTheme.textMuted),
+              ),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => ref.invalidate(savedPaymentMethodsProvider),
@@ -122,16 +124,21 @@ class PaymentMethodsScreen extends ConsumerWidget {
   }
 
   Future<void> _setDefault(
-      BuildContext context, WidgetRef ref, String methodId,) async {
+    BuildContext context,
+    WidgetRef ref,
+    String methodId,
+  ) async {
     final service = ref.read(paymentServiceProvider);
     final success = await service.setDefaultPaymentMethod(methodId);
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success
-              ? 'Default payment method updated'
-              : 'Failed to update default',),
+          content: Text(
+            success
+                ? 'Default payment method updated'
+                : 'Failed to update default',
+          ),
           backgroundColor: success ? DCTheme.success : DCTheme.error,
         ),
       );
@@ -143,13 +150,18 @@ class PaymentMethodsScreen extends ConsumerWidget {
   }
 
   Future<void> _deleteMethod(
-      BuildContext context, WidgetRef ref, String methodId,) async {
+    BuildContext context,
+    WidgetRef ref,
+    String methodId,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: DCTheme.surface,
-        title: const Text('Remove Card?',
-            style: TextStyle(color: DCTheme.text),),
+        title: const Text(
+          'Remove Card?',
+          style: TextStyle(color: DCTheme.text),
+        ),
         content: const Text(
           'Are you sure you want to remove this payment method?',
           style: TextStyle(color: DCTheme.textMuted),
@@ -157,13 +169,17 @@ class PaymentMethodsScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel',
-                style: TextStyle(color: DCTheme.textMuted),),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: DCTheme.textMuted),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Remove',
-                style: TextStyle(color: DCTheme.error),),
+            child: const Text(
+              'Remove',
+              style: TextStyle(color: DCTheme.error),
+            ),
           ),
         ],
       ),
@@ -178,7 +194,8 @@ class PaymentMethodsScreen extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              success ? 'Payment method removed' : 'Failed to remove card',),
+            success ? 'Payment method removed' : 'Failed to remove card',
+          ),
           backgroundColor: success ? DCTheme.success : DCTheme.error,
         ),
       );
@@ -209,7 +226,9 @@ class _PaymentMethodCard extends StatelessWidget {
         color: DCTheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: method.isDefault ? DCTheme.primary : DCTheme.border.withValues(alpha: 0.3),
+          color: method.isDefault
+              ? DCTheme.primary
+              : DCTheme.border.withValues(alpha: 0.3),
           width: method.isDefault ? 2 : 1,
         ),
       ),
@@ -281,8 +300,10 @@ class _PaymentMethodCard extends StatelessWidget {
                       children: [
                         Icon(Icons.star_outline, color: DCTheme.text),
                         SizedBox(width: 12),
-                        Text('Set as Default',
-                            style: TextStyle(color: DCTheme.text),),
+                        Text(
+                          'Set as Default',
+                          style: TextStyle(color: DCTheme.text),
+                        ),
                       ],
                     ),
                   ),

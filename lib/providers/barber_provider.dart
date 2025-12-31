@@ -57,7 +57,8 @@ final barberPortfolioProvider =
 });
 
 // User location state
-final userLocationProvider = StateNotifierProvider<UserLocationNotifier, AsyncValue<Position?>>((ref) {
+final userLocationProvider =
+    StateNotifierProvider<UserLocationNotifier, AsyncValue<Position?>>((ref) {
   return UserLocationNotifier(ref.read(locationServiceProvider));
 });
 
@@ -65,7 +66,8 @@ class UserLocationNotifier extends StateNotifier<AsyncValue<Position?>> {
   final LocationService _locationService;
   bool _initialized = false;
 
-  UserLocationNotifier(this._locationService) : super(const AsyncValue.data(null)) {
+  UserLocationNotifier(this._locationService)
+      : super(const AsyncValue.data(null)) {
     // Don't auto-init - let UI trigger when needed
   }
 
@@ -107,17 +109,18 @@ final searchLocationProvider = StateProvider<({double lat, double lng})>((ref) {
 
 // Nearby barbers - uses searchLocationProvider for coordinates
 // This ensures we only search once per location change
-final nearbyBarbersProvider = FutureProvider.autoDispose<List<BarberWithDistance>>((ref) async {
+final nearbyBarbersProvider =
+    FutureProvider.autoDispose<List<BarberWithDistance>>((ref) async {
   final location = ref.watch(searchLocationProvider);
 
   Logger.debug('NearbyBarbersProvider: Searching for barbers');
 
   try {
     final results = await ref.read(barberServiceProvider).getNearbyBarbers(
-      latitude: location.lat,
-      longitude: location.lng,
-      radiusMiles: 100, // Wide radius to catch all Vegas barbers
-    );
+          latitude: location.lat,
+          longitude: location.lng,
+          radiusMiles: 100, // Wide radius to catch all Vegas barbers
+        );
 
     Logger.debug('NearbyBarbersProvider: Found ${results.length} barbers');
     return results;
@@ -133,7 +136,7 @@ final searchQueryProvider = StateProvider<String>((ref) => '');
 
 final filteredBarbersProvider = FutureProvider<List<Barber>>((ref) {
   final query = ref.watch(searchQueryProvider);
-  
+
   if (query.isEmpty) {
     return ref.read(barberServiceProvider).getActiveBarbers();
   }
@@ -146,8 +149,8 @@ final selectedBarberProvider = StateProvider<Barber?>((ref) => null);
 // GeoJSON nearby barbers (using MapService for enhanced mapping)
 // Returns raw GeoJSON data from Edge Functions
 final geoJsonNearbyBarbersProvider = FutureProvider.autoDispose.family<
-    GeoJSONFeatureCollection, ({double lat, double lng, double radiusMiles})
->((ref, params) async {
+    GeoJSONFeatureCollection,
+    ({double lat, double lng, double radiusMiles})>((ref, params) async {
   final mapService = ref.read(mapServiceProvider);
   final radiusMeters = params.radiusMiles * 1609.34;
 
@@ -158,10 +161,12 @@ final geoJsonNearbyBarbersProvider = FutureProvider.autoDispose.family<
       radiusMeters: radiusMeters,
     );
 
-    Logger.debug('geoJsonNearbyBarbersProvider: Found ${result.features.length} barbers');
+    Logger.debug(
+        'geoJsonNearbyBarbersProvider: Found ${result.features.length} barbers');
     return result;
   } catch (e, stack) {
-    Logger.error('geoJsonNearbyBarbersProvider: Error fetching GeoJSON', e, stack);
+    Logger.error(
+        'geoJsonNearbyBarbersProvider: Error fetching GeoJSON', e, stack);
     return GeoJSONFeatureCollection.empty();
   }
 });

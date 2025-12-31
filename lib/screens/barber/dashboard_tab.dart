@@ -171,7 +171,8 @@ class DashboardTab extends ConsumerWidget {
         ),
       ),
       error: (_, __) => const Center(
-        child: Text('Error loading stats', style: TextStyle(color: DCTheme.error)),
+        child:
+            Text('Error loading stats', style: TextStyle(color: DCTheme.error)),
       ),
     );
   }
@@ -220,11 +221,12 @@ class DashboardTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildPendingSection(WidgetRef ref, AsyncValue<List<Booking>> pendingAsync) {
+  Widget _buildPendingSection(
+      WidgetRef ref, AsyncValue<List<Booking>> pendingAsync) {
     return pendingAsync.when(
       data: (pending) {
         if (pending.isEmpty) return const SizedBox.shrink();
-        
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -243,7 +245,8 @@ class DashboardTab extends ConsumerWidget {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: DCTheme.warning.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(10),
@@ -262,11 +265,13 @@ class DashboardTab extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 12),
-            ...pending.take(3).map((booking) => _PendingBookingCard(
-              booking: booking,
-              onAccept: () => _handleAccept(ref, booking),
-              onDecline: () => _handleDecline(ref, booking),
-            ),),
+            ...pending.take(3).map(
+                  (booking) => _PendingBookingCard(
+                    booking: booking,
+                    onAccept: () => _handleAccept(ref, booking),
+                    onDecline: () => _handleDecline(ref, booking),
+                  ),
+                ),
           ],
         );
       },
@@ -275,7 +280,8 @@ class DashboardTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildTodaySection(WidgetRef ref, AsyncValue<List<Booking>> todayAsync) {
+  Widget _buildTodaySection(
+      WidgetRef ref, AsyncValue<List<Booking>> todayAsync) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -320,7 +326,8 @@ class DashboardTab extends ConsumerWidget {
               );
             }
             return Column(
-              children: bookings.map((b) => _AppointmentCard(booking: b)).toList(),
+              children:
+                  bookings.map((b) => _AppointmentCard(booking: b)).toList(),
             );
           },
           loading: () => const Center(
@@ -352,8 +359,29 @@ class DashboardTab extends ConsumerWidget {
   }
 
   String _formatDate(DateTime date) {
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const days = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday'
+    ];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     return '${days[date.weekday % 7]}, ${months[date.month - 1]} ${date.day}';
   }
 }
@@ -390,7 +418,8 @@ class _StatCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(color: DCTheme.textMuted, fontSize: 12),
+                  style:
+                      const TextStyle(color: DCTheme.textMuted, fontSize: 12),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -521,7 +550,8 @@ class _PendingBookingCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       booking.serviceName ?? 'Service',
-                      style: const TextStyle(color: DCTheme.textMuted, fontSize: 13),
+                      style: const TextStyle(
+                          color: DCTheme.textMuted, fontSize: 13),
                     ),
                   ],
                 ),
@@ -577,7 +607,20 @@ class _PendingBookingCard extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     return '${months[date.month - 1]} ${date.day}';
   }
 
@@ -657,7 +700,8 @@ class _AppointmentCard extends StatelessWidget {
                 ),
                 Text(
                   booking.serviceName ?? 'Service',
-                  style: const TextStyle(color: DCTheme.textMuted, fontSize: 13),
+                  style:
+                      const TextStyle(color: DCTheme.textMuted, fontSize: 13),
                 ),
               ],
             ),
@@ -698,7 +742,8 @@ class _AppointmentCard extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600),
+        style:
+            TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600),
       ),
     );
   }

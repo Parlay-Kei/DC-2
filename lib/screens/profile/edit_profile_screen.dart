@@ -79,8 +79,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
                 child: const Icon(Icons.photo_library, color: Colors.purple),
               ),
-              title: const Text('Choose from Gallery',
-                  style: TextStyle(color: DCTheme.text),),
+              title: const Text(
+                'Choose from Gallery',
+                style: TextStyle(color: DCTheme.text),
+              ),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
             ListTile(
@@ -92,8 +94,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
                 child: const Icon(Icons.camera_alt, color: Colors.pink),
               ),
-              title: const Text('Take a Photo',
-                  style: TextStyle(color: DCTheme.text),),
+              title: const Text(
+                'Take a Photo',
+                style: TextStyle(color: DCTheme.text),
+              ),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             const SizedBox(height: 16),
@@ -142,8 +146,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: DCTheme.surface,
-        title: const Text('Delete Avatar?',
-            style: TextStyle(color: DCTheme.text),),
+        title: const Text(
+          'Delete Avatar?',
+          style: TextStyle(color: DCTheme.text),
+        ),
         content: const Text(
           'Are you sure you want to remove your profile picture?',
           style: TextStyle(color: DCTheme.textMuted),
@@ -151,13 +157,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child:
-                const Text('Cancel', style: TextStyle(color: DCTheme.textMuted)),
+            child: const Text('Cancel',
+                style: TextStyle(color: DCTheme.textMuted)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child:
-                const Text('Delete', style: TextStyle(color: DCTheme.error)),
+            child: const Text('Delete', style: TextStyle(color: DCTheme.error)),
           ),
         ],
       ),
@@ -232,8 +237,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       color: DCTheme.primary,
                     ),
                   )
-                : const Text('Save',
-                    style: TextStyle(color: DCTheme.primary),),
+                : const Text(
+                    'Save',
+                    style: TextStyle(color: DCTheme.primary),
+                  ),
           ),
         ],
       ),
@@ -242,7 +249,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           child: CircularProgressIndicator(color: DCTheme.primary),
         ),
         error: (error, _) => Center(
-          child: Text('Error: $error', style: const TextStyle(color: DCTheme.error)),
+          child: Text('Error: $error',
+              style: const TextStyle(color: DCTheme.error)),
         ),
         data: (profile) => SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -251,7 +259,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             child: Column(
               children: [
                 // Avatar section
-                _buildAvatarSection(profile?.avatarUrl, state.isUploadingAvatar),
+                _buildAvatarSection(
+                    profile?.avatarUrl, state.isUploadingAvatar),
                 const SizedBox(height: 32),
 
                 // Form fields
@@ -311,10 +320,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   avatarUrl != null ? NetworkImage(avatarUrl) : null,
               child: isUploading
                   ? const CircularProgressIndicator(
-                      color: DCTheme.primary, strokeWidth: 2,)
+                      color: DCTheme.primary,
+                      strokeWidth: 2,
+                    )
                   : avatarUrl == null
-                      ? const Icon(Icons.person,
-                          size: 60, color: DCTheme.textMuted,)
+                      ? const Icon(
+                          Icons.person,
+                          size: 60,
+                          color: DCTheme.textMuted,
+                        )
                       : null,
             ),
             Positioned(

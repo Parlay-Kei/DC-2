@@ -20,7 +20,8 @@ class ProfileStateNotifier extends StateNotifier<ProfileState> {
   final ProfileService _service;
   final Ref _ref;
 
-  ProfileStateNotifier(this._service, this._ref) : super(ProfileState.initial());
+  ProfileStateNotifier(this._service, this._ref)
+      : super(ProfileState.initial());
 
   /// Update basic profile
   Future<bool> updateProfile({
@@ -42,7 +43,8 @@ class ProfileStateNotifier extends StateNotifier<ProfileState> {
       );
 
       if (profile == null) {
-        state = state.copyWith(isLoading: false, error: 'Failed to update profile');
+        state =
+            state.copyWith(isLoading: false, error: 'Failed to update profile');
         return false;
       }
 
@@ -85,7 +87,8 @@ class ProfileStateNotifier extends StateNotifier<ProfileState> {
       final success = await _service.deleteAvatar();
 
       if (!success) {
-        state = state.copyWith(isLoading: false, error: 'Failed to delete avatar');
+        state =
+            state.copyWith(isLoading: false, error: 'Failed to delete avatar');
         return false;
       }
 

@@ -45,7 +45,8 @@ class ClientsTab extends ConsumerWidget {
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     itemCount: clients.length,
-                    itemBuilder: (context, index) => _ClientCard(client: clients[index]),
+                    itemBuilder: (context, index) =>
+                        _ClientCard(client: clients[index]),
                   ),
                 );
               },
@@ -56,9 +57,11 @@ class ClientsTab extends ConsumerWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, color: DCTheme.error, size: 48),
+                    const Icon(Icons.error_outline,
+                        color: DCTheme.error, size: 48),
                     const SizedBox(height: 16),
-                    const Text('Error loading clients', style: TextStyle(color: DCTheme.textMuted)),
+                    const Text('Error loading clients',
+                        style: TextStyle(color: DCTheme.textMuted)),
                     TextButton(
                       onPressed: () => ref.invalidate(barberClientsProvider),
                       child: const Text('Retry'),
@@ -155,11 +158,13 @@ class _ClientCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.history, size: 14, color: DCTheme.textMuted),
+                    const Icon(Icons.history,
+                        size: 14, color: DCTheme.textMuted),
                     const SizedBox(width: 4),
                     Text(
                       '${client.visitCount} ${client.visitCount == 1 ? 'visit' : 'visits'}',
-                      style: const TextStyle(color: DCTheme.textMuted, fontSize: 13),
+                      style: const TextStyle(
+                          color: DCTheme.textMuted, fontSize: 13),
                     ),
                   ],
                 ),

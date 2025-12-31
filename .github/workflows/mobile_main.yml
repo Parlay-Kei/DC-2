@@ -1,0 +1,368 @@
+#===============================================================================
+# Direct Cuts - Mobile Main Branch Pipeline
+#===============================================================================
+# Continuous integration pipeline triggered on pushes to main branch.
+# Builds debug artifacts for manual testing and integration verification.
+#
+# Target: < 20 minutes total execution time
+#
+# Jobs:
+#   1. test           - Full test suite
+#   2. build-android  - Android debug APK build
+#   3. build-ios      - iOS build (no codesign)
+#   4. notify         - Post-build summary
+#
+# Artifacts are retained for 7 days for manual testing.
+#===============================================================================
+
+name: Mobile Main Build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      # Only run on mobile-related changes
+      - 'lib/**'
+      - 'test/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'android/**'
+      - 'ios/**'
+      - 'scripts/mobile/**'
+      - 'fastlane/**'
+      - '.github/workflows/mobile_main.yml'
+
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      run_ios:
+        description: 'Run iOS build (uses macOS runner minutes)'
+        required: false
+        default: true
+        type: boolean
+      skip_tests:
+        description: 'Skip tests (for faster iteration)'
+        required: false
+        default: false
+        type: boolean
+
+# Only one main build at a time
+concurrency:
+  group: mobile-main
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: '3.27.0'
+  JAVA_VERSION: '17'
+  ARTIFACT_RETENTION_DAYS: 7
+
+jobs:
+  #=============================================================================
+  # Job 1: Full Test Suite
+  #=============================================================================
+  test:
+    name: Full Test Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: ${{ github.event.inputs.skip_tests != 'true' }}
+
+    outputs:
+      test_passed: ${{ steps.test-run.outputs.passed }}
+      coverage: ${{ steps.coverage.outputs.percentage }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Run code generation
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Run full test suite
+        id: test-run
+        run: |
+          if flutter test --coverage --reporter expanded 2>&1 | tee test_output.txt; then
+            echo "passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "passed=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Calculate coverage
+        id: coverage
+        if: success()
+        run: |
+          if [ -f coverage/lcov.info ]; then
+            LINES=$(grep -oP 'LF:\d+' coverage/lcov.info | cut -d: -f2 | paste -sd+ | bc 2>/dev/null || echo "0")
+            HITS=$(grep -oP 'LH:\d+' coverage/lcov.info | cut -d: -f2 | paste -sd+ | bc 2>/dev/null || echo "0")
+            if [ "$LINES" -gt 0 ]; then
+              COVERAGE=$(echo "scale=2; $HITS * 100 / $LINES" | bc)
+              echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
+              echo "Test coverage: ${COVERAGE}%"
+            else
+              echo "percentage=0" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "percentage=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload coverage to Codecov
+        if: success()
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: main-build-coverage
+          fail_ci_if_error: false
+        continue-on-error: true
+
+  #=============================================================================
+  # Job 2: Android Debug Build
+  #=============================================================================
+  build-android:
+    name: Build Android Debug
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: test
+    if: always() && (needs.test.result == 'success' || needs.test.result == 'skipped')
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_number: ${{ steps.version.outputs.build_number }}
+      apk_size: ${{ steps.build.outputs.apk_size }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep -E "^version:" pubspec.yaml | sed 's/version: //' | tr -d '[:space:]')
+          VERSION_NAME=$(echo "$VERSION" | cut -d'+' -f1)
+          BUILD_NUMBER=$(echo "$VERSION" | cut -d'+' -f2)
+          echo "version=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "full_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION_NAME (build $BUILD_NUMBER)"
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'gradle'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Run code generation
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Build Android debug APK
+        id: build
+        run: |
+          # Build debug APK
+          flutter build apk --debug --no-tree-shake-icons
+
+          # Get APK info
+          APK_PATH="build/app/outputs/flutter-apk/app-debug.apk"
+          if [ -f "$APK_PATH" ]; then
+            APK_SIZE=$(du -h "$APK_PATH" | cut -f1)
+            echo "apk_size=$APK_SIZE" >> $GITHUB_OUTPUT
+            echo "Android debug APK built: $APK_SIZE"
+          fi
+
+      - name: Rename artifact
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          BUILD="${{ steps.version.outputs.build_number }}"
+          mkdir -p artifacts
+          cp build/app/outputs/flutter-apk/app-debug.apk \
+             "artifacts/direct-cuts-${VERSION}-build${BUILD}-debug.apk"
+
+      - name: Upload Android APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: artifacts/*.apk
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+          if-no-files-found: error
+
+  #=============================================================================
+  # Job 3: iOS Build (No Codesign)
+  #=============================================================================
+  build-ios:
+    name: Build iOS (No Codesign)
+    runs-on: macos-latest
+    timeout-minutes: 25
+    needs: test
+    if: always() && (needs.test.result == 'success' || needs.test.result == 'skipped') && (github.event.inputs.run_ios != 'false')
+
+    outputs:
+      build_success: ${{ steps.build.outputs.success }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep -E "^version:" pubspec.yaml | sed 's/version: //' | tr -d '[:space:]')
+          VERSION_NAME=$(echo "$VERSION" | cut -d'+' -f1)
+          BUILD_NUMBER=$(echo "$VERSION" | cut -d'+' -f2)
+          echo "version=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION_NAME (build $BUILD_NUMBER)"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Run code generation
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Setup CocoaPods cache
+        uses: actions/cache@v4
+        with:
+          path: ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios
+          pod install --repo-update
+          cd ..
+
+      - name: Build iOS (no codesign)
+        id: build
+        run: |
+          if flutter build ios --release --no-codesign --no-tree-shake-icons; then
+            echo "success=true" >> $GITHUB_OUTPUT
+
+            # Check for app bundle
+            if [ -d "build/ios/iphoneos/Runner.app" ]; then
+              APP_SIZE=$(du -sh build/ios/iphoneos/Runner.app | cut -f1)
+              echo "iOS build successful: $APP_SIZE"
+            fi
+          else
+            echo "success=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Create build info artifact
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          BUILD="${{ steps.version.outputs.build_number }}"
+          COMMIT="${{ github.sha }}"
+
+          mkdir -p artifacts
+          cat > artifacts/ios-build-info.json << EOF
+          {
+            "platform": "ios",
+            "version": "$VERSION",
+            "build_number": "$BUILD",
+            "git_commit": "$COMMIT",
+            "git_branch": "main",
+            "build_type": "debug",
+            "codesigned": false,
+            "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "flutter_version": "${{ env.FLUTTER_VERSION }}",
+            "note": "Build without code signing. For TestFlight, use release pipeline with signing."
+          }
+          EOF
+
+      - name: Upload iOS build info
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-info
+          path: artifacts/ios-build-info.json
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  #=============================================================================
+  # Job 4: Build Summary & Notifications
+  #=============================================================================
+  notify:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [test, build-android, build-ios]
+    if: always()
+
+    steps:
+      - name: Generate build summary
+        run: |
+          echo "# Mobile Main Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "## Build Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Test results
+          if [ "${{ needs.test.result }}" == "success" ]; then
+            echo "| Tests | Passed | Coverage: ${{ needs.test.outputs.coverage }}% |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.test.result }}" == "skipped" ]; then
+            echo "| Tests | Skipped | - |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Tests | Failed | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Android results
+          if [ "${{ needs.build-android.result }}" == "success" ]; then
+            echo "| Android | Built | v${{ needs.build-android.outputs.version }} (${{ needs.build-android.outputs.apk_size }}) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Android | Failed | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # iOS results
+          if [ "${{ needs.build-ios.result }}" == "success" ]; then
+            echo "| iOS | Built | No codesign |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.build-ios.result }}" == "skipped" ]; then
+            echo "| iOS | Skipped | - |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| iOS | Failed | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Artifacts are available for **${{ env.ARTIFACT_RETENTION_DAYS }} days**:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`android-debug-apk\` - Debug APK for testing" >> $GITHUB_STEP_SUMMARY
+          echo "- \`ios-build-info\` - iOS build information" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "To create a production release, push a version tag (e.g., \`v2.0.1\`)." >> $GITHUB_STEP_SUMMARY
+
+      - name: Set overall status
+        if: needs.test.result == 'failure' || needs.build-android.result == 'failure' || needs.build-ios.result == 'failure'
+        run: |
+          echo "::error::One or more build steps failed."
+          exit 1

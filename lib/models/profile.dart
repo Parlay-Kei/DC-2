@@ -74,7 +74,8 @@ class Profile {
     NotificationPreferences? notificationPreferences,
     required this.createdAt,
     required this.updatedAt,
-  }) : notificationPreferences = notificationPreferences ?? NotificationPreferences();
+  }) : notificationPreferences =
+            notificationPreferences ?? NotificationPreferences();
 
   factory Profile.fromJson(Map<String, dynamic> json) {
     return Profile(
@@ -132,7 +133,8 @@ class Profile {
       avatarUrl: avatarUrl ?? this.avatarUrl,
       role: role ?? this.role,
       preferredLanguage: preferredLanguage ?? this.preferredLanguage,
-      notificationPreferences: notificationPreferences ?? this.notificationPreferences,
+      notificationPreferences:
+          notificationPreferences ?? this.notificationPreferences,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

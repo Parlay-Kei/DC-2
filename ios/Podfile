@@ -32,11 +32,28 @@ target 'Runner' do
   use_modular_headers!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-  
+
   target 'RunnerTests' do
     inherit! :search_paths
   end
 end
+
+# OneSignal Notification Service Extension
+# Required for rich notifications and confirmed delivery on iOS
+# To add the extension:
+# 1. Open ios/Runner.xcworkspace in Xcode
+# 2. File > New > Target > Notification Service Extension
+# 3. Name: OneSignalNotificationServiceExtension
+# 4. Language: Objective-C
+# 5. DO NOT click "Activate" when prompted
+# 6. Add App Groups capability: group.com.directcuts.app.onesignal
+# 7. Run `cd ios && pod install && cd ..`
+#
+# Uncomment after creating the extension target in Xcode:
+# target 'OneSignalNotificationServiceExtension' do
+#   use_frameworks!
+#   pod 'OneSignalXCFramework', '>= 5.0.0', '< 6.0'
+# end
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|

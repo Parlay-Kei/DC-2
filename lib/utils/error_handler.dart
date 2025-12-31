@@ -10,7 +10,7 @@ import '../config/theme.dart';
 class ErrorHandler {
   static ErrorHandler? _instance;
   static ErrorHandler get instance => _instance ??= ErrorHandler._();
-  
+
   ErrorHandler._();
 
   /// Convert any error to user-friendly message
@@ -18,39 +18,39 @@ class ErrorHandler {
     if (error is AuthException) {
       return _handleAuthError(error);
     }
-    
+
     if (error is PostgrestException) {
       return _handlePostgrestError(error);
     }
-    
+
     if (error is StorageException) {
       return _handleStorageError(error);
     }
-    
+
     if (error is SocketException) {
       return 'No internet connection. Please check your network.';
     }
-    
+
     if (error is TimeoutException) {
       return 'Request timed out. Please try again.';
     }
-    
+
     if (error is FormatException) {
       return 'Invalid data format received.';
     }
-    
+
     // Generic error
     final message = error.toString();
     if (message.contains('network') || message.contains('connection')) {
       return 'Network error. Please check your connection.';
     }
-    
+
     return 'Something went wrong. Please try again.';
   }
 
   String _handleAuthError(AuthException error) {
     final message = error.message.toLowerCase();
-    
+
     if (message.contains('invalid login credentials')) {
       return 'Invalid email or password.';
     }
@@ -66,19 +66,20 @@ class ErrorHandler {
     if (message.contains('weak password')) {
       return 'Password is too weak. Please use a stronger password.';
     }
-    if (message.contains('session expired') || message.contains('refresh_token')) {
+    if (message.contains('session expired') ||
+        message.contains('refresh_token')) {
       return 'Your session has expired. Please sign in again.';
     }
     if (message.contains('rate limit')) {
       return 'Too many attempts. Please wait a moment.';
     }
-    
+
     return error.message;
   }
 
   String _handlePostgrestError(PostgrestException error) {
     final code = error.code;
-    
+
     switch (code) {
       case '23505': // unique_violation
         return 'This record already exists.';
@@ -100,7 +101,7 @@ class ErrorHandler {
 
   String _handleStorageError(StorageException error) {
     final message = error.message.toLowerCase();
-    
+
     if (message.contains('not found')) {
       return 'File not found.';
     }
@@ -113,14 +114,14 @@ class ErrorHandler {
     if (message.contains('invalid') && message.contains('type')) {
       return 'Invalid file type. Please use JPG, PNG, or GIF.';
     }
-    
+
     return 'File upload failed. Please try again.';
   }
 
   /// Show error snackbar
   void showError(BuildContext context, dynamic error) {
     final message = getErrorMessage(error);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -220,7 +221,8 @@ class ErrorHandler {
             ),
           ],
         ),
-        content: Text(message, style: const TextStyle(color: DCTheme.textMuted)),
+        content:
+            Text(message, style: const TextStyle(color: DCTheme.textMuted)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -232,7 +234,8 @@ class ErrorHandler {
                 Navigator.pop(context);
                 onAction();
               },
-              child: Text(actionLabel, style: const TextStyle(color: DCTheme.primary)),
+              child: Text(actionLabel,
+                  style: const TextStyle(color: DCTheme.primary)),
             ),
         ],
       ),
@@ -260,7 +263,10 @@ class ErrorHandler {
 /// Extension for easy error handling
 extension ErrorHandlerExtension on BuildContext {
   void showError(dynamic error) => ErrorHandler.instance.showError(this, error);
-  void showSuccess(String message) => ErrorHandler.instance.showSuccess(this, message);
-  void showInfo(String message) => ErrorHandler.instance.showInfo(this, message);
-  void showWarning(String message) => ErrorHandler.instance.showWarning(this, message);
+  void showSuccess(String message) =>
+      ErrorHandler.instance.showSuccess(this, message);
+  void showInfo(String message) =>
+      ErrorHandler.instance.showInfo(this, message);
+  void showWarning(String message) =>
+      ErrorHandler.instance.showWarning(this, message);
 }

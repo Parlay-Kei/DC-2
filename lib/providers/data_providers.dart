@@ -25,8 +25,7 @@ final favoriteIdsProvider = FutureProvider<Set<String>>((ref) {
 });
 
 // Check if specific barber is favorited
-final isFavoriteProvider =
-    FutureProvider.family<bool, String>((ref, barberId) {
+final isFavoriteProvider = FutureProvider.family<bool, String>((ref, barberId) {
   return ref.read(favoritesServiceProvider).isFavorite(barberId);
 });
 
@@ -45,8 +44,7 @@ final ratingStatsProvider =
 });
 
 // Check if user can review a booking
-final canReviewProvider =
-    FutureProvider.family<bool, String>((ref, bookingId) {
+final canReviewProvider = FutureProvider.family<bool, String>((ref, bookingId) {
   return ref.read(reviewServiceProvider).canReview(bookingId);
 });
 

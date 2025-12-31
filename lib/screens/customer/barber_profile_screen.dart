@@ -17,7 +17,8 @@ class BarberProfileScreen extends ConsumerStatefulWidget {
   const BarberProfileScreen({super.key, required this.barberId});
 
   @override
-  ConsumerState<BarberProfileScreen> createState() => _BarberProfileScreenState();
+  ConsumerState<BarberProfileScreen> createState() =>
+      _BarberProfileScreenState();
 }
 
 class _BarberProfileScreenState extends ConsumerState<BarberProfileScreen>
@@ -52,7 +53,8 @@ class _BarberProfileScreenState extends ConsumerState<BarberProfileScreen>
       },
       loading: () => Scaffold(
         appBar: AppBar(),
-        body: const Center(child: CircularProgressIndicator(color: DCTheme.primary)),
+        body: const Center(
+            child: CircularProgressIndicator(color: DCTheme.primary)),
       ),
       error: (e, _) => Scaffold(
         appBar: AppBar(),
@@ -154,7 +156,8 @@ class _BarberProfileScreenState extends ConsumerState<BarberProfileScreen>
               ),
               if (barber.isVerified)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: DCTheme.info.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
@@ -299,13 +302,14 @@ class _MessageButtonState extends ConsumerState<_MessageButton> {
 
   Future<void> _startChat() async {
     if (_isLoading) return;
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
       final service = ref.read(messageServiceProvider);
-      final conversation = await service.getOrCreateConversation(widget.barberId);
-      
+      final conversation =
+          await service.getOrCreateConversation(widget.barberId);
+
       if (conversation != null && mounted) {
         context.push('/chat/${conversation.id}', extra: widget.barberName);
       } else if (mounted) {
@@ -395,7 +399,8 @@ class _ServicesTab extends ConsumerWidget {
       data: (services) {
         if (services.isEmpty) {
           return const Center(
-            child: Text('No services available', style: TextStyle(color: DCTheme.textMuted)),
+            child: Text('No services available',
+                style: TextStyle(color: DCTheme.textMuted)),
           );
         }
         return ListView.builder(
@@ -404,13 +409,16 @@ class _ServicesTab extends ConsumerWidget {
           itemBuilder: (context, index) => _ServiceTile(
             service: services[index],
             onTap: () {
-              ref.read(bookingFlowProvider.notifier).selectService(services[index]);
+              ref
+                  .read(bookingFlowProvider.notifier)
+                  .selectService(services[index]);
               context.push('/book/$barberId');
             },
           ),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator(color: DCTheme.primary)),
+      loading: () => const Center(
+          child: CircularProgressIndicator(color: DCTheme.primary)),
       error: (e, _) => Center(child: Text('Error: $e')),
     );
   }
@@ -435,7 +443,8 @@ class _ServiceTile extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         title: Text(
           service.name,
-          style: const TextStyle(fontWeight: FontWeight.w600, color: DCTheme.text),
+          style:
+              const TextStyle(fontWeight: FontWeight.w600, color: DCTheme.text),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -488,7 +497,8 @@ class _PortfolioTab extends ConsumerWidget {
       data: (images) {
         if (images.isEmpty) {
           return const Center(
-            child: Text('No portfolio images', style: TextStyle(color: DCTheme.textMuted)),
+            child: Text('No portfolio images',
+                style: TextStyle(color: DCTheme.textMuted)),
           );
         }
         return GridView.builder(
@@ -512,7 +522,8 @@ class _PortfolioTab extends ConsumerWidget {
           ),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator(color: DCTheme.primary)),
+      loading: () => const Center(
+          child: CircularProgressIndicator(color: DCTheme.primary)),
       error: (e, _) => Center(child: Text('Error: $e')),
     );
   }
@@ -542,7 +553,8 @@ class _ReviewsTab extends ConsumerWidget {
             if (reviews.isEmpty) {
               return const SliverFillRemaining(
                 child: Center(
-                  child: Text('No reviews yet', style: TextStyle(color: DCTheme.textMuted)),
+                  child: Text('No reviews yet',
+                      style: TextStyle(color: DCTheme.textMuted)),
                 ),
               );
             }
@@ -554,7 +566,8 @@ class _ReviewsTab extends ConsumerWidget {
             );
           },
           loading: () => const SliverFillRemaining(
-            child: Center(child: CircularProgressIndicator(color: DCTheme.primary)),
+            child: Center(
+                child: CircularProgressIndicator(color: DCTheme.primary)),
           ),
           error: (e, _) => SliverFillRemaining(
             child: Center(child: Text('Error: $e')),
@@ -616,7 +629,8 @@ class _RatingStats extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 2),
                   child: Row(
                     children: [
-                      Text('$stars', style: const TextStyle(color: DCTheme.textMuted)),
+                      Text('$stars',
+                          style: const TextStyle(color: DCTheme.textMuted)),
                       const SizedBox(width: 8),
                       Expanded(
                         child: ClipRRect(
@@ -624,7 +638,8 @@ class _RatingStats extends StatelessWidget {
                           child: LinearProgressIndicator(
                             value: percentage / 100,
                             backgroundColor: DCTheme.surfaceSecondary,
-                            valueColor: const AlwaysStoppedAnimation(Colors.amber),
+                            valueColor:
+                                const AlwaysStoppedAnimation(Colors.amber),
                             minHeight: 8,
                           ),
                         ),
@@ -763,7 +778,8 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => tabBar.preferredSize.height;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
       color: DCTheme.background,
       child: tabBar,

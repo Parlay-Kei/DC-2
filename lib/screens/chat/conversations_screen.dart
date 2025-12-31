@@ -44,7 +44,8 @@ class ConversationsScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, color: DCTheme.error, size: 48),
               const SizedBox(height: 16),
-              const Text('Error loading conversations', style: TextStyle(color: DCTheme.textMuted)),
+              const Text('Error loading conversations',
+                  style: TextStyle(color: DCTheme.textMuted)),
               TextButton(
                 onPressed: () => ref.invalidate(conversationsProvider),
                 child: const Text('Retry'),
@@ -146,7 +147,9 @@ class _ConversationTile extends StatelessWidget {
                         ),
                         child: Center(
                           child: Text(
-                            conversation.unreadCount > 9 ? '9+' : '${conversation.unreadCount}',
+                            conversation.unreadCount > 9
+                                ? '9+'
+                                : '${conversation.unreadCount}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,

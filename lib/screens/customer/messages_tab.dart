@@ -42,7 +42,8 @@ class CustomerMessagesTab extends ConsumerWidget {
           children: [
             const Icon(Icons.error_outline, color: DCTheme.error, size: 48),
             const SizedBox(height: 16),
-            const Text('Error loading messages', style: TextStyle(color: DCTheme.textMuted)),
+            const Text('Error loading messages',
+                style: TextStyle(color: DCTheme.textMuted)),
             TextButton(
               onPressed: () => ref.invalidate(conversationsProvider),
               child: const Text('Retry'),
@@ -105,8 +106,8 @@ class _ConversationTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: BoxDecoration(
-            color: conversation.hasUnread 
-                ? DCTheme.primary.withValues(alpha: 0.05) 
+            color: conversation.hasUnread
+                ? DCTheme.primary.withValues(alpha: 0.05)
                 : Colors.transparent,
             border: Border(
               bottom: BorderSide(color: DCTheme.border.withValues(alpha: 0.2)),
@@ -143,11 +144,14 @@ class _ConversationTile extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: DCTheme.primary,
                           shape: BoxShape.circle,
-                          border: Border.all(color: DCTheme.background, width: 2),
+                          border:
+                              Border.all(color: DCTheme.background, width: 2),
                         ),
                         child: Center(
                           child: Text(
-                            conversation.unreadCount > 9 ? '9+' : '${conversation.unreadCount}',
+                            conversation.unreadCount > 9
+                                ? '9+'
+                                : '${conversation.unreadCount}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,

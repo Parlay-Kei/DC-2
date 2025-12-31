@@ -20,7 +20,7 @@ class _AddServiceScreenState extends ConsumerState<AddServiceScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
-  
+
   String _selectedCategory = 'Haircut';
   int _duration = 30;
   bool _isLoading = false;
@@ -167,7 +167,8 @@ class _AddServiceScreenState extends ConsumerState<AddServiceScreen> {
             return GestureDetector(
               onTap: () => setState(() => _selectedCategory = category),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: isSelected ? DCTheme.primary : DCTheme.surface,
                   borderRadius: BorderRadius.circular(20),
@@ -176,7 +177,8 @@ class _AddServiceScreenState extends ConsumerState<AddServiceScreen> {
                   category,
                   style: TextStyle(
                     color: isSelected ? Colors.white : DCTheme.text,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
               ),
@@ -261,7 +263,8 @@ class _AddServiceScreenState extends ConsumerState<AddServiceScreen> {
             return GestureDetector(
               onTap: () => setState(() => _duration = duration),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: isSelected ? DCTheme.primary : DCTheme.surface,
                   borderRadius: BorderRadius.circular(20),
@@ -270,7 +273,8 @@ class _AddServiceScreenState extends ConsumerState<AddServiceScreen> {
                   _formatDuration(duration),
                   style: TextStyle(
                     color: isSelected ? Colors.white : DCTheme.text,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
               ),
@@ -293,7 +297,8 @@ class _AddServiceScreenState extends ConsumerState<AddServiceScreen> {
             ? const SizedBox(
                 height: 20,
                 width: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white),
               )
             : const Text('Add Service', style: TextStyle(fontSize: 16)),
       ),
@@ -322,7 +327,7 @@ class _AddServiceScreenState extends ConsumerState<AddServiceScreen> {
       );
 
       ref.invalidate(myServicesProvider);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

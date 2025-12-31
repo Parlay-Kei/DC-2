@@ -12,7 +12,8 @@ class SelectDateTimeScreen extends ConsumerStatefulWidget {
   const SelectDateTimeScreen({super.key, required this.barberId});
 
   @override
-  ConsumerState<SelectDateTimeScreen> createState() => _SelectDateTimeScreenState();
+  ConsumerState<SelectDateTimeScreen> createState() =>
+      _SelectDateTimeScreenState();
 }
 
 class _SelectDateTimeScreenState extends ConsumerState<SelectDateTimeScreen> {
@@ -149,7 +150,8 @@ class _SelectDateTimeScreenState extends ConsumerState<SelectDateTimeScreen> {
           children: [
             const Icon(Icons.error_outline, color: DCTheme.error, size: 48),
             const SizedBox(height: 16),
-            const Text('Error loading times', style: TextStyle(color: DCTheme.textMuted)),
+            const Text('Error loading times',
+                style: TextStyle(color: DCTheme.textMuted)),
             TextButton(
               onPressed: () => ref.invalidate(availableSlotsProvider(request)),
               child: const Text('Retry'),
@@ -163,7 +165,9 @@ class _SelectDateTimeScreenState extends ConsumerState<SelectDateTimeScreen> {
   Widget _buildSlotsGrid(List<TimeSlot> slots, String? selectedTime) {
     // Group by morning/afternoon/evening
     final morning = slots.where((s) => _getHour(s.time) < 12).toList();
-    final afternoon = slots.where((s) => _getHour(s.time) >= 12 && _getHour(s.time) < 17).toList();
+    final afternoon = slots
+        .where((s) => _getHour(s.time) >= 12 && _getHour(s.time) < 17)
+        .toList();
     final evening = slots.where((s) => _getHour(s.time) >= 17).toList();
 
     return ListView(
@@ -185,7 +189,8 @@ class _SelectDateTimeScreenState extends ConsumerState<SelectDateTimeScreen> {
     );
   }
 
-  Widget _buildTimeSection(String title, List<TimeSlot> slots, String? selectedTime) {
+  Widget _buildTimeSection(
+      String title, List<TimeSlot> slots, String? selectedTime) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -208,7 +213,9 @@ class _SelectDateTimeScreenState extends ConsumerState<SelectDateTimeScreen> {
               isSelected: isSelected,
               onTap: slot.isAvailable
                   ? () {
-                      ref.read(bookingFlowProvider.notifier).selectTime(slot.time);
+                      ref
+                          .read(bookingFlowProvider.notifier)
+                          .selectTime(slot.time);
                     }
                   : null,
             );
@@ -340,8 +347,18 @@ class _SelectDateTimeScreenState extends ConsumerState<SelectDateTimeScreen> {
 
   String _formatDate(DateTime date) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${_getDayName(date)}, ${months[date.month - 1]} ${date.day}';
   }

@@ -36,7 +36,13 @@ class AppConstants {
   // File Constraints
   static const int maxImageSizeBytes = 5 * 1024 * 1024; // 5MB
   static const int maxAvatarSizeBytes = 2 * 1024 * 1024; // 2MB
-  static const List<String> allowedImageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+  static const List<String> allowedImageTypes = [
+    'jpg',
+    'jpeg',
+    'png',
+    'gif',
+    'webp'
+  ];
 
   // Pagination
   static const int defaultPageSize = 20;

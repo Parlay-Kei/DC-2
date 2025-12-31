@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!--
+    Direct Cuts - iOS Export Options
+
+    This file configures how the app is exported for distribution.
+    Update the teamID with your Apple Developer Team ID before building.
+
+    Export Methods:
+    - app-store: For App Store and TestFlight distribution
+    - ad-hoc: For limited distribution with registered devices
+    - development: For development/testing on registered devices
+    - enterprise: For enterprise distribution (requires Enterprise account)
+
+    To find your Team ID:
+    1. Go to https://developer.apple.com/account
+    2. Click "Membership" in the sidebar
+    3. Your Team ID is listed under "Team ID"
+-->
+<dict>
+    <!-- Export method: app-store, ad-hoc, development, enterprise -->
+    <key>method</key>
+    <string>app-store</string>
+
+    <!-- Your Apple Developer Team ID -->
+    <!-- TODO: Replace with your actual Team ID -->
+    <key>teamID</key>
+    <string>TEAM_ID_PLACEHOLDER</string>
+
+    <!-- Signing style: automatic or manual -->
+    <key>signingStyle</key>
+    <string>automatic</string>
+
+    <!-- Strip Swift symbols to reduce binary size -->
+    <key>stripSwiftSymbols</key>
+    <true/>
+
+    <!-- Upload debug symbols to App Store Connect -->
+    <key>uploadSymbols</key>
+    <true/>
+
+    <!-- Upload bitcode (deprecated in Xcode 14+, but included for compatibility) -->
+    <key>uploadBitcode</key>
+    <false/>
+
+    <!-- Compile bitcode -->
+    <key>compileBitcode</key>
+    <false/>
+
+    <!-- Destination: export or upload -->
+    <key>destination</key>
+    <string>export</string>
+
+    <!-- Provisioning profiles (for manual signing) -->
+    <!-- Uncomment and configure if using manual signing -->
+    <!--
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>com.directcuts.app</key>
+        <string>Direct Cuts App Store Profile</string>
+    </dict>
+    -->
+
+    <!-- Signing certificate name (for manual signing) -->
+    <!-- Uncomment if using manual signing -->
+    <!--
+    <key>signingCertificate</key>
+    <string>Apple Distribution</string>
+    -->
+
+    <!-- Generate App Store Info.plist -->
+    <key>generateAppStoreInformation</key>
+    <false/>
+
+    <!-- Manage version and build number -->
+    <key>manageAppVersionAndBuildNumber</key>
+    <false/>
+</dict>
+</plist>

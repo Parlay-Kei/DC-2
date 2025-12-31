@@ -11,7 +11,7 @@ class FavoritesService {
 
     try {
       final response = await _client
-          .from('favorites')
+          .from('user_favorites')
           .select('barber_id, barbers(*)')
           .eq('user_id', userId)
           .order('created_at', ascending: false);
@@ -32,7 +32,7 @@ class FavoritesService {
 
     try {
       final response = await _client
-          .from('favorites')
+          .from('user_favorites')
           .select('id')
           .eq('user_id', userId)
           .eq('barber_id', barberId)
@@ -50,7 +50,7 @@ class FavoritesService {
     if (userId == null) return false;
 
     try {
-      await _client.from('favorites').insert({
+      await _client.from('user_favorites').insert({
         'user_id': userId,
         'barber_id': barberId,
       });
@@ -68,7 +68,7 @@ class FavoritesService {
 
     try {
       await _client
-          .from('favorites')
+          .from('user_favorites')
           .delete()
           .eq('user_id', userId)
           .eq('barber_id', barberId);
@@ -92,7 +92,7 @@ class FavoritesService {
   Future<int> getFavoriteCount(String barberId) async {
     try {
       final response = await _client
-          .from('favorites')
+          .from('user_favorites')
           .select('id')
           .eq('barber_id', barberId);
 
@@ -109,13 +109,11 @@ class FavoritesService {
 
     try {
       final response = await _client
-          .from('favorites')
+          .from('user_favorites')
           .select('barber_id')
           .eq('user_id', userId);
 
-      return (response as List)
-          .map((f) => f['barber_id'] as String)
-          .toSet();
+      return (response as List).map((f) => f['barber_id'] as String).toSet();
     } catch (e) {
       return {};
     }

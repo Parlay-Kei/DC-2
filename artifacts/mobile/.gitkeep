@@ -1,0 +1,3 @@
+# This file ensures the artifacts/mobile directory is tracked by git.
+# Build artifacts (APK, AAB, IPA) should NOT be committed to git.
+# Add to .gitignore: artifacts/mobile/*/

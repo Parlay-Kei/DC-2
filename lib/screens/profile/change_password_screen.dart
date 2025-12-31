@@ -87,8 +87,8 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 controller: _currentPasswordController,
                 label: 'Current Password',
                 showPassword: _showCurrentPassword,
-                onToggle: () =>
-                    setState(() => _showCurrentPassword = !_showCurrentPassword),
+                onToggle: () => setState(
+                    () => _showCurrentPassword = !_showCurrentPassword),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Current password is required';
@@ -131,8 +131,8 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 controller: _confirmPasswordController,
                 label: 'Confirm New Password',
                 showPassword: _showConfirmPassword,
-                onToggle: () =>
-                    setState(() => _showConfirmPassword = !_showConfirmPassword),
+                onToggle: () => setState(
+                    () => _showConfirmPassword = !_showConfirmPassword),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please confirm your password';
@@ -234,7 +234,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
 
   Widget _buildRequirementsList() {
     final password = _newPasswordController.text;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -247,8 +247,10 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         ),
         const SizedBox(height: 8),
         _buildRequirement('At least 8 characters', password.length >= 8),
-        _buildRequirement('One uppercase letter', RegExp(r'[A-Z]').hasMatch(password)),
-        _buildRequirement('One lowercase letter', RegExp(r'[a-z]').hasMatch(password)),
+        _buildRequirement(
+            'One uppercase letter', RegExp(r'[A-Z]').hasMatch(password)),
+        _buildRequirement(
+            'One lowercase letter', RegExp(r'[a-z]').hasMatch(password)),
         _buildRequirement('One number', RegExp(r'[0-9]').hasMatch(password)),
       ],
     );

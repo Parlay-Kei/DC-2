@@ -13,7 +13,8 @@ class BarberSeeder {
         'display_name': 'James Wilson',
         'shop_name': 'Elite Cuts LV',
         'shop_address': '2800 W Sahara Ave, Las Vegas, NV',
-        'bio': 'Master barber with 10+ years experience. Specializing in fades and designs.',
+        'bio':
+            'Master barber with 10+ years experience. Specializing in fades and designs.',
         'latitude': 36.1447,
         'longitude': -115.1728,
         'is_mobile': false,
@@ -79,7 +80,7 @@ class BarberSeeder {
     for (final barber in testBarbers) {
       try {
         final displayName = barber['display_name'] as String;
-        
+
         // Check if barber already exists by name
         final existing = await _client
             .from('barbers')
@@ -89,7 +90,8 @@ class BarberSeeder {
 
         if (existing == null) {
           // Create a dummy user_id (in production this would be a real auth user)
-          final userId = 'test-${displayName.toLowerCase().replaceAll(' ', '-')}';
+          final userId =
+              'test-${displayName.toLowerCase().replaceAll(' ', '-')}';
 
           await _client.from('barbers').insert({
             ...barber,
@@ -115,10 +117,7 @@ class BarberSeeder {
   /// Clear all test barbers
   static Future<void> clearTestBarbers() async {
     try {
-      await _client
-          .from('barbers')
-          .delete()
-          .like('user_id', 'test-%');
+      await _client.from('barbers').delete().like('user_id', 'test-%');
       Logger.debug('Cleared test barbers');
     } catch (e) {
       Logger.error('Error clearing test barbers', e);

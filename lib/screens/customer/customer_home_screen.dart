@@ -44,7 +44,8 @@ final trendingBarbersProvider =
 });
 
 // Provider to fetch user stats
-final userStatsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+final userStatsProvider =
+    FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
   final user = Supabase.instance.client.auth.currentUser;
   if (user == null) {
     Logger.debug('No authenticated user for stats');
@@ -116,7 +117,9 @@ final upcomingAppointmentsProvider =
       return {
         ...apt,
         'date': startTime?.toIso8601String().split('T')[0] ?? '',
-        'time': startTime != null ? '${startTime.hour}:${startTime.minute.toString().padLeft(2, '0')}' : '',
+        'time': startTime != null
+            ? '${startTime.hour}:${startTime.minute.toString().padLeft(2, '0')}'
+            : '',
       };
     }).toList();
 
@@ -175,7 +178,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
 
   Widget _buildBottomNav() {
     final isFabSelected = _currentIndex == 2;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: DCTheme.surface,
@@ -336,13 +339,23 @@ class _HomeTab extends ConsumerWidget {
                               color: Colors.white,
                             ),
                           ),
-                          loading: () => const Text('Hey there!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
-                          error: (_, __) => const Text('Hey there!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
+                          loading: () => const Text('Hey there!',
+                              style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white)),
+                          error: (_, __) => const Text('Hey there!',
+                              style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white)),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           _getSubtitle(),
-                          style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.85)),
+                          style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white.withValues(alpha: 0.85)),
                         ),
                       ],
                     ),
@@ -361,7 +374,8 @@ class _HomeTab extends ConsumerWidget {
                       padding: EdgeInsets.zero,
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Notifications coming soon')),
+                          const SnackBar(
+                              content: Text('Notifications coming soon')),
                         );
                       },
                     ),
@@ -387,7 +401,9 @@ class _HomeTab extends ConsumerWidget {
         child: profile.when(
           data: (p) {
             if (p?.avatarUrl != null && p!.avatarUrl!.isNotEmpty) {
-              return Image.network(p.avatarUrl!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _avatarFallback(p.fullName));
+              return Image.network(p.avatarUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _avatarFallback(p.fullName));
             }
             return _avatarFallback(p?.fullName);
           },
@@ -402,7 +418,12 @@ class _HomeTab extends ConsumerWidget {
     final initials = _getInitials(name);
     return Container(
       color: const Color(0xFF2A2A2A),
-      child: Center(child: Text(initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18))),
+      child: Center(
+          child: Text(initials,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18))),
     );
   }
 
@@ -420,22 +441,73 @@ class _HomeTab extends ConsumerWidget {
             final spentValue = ((data['spent'] ?? 0) as num).toStringAsFixed(0);
             return Row(
               children: [
-                Expanded(child: _StatItem(icon: Icons.calendar_today, iconBgColor: DCTheme.primary.withValues(alpha: 0.2), iconColor: DCTheme.primary, value: '${data['bookings']}', label: 'Bookings')),
-                Container(width: 1, height: 50, color: Colors.white.withValues(alpha: 0.1)),
-                Expanded(child: _StatItem(icon: Icons.star, iconBgColor: Colors.amber.withValues(alpha: 0.2), iconColor: Colors.amber, value: '${data['favorites']}', label: 'Favorites')),
-                Container(width: 1, height: 50, color: Colors.white.withValues(alpha: 0.1)),
-                Expanded(child: _StatItem(icon: Icons.trending_up, iconBgColor: DCTheme.info.withValues(alpha: 0.2), iconColor: DCTheme.info, value: '\$$spentValue', label: 'Spent')),
+                Expanded(
+                    child: _StatItem(
+                        icon: Icons.calendar_today,
+                        iconBgColor: DCTheme.primary.withValues(alpha: 0.2),
+                        iconColor: DCTheme.primary,
+                        value: '${data['bookings']}',
+                        label: 'Bookings')),
+                Container(
+                    width: 1,
+                    height: 50,
+                    color: Colors.white.withValues(alpha: 0.1)),
+                Expanded(
+                    child: _StatItem(
+                        icon: Icons.star,
+                        iconBgColor: Colors.amber.withValues(alpha: 0.2),
+                        iconColor: Colors.amber,
+                        value: '${data['favorites']}',
+                        label: 'Favorites')),
+                Container(
+                    width: 1,
+                    height: 50,
+                    color: Colors.white.withValues(alpha: 0.1)),
+                Expanded(
+                    child: _StatItem(
+                        icon: Icons.trending_up,
+                        iconBgColor: DCTheme.info.withValues(alpha: 0.2),
+                        iconColor: DCTheme.info,
+                        value: '\$$spentValue',
+                        label: 'Spent')),
               ],
             );
           },
-          loading: () => const SizedBox(height: 80, child: Center(child: CircularProgressIndicator(color: DCTheme.primary))),
+          loading: () => const SizedBox(
+              height: 80,
+              child: Center(
+                  child: CircularProgressIndicator(color: DCTheme.primary))),
           error: (_, __) => Row(
             children: [
-              Expanded(child: _StatItem(icon: Icons.calendar_today, iconBgColor: DCTheme.primary.withValues(alpha: 0.2), iconColor: DCTheme.primary, value: '0', label: 'Bookings')),
-              Container(width: 1, height: 50, color: Colors.white.withValues(alpha: 0.1)),
-              Expanded(child: _StatItem(icon: Icons.star, iconBgColor: Colors.amber.withValues(alpha: 0.2), iconColor: Colors.amber, value: '0', label: 'Favorites')),
-              Container(width: 1, height: 50, color: Colors.white.withValues(alpha: 0.1)),
-              Expanded(child: _StatItem(icon: Icons.trending_up, iconBgColor: DCTheme.info.withValues(alpha: 0.2), iconColor: DCTheme.info, value: '\$0', label: 'Spent')),
+              Expanded(
+                  child: _StatItem(
+                      icon: Icons.calendar_today,
+                      iconBgColor: DCTheme.primary.withValues(alpha: 0.2),
+                      iconColor: DCTheme.primary,
+                      value: '0',
+                      label: 'Bookings')),
+              Container(
+                  width: 1,
+                  height: 50,
+                  color: Colors.white.withValues(alpha: 0.1)),
+              Expanded(
+                  child: _StatItem(
+                      icon: Icons.star,
+                      iconBgColor: Colors.amber.withValues(alpha: 0.2),
+                      iconColor: Colors.amber,
+                      value: '0',
+                      label: 'Favorites')),
+              Container(
+                  width: 1,
+                  height: 50,
+                  color: Colors.white.withValues(alpha: 0.1)),
+              Expanded(
+                  child: _StatItem(
+                      icon: Icons.trending_up,
+                      iconBgColor: DCTheme.info.withValues(alpha: 0.2),
+                      iconColor: DCTheme.info,
+                      value: '\$0',
+                      label: 'Spent')),
             ],
           ),
         ),
@@ -443,7 +515,8 @@ class _HomeTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildUpcomingSection(BuildContext context, AsyncValue<List<Map<String, dynamic>>> appointments) {
+  Widget _buildUpcomingSection(BuildContext context,
+      AsyncValue<List<Map<String, dynamic>>> appointments) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
@@ -451,12 +524,20 @@ class _HomeTab extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Upcoming', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: DCTheme.text)),
+              const Text('Upcoming',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: DCTheme.text)),
               GestureDetector(
                 onTap: () => onNavigate(2),
                 child: const Row(
                   children: [
-                    Text('View All', style: TextStyle(color: DCTheme.primary, fontSize: 13, fontWeight: FontWeight.w500)),
+                    Text('View All',
+                        style: TextStyle(
+                            color: DCTheme.primary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500)),
                     SizedBox(width: 2),
                     Icon(Icons.chevron_right, color: DCTheme.primary, size: 18),
                   ],
@@ -468,12 +549,18 @@ class _HomeTab extends ConsumerWidget {
           appointments.when(
             data: (list) {
               if (list.isEmpty) return _buildEmptyAppointments(context);
-              return Column(children: list.map((apt) => _AppointmentCard(appointment: apt)).toList());
+              return Column(
+                  children: list
+                      .map((apt) => _AppointmentCard(appointment: apt))
+                      .toList());
             },
             loading: () => Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(color: DCTheme.surface, borderRadius: BorderRadius.circular(12)),
-              child: const Center(child: CircularProgressIndicator(color: DCTheme.primary)),
+              decoration: BoxDecoration(
+                  color: DCTheme.surface,
+                  borderRadius: BorderRadius.circular(12)),
+              child: const Center(
+                  child: CircularProgressIndicator(color: DCTheme.primary)),
             ),
             error: (_, __) => _buildEmptyAppointments(context),
           ),
@@ -486,24 +573,36 @@ class _HomeTab extends ConsumerWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-      decoration: BoxDecoration(color: DCTheme.surface, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+          color: DCTheme.surface, borderRadius: BorderRadius.circular(12)),
       child: Column(
         children: [
-          Icon(Icons.calendar_today_outlined, size: 36, color: DCTheme.textMuted.withValues(alpha: 0.3)),
+          Icon(Icons.calendar_today_outlined,
+              size: 36, color: DCTheme.textMuted.withValues(alpha: 0.3)),
           const SizedBox(height: 12),
-          const Text('No upcoming appointments', style: TextStyle(color: DCTheme.textMuted, fontSize: 14)),
+          const Text('No upcoming appointments',
+              style: TextStyle(color: DCTheme.textMuted, fontSize: 14)),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () => onNavigate(1),
-            style: ElevatedButton.styleFrom(backgroundColor: DCTheme.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0),
-            child: const Text('Book Now', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: DCTheme.primary,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+                elevation: 0),
+            child: const Text('Book Now',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTrendingBarbersSection(BuildContext context, AsyncValue<List<Map<String, dynamic>>> barbers) {
+  Widget _buildTrendingBarbersSection(
+      BuildContext context, AsyncValue<List<Map<String, dynamic>>> barbers) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 16, 0, 0),
       child: Column(
@@ -513,14 +612,23 @@ class _HomeTab extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Trending Barbers', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: DCTheme.text)),
+                const Text('Trending Barbers',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: DCTheme.text)),
                 GestureDetector(
                   onTap: () => onNavigate(1),
                   child: const Row(
                     children: [
-                      Text('See All', style: TextStyle(color: DCTheme.primary, fontSize: 13, fontWeight: FontWeight.w500)),
+                      Text('See All',
+                          style: TextStyle(
+                              color: DCTheme.primary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500)),
                       SizedBox(width: 2),
-                      Icon(Icons.chevron_right, color: DCTheme.primary, size: 18),
+                      Icon(Icons.chevron_right,
+                          color: DCTheme.primary, size: 18),
                     ],
                   ),
                 ),
@@ -536,12 +644,18 @@ class _HomeTab extends ConsumerWidget {
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(color: DCTheme.surface, borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(
+                        color: DCTheme.surface,
+                        borderRadius: BorderRadius.circular(12)),
                     child: Column(
                       children: [
-                        Icon(Icons.location_on_outlined, size: 36, color: DCTheme.textMuted.withValues(alpha: 0.3)),
+                        Icon(Icons.location_on_outlined,
+                            size: 36,
+                            color: DCTheme.textMuted.withValues(alpha: 0.3)),
                         const SizedBox(height: 10),
-                        const Text('No barbers found nearby', style: TextStyle(color: DCTheme.textMuted, fontSize: 14)),
+                        const Text('No barbers found nearby',
+                            style: TextStyle(
+                                color: DCTheme.textMuted, fontSize: 14)),
                       ],
                     ),
                   ),
@@ -556,10 +670,13 @@ class _HomeTab extends ConsumerWidget {
                   itemBuilder: (context, index) {
                     final barber = list[index];
                     return Padding(
-                      padding: EdgeInsets.only(right: index < list.length - 1 ? 10 : 0),
+                      padding: EdgeInsets.only(
+                          right: index < list.length - 1 ? 10 : 0),
                       child: _BarberCard(
                         id: barber['id'] ?? '',
-                        name: barber['full_name'] ?? barber['shop_name'] ?? 'Unknown',
+                        name: barber['full_name'] ??
+                            barber['shop_name'] ??
+                            'Unknown',
                         avatarUrl: barber['avatar_url'],
                         rating: ((barber['rating'] ?? 0) as num).toDouble(),
                         specialty: barber['shop_name'] ?? 'Barber',
@@ -578,13 +695,27 @@ class _HomeTab extends ConsumerWidget {
                 itemCount: 3,
                 itemBuilder: (_, i) => Padding(
                   padding: EdgeInsets.only(right: i < 2 ? 10 : 0),
-                  child: Container(width: 120, decoration: BoxDecoration(color: DCTheme.surface, borderRadius: BorderRadius.circular(12)), child: const Center(child: CircularProgressIndicator(color: DCTheme.primary, strokeWidth: 2))),
+                  child: Container(
+                      width: 120,
+                      decoration: BoxDecoration(
+                          color: DCTheme.surface,
+                          borderRadius: BorderRadius.circular(12)),
+                      child: const Center(
+                          child: CircularProgressIndicator(
+                              color: DCTheme.primary, strokeWidth: 2))),
                 ),
               ),
             ),
             error: (e, __) => Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: DCTheme.surface, borderRadius: BorderRadius.circular(12)), child: Text('Error: $e', style: const TextStyle(color: DCTheme.error, fontSize: 12))),
+              child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                      color: DCTheme.surface,
+                      borderRadius: BorderRadius.circular(12)),
+                  child: Text('Error: $e',
+                      style:
+                          const TextStyle(color: DCTheme.error, fontSize: 12))),
             ),
           ),
         ],
@@ -595,15 +726,39 @@ class _HomeTab extends ConsumerWidget {
   String _getInitials(String? name) {
     if (name == null || name.isEmpty) return 'DC';
     final parts = name.trim().split(' ');
-    if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty)
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     return name[0].toUpperCase();
   }
 
-  static const _morningGreetings = ['Good morning', 'Morning', 'Hey there', "What's good", 'Hello'];
-  static const _afternoonGreetings = ['Good afternoon', 'Hey there', "What's up", 'Afternoon', 'Hey', "What's good"];
-  static const _eveningGreetings = ['Good evening', 'Evening', 'Hey there', "What's good"];
-  static const _lateNightGreetings = ['Hey there', "What's good", 'Still up', 'Hey night owl'];
-  
+  static const _morningGreetings = [
+    'Good morning',
+    'Morning',
+    'Hey there',
+    "What's good",
+    'Hello'
+  ];
+  static const _afternoonGreetings = [
+    'Good afternoon',
+    'Hey there',
+    "What's up",
+    'Afternoon',
+    'Hey',
+    "What's good"
+  ];
+  static const _eveningGreetings = [
+    'Good evening',
+    'Evening',
+    'Hey there',
+    "What's good"
+  ];
+  static const _lateNightGreetings = [
+    'Hey there',
+    "What's good",
+    'Still up',
+    'Hey night owl'
+  ];
+
   static const _subtexts = [
     'Ready for a fresh cut?',
     "Let's get you looking sharp",
@@ -631,7 +786,8 @@ class _HomeTab extends ConsumerWidget {
     }
     final randomIndex = DateTime.now().minute % greetings.length;
     final greeting = greetings[randomIndex];
-    if (firstName != null && firstName.isNotEmpty) return '$greeting, $firstName!';
+    if (firstName != null && firstName.isNotEmpty)
+      return '$greeting, $firstName!';
     return 'Hey there!';
   }
 
@@ -660,9 +816,8 @@ class _NearbyTabState extends State<_NearbyTab> {
         children: [
           _buildViewToggle(),
           Expanded(
-            child: _showMap
-                ? const NearbyMapScreen()
-                : const BarberListScreen(),
+            child:
+                _showMap ? const NearbyMapScreen() : const BarberListScreen(),
           ),
         ],
       ),
@@ -678,9 +833,19 @@ class _NearbyTabState extends State<_NearbyTab> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              Expanded(child: _ViewToggleBtn(icon: Icons.map_outlined, label: 'Map', isSelected: _showMap, onTap: () => setState(() => _showMap = true))),
+              Expanded(
+                  child: _ViewToggleBtn(
+                      icon: Icons.map_outlined,
+                      label: 'Map',
+                      isSelected: _showMap,
+                      onTap: () => setState(() => _showMap = true))),
               const SizedBox(width: 8),
-              Expanded(child: _ViewToggleBtn(icon: Icons.list_outlined, label: 'List', isSelected: !_showMap, onTap: () => setState(() => _showMap = false))),
+              Expanded(
+                  child: _ViewToggleBtn(
+                      icon: Icons.list_outlined,
+                      label: 'List',
+                      isSelected: !_showMap,
+                      onTap: () => setState(() => _showMap = false))),
             ],
           ),
         ),
@@ -695,7 +860,11 @@ class _ViewToggleBtn extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _ViewToggleBtn({required this.icon, required this.label, required this.isSelected, required this.onTap});
+  const _ViewToggleBtn(
+      {required this.icon,
+      required this.label,
+      required this.isSelected,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -706,14 +875,22 @@ class _ViewToggleBtn extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected ? DCTheme.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
-          border: isSelected ? null : Border.all(color: DCTheme.textMuted.withValues(alpha: 0.3)),
+          border: isSelected
+              ? null
+              : Border.all(color: DCTheme.textMuted.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 18, color: isSelected ? Colors.white : DCTheme.textMuted),
+            Icon(icon,
+                size: 18, color: isSelected ? Colors.white : DCTheme.textMuted),
             const SizedBox(width: 6),
-            Text(label, style: TextStyle(fontSize: 14, fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal, color: isSelected ? Colors.white : DCTheme.textMuted)),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.normal,
+                    color: isSelected ? Colors.white : DCTheme.textMuted)),
           ],
         ),
       ),
@@ -741,11 +918,16 @@ class _FavoritesTab extends StatelessWidget {
         children: [
           const Padding(
             padding: EdgeInsets.fromLTRB(20, 20, 20, 0),
-            child: Text('Favorites', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: DCTheme.text)),
+            child: Text('Favorites',
+                style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: DCTheme.text)),
           ),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Text('Your favorite barbers', style: TextStyle(color: DCTheme.textMuted, fontSize: 15)),
+            child: Text('Your favorite barbers',
+                style: TextStyle(color: DCTheme.textMuted, fontSize: 15)),
           ),
           const SizedBox(height: 24),
           Expanded(
@@ -753,11 +935,18 @@ class _FavoritesTab extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.star_outline, size: 64, color: DCTheme.textMuted.withValues(alpha: 0.3)),
+                  Icon(Icons.star_outline,
+                      size: 64,
+                      color: DCTheme.textMuted.withValues(alpha: 0.3)),
                   const SizedBox(height: 16),
-                  const Text('No favorites yet', style: TextStyle(color: DCTheme.text, fontSize: 18, fontWeight: FontWeight.w600)),
+                  const Text('No favorites yet',
+                      style: TextStyle(
+                          color: DCTheme.text,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
-                  const Text('Tap the heart on a barber to add them here', style: TextStyle(color: DCTheme.textMuted, fontSize: 14)),
+                  const Text('Tap the heart on a barber to add them here',
+                      style: TextStyle(color: DCTheme.textMuted, fontSize: 14)),
                 ],
               ),
             ),
@@ -786,36 +975,80 @@ class _ProfileTab extends ConsumerWidget {
               data: (p) => Container(
                 width: 100,
                 height: 100,
-                decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: DCTheme.primary, width: 3)),
+                decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: DCTheme.primary, width: 3)),
                 child: ClipOval(
                   child: p?.avatarUrl != null
                       ? Image.network(p!.avatarUrl!, fit: BoxFit.cover)
-                      : Container(color: DCTheme.surface, child: Center(child: Text(_getInitials(p?.fullName), style: const TextStyle(color: DCTheme.text, fontSize: 32, fontWeight: FontWeight.bold)))),
+                      : Container(
+                          color: DCTheme.surface,
+                          child: Center(
+                              child: Text(_getInitials(p?.fullName),
+                                  style: const TextStyle(
+                                      color: DCTheme.text,
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold)))),
                 ),
               ),
-              loading: () => Container(width: 100, height: 100, decoration: const BoxDecoration(shape: BoxShape.circle, color: DCTheme.surface)),
-              error: (_, __) => Container(width: 100, height: 100, decoration: const BoxDecoration(shape: BoxShape.circle, color: DCTheme.surface), child: const Icon(Icons.person, size: 48, color: DCTheme.textMuted)),
+              loading: () => Container(
+                  width: 100,
+                  height: 100,
+                  decoration: const BoxDecoration(
+                      shape: BoxShape.circle, color: DCTheme.surface)),
+              error: (_, __) => Container(
+                  width: 100,
+                  height: 100,
+                  decoration: const BoxDecoration(
+                      shape: BoxShape.circle, color: DCTheme.surface),
+                  child: const Icon(Icons.person,
+                      size: 48, color: DCTheme.textMuted)),
             ),
             const SizedBox(height: 16),
             profile.when(
-              data: (p) => Text(p?.fullName ?? 'Guest', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: DCTheme.text)),
-              loading: () => const Text('Loading...', style: TextStyle(color: DCTheme.textMuted)),
-              error: (_, __) => const Text('Error', style: TextStyle(color: DCTheme.error)),
+              data: (p) => Text(p?.fullName ?? 'Guest',
+                  style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: DCTheme.text)),
+              loading: () => const Text('Loading...',
+                  style: TextStyle(color: DCTheme.textMuted)),
+              error: (_, __) =>
+                  const Text('Error', style: TextStyle(color: DCTheme.error)),
             ),
             const SizedBox(height: 32),
-            _ProfileMenuItem(icon: Icons.person_outline, label: 'Edit Profile', onTap: () {}),
-            _ProfileMenuItem(icon: Icons.favorite_outline, label: 'Favorites', onTap: () {}),
-            _ProfileMenuItem(icon: Icons.payment_outlined, label: 'Payment Methods', onTap: () {}),
-            _ProfileMenuItem(icon: Icons.notifications_outlined, label: 'Notifications', onTap: () {}),
-            _ProfileMenuItem(icon: Icons.help_outline, label: 'Help & Support', onTap: () {}),
+            _ProfileMenuItem(
+                icon: Icons.person_outline,
+                label: 'Edit Profile',
+                onTap: () {}),
+            _ProfileMenuItem(
+                icon: Icons.favorite_outline, label: 'Favorites', onTap: () {}),
+            _ProfileMenuItem(
+                icon: Icons.payment_outlined,
+                label: 'Payment Methods',
+                onTap: () {}),
+            _ProfileMenuItem(
+                icon: Icons.notifications_outlined,
+                label: 'Notifications',
+                onTap: () {}),
+            _ProfileMenuItem(
+                icon: Icons.help_outline,
+                label: 'Help & Support',
+                onTap: () {}),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () async => await Supabase.instance.client.auth.signOut(),
+                onPressed: () async =>
+                    await Supabase.instance.client.auth.signOut(),
                 icon: const Icon(Icons.logout, color: DCTheme.error),
-                label: const Text('Sign Out', style: TextStyle(color: DCTheme.error)),
-                style: OutlinedButton.styleFrom(side: const BorderSide(color: DCTheme.error), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                label: const Text('Sign Out',
+                    style: TextStyle(color: DCTheme.error)),
+                style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: DCTheme.error),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12))),
               ),
             ),
           ],
@@ -837,7 +1070,8 @@ class _ProfileMenuItem extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _ProfileMenuItem({required this.icon, required this.label, required this.onTap});
+  const _ProfileMenuItem(
+      {required this.icon, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -863,18 +1097,34 @@ class _StatItem extends StatelessWidget {
   final String value;
   final String label;
 
-  const _StatItem({required this.icon, required this.iconBgColor, required this.iconColor, required this.value, required this.label});
+  const _StatItem(
+      {required this.icon,
+      required this.iconBgColor,
+      required this.iconColor,
+      required this.value,
+      required this.label});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 36, height: 36, decoration: BoxDecoration(color: iconBgColor, borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: iconColor, size: 18)),
+        Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+                color: iconBgColor, borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, color: iconColor, size: 18)),
         const SizedBox(height: 8),
-        Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: DCTheme.text)),
+        Text(value,
+            style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: DCTheme.text)),
         const SizedBox(height: 2),
-        Text(label, style: TextStyle(fontSize: 11, color: DCTheme.textMuted.withValues(alpha: 0.8))),
+        Text(label,
+            style: TextStyle(
+                fontSize: 11, color: DCTheme.textMuted.withValues(alpha: 0.8))),
       ],
     );
   }
@@ -887,7 +1137,12 @@ class _NavItem extends StatelessWidget {
   final bool isActive;
   final VoidCallback onTap;
 
-  const _NavItem({required this.icon, required this.activeIcon, required this.label, required this.isActive, required this.onTap});
+  const _NavItem(
+      {required this.icon,
+      required this.activeIcon,
+      required this.label,
+      required this.isActive,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -899,9 +1154,15 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(isActive ? activeIcon : icon, color: isActive ? DCTheme.primary : DCTheme.textMuted, size: 24),
+            Icon(isActive ? activeIcon : icon,
+                color: isActive ? DCTheme.primary : DCTheme.textMuted,
+                size: 24),
             const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 11, fontWeight: isActive ? FontWeight.w600 : FontWeight.normal, color: isActive ? DCTheme.primary : DCTheme.textMuted)),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                    color: isActive ? DCTheme.primary : DCTheme.textMuted)),
           ],
         ),
       ),
@@ -917,7 +1178,13 @@ class _BarberCard extends StatelessWidget {
   final String specialty;
   final VoidCallback onTap;
 
-  const _BarberCard({required this.id, required this.name, this.avatarUrl, required this.rating, required this.specialty, required this.onTap});
+  const _BarberCard(
+      {required this.id,
+      required this.name,
+      this.avatarUrl,
+      required this.rating,
+      required this.specialty,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -926,33 +1193,58 @@ class _BarberCard extends StatelessWidget {
       child: Container(
         width: 120,
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: DCTheme.surface, borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(
+            color: DCTheme.surface, borderRadius: BorderRadius.circular(12)),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               width: 56,
               height: 56,
-              decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: DCTheme.primary, width: 2)),
+              decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: DCTheme.primary, width: 2)),
               child: ClipOval(
                 child: avatarUrl != null && avatarUrl!.isNotEmpty
-                    ? Image.network(avatarUrl!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _fallback())
+                    ? Image.network(avatarUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _fallback())
                     : _fallback(),
               ),
             ),
             const SizedBox(height: 10),
-            Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: DCTheme.text), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(name,
+                style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: DCTheme.text),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
             const SizedBox(height: 4),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.star, color: Colors.amber, size: 12), const SizedBox(width: 3), Text(rating.toStringAsFixed(1), style: const TextStyle(fontSize: 11, color: DCTheme.textMuted))]),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const Icon(Icons.star, color: Colors.amber, size: 12),
+              const SizedBox(width: 3),
+              Text(rating.toStringAsFixed(1),
+                  style:
+                      const TextStyle(fontSize: 11, color: DCTheme.textMuted))
+            ]),
             const SizedBox(height: 2),
-            Text(specialty, style: TextStyle(fontSize: 10, color: DCTheme.textMuted.withValues(alpha: 0.7)), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(specialty,
+                style: TextStyle(
+                    fontSize: 10,
+                    color: DCTheme.textMuted.withValues(alpha: 0.7)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
           ],
         ),
       ),
     );
   }
 
-  Widget _fallback() => Container(color: DCTheme.surfaceSecondary, child: const Center(child: Icon(Icons.content_cut, color: DCTheme.textMuted, size: 24)));
+  Widget _fallback() => Container(
+      color: DCTheme.surfaceSecondary,
+      child: const Center(
+          child: Icon(Icons.content_cut, color: DCTheme.textMuted, size: 24)));
 }
 
 class _AppointmentCard extends StatelessWidget {
@@ -966,25 +1258,44 @@ class _AppointmentCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: DCTheme.surface, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+          color: DCTheme.surface, borderRadius: BorderRadius.circular(16)),
       child: Row(
         children: [
-          Container(width: 50, height: 50, decoration: const BoxDecoration(shape: BoxShape.circle, color: DCTheme.surfaceSecondary), child: const Icon(Icons.content_cut, color: DCTheme.textMuted)),
+          Container(
+              width: 50,
+              height: 50,
+              decoration: const BoxDecoration(
+                  shape: BoxShape.circle, color: DCTheme.surfaceSecondary),
+              child: const Icon(Icons.content_cut, color: DCTheme.textMuted)),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Appointment', style: TextStyle(fontWeight: FontWeight.w600, color: DCTheme.text)),
+                const Text('Appointment',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600, color: DCTheme.text)),
                 const SizedBox(height: 4),
-                Text('${appointment['date']} at ${appointment['time']}', style: const TextStyle(color: DCTheme.textMuted, fontSize: 13)),
+                Text('${appointment['date']} at ${appointment['time']}',
+                    style: const TextStyle(
+                        color: DCTheme.textMuted, fontSize: 13)),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(color: status == 'confirmed' ? DCTheme.success.withValues(alpha: 0.2) : Colors.amber.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
-            child: Text(status, style: TextStyle(color: status == 'confirmed' ? DCTheme.success : Colors.amber, fontSize: 12, fontWeight: FontWeight.w500)),
+            decoration: BoxDecoration(
+                color: status == 'confirmed'
+                    ? DCTheme.success.withValues(alpha: 0.2)
+                    : Colors.amber.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8)),
+            child: Text(status,
+                style: TextStyle(
+                    color:
+                        status == 'confirmed' ? DCTheme.success : Colors.amber,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500)),
           ),
         ],
       ),
@@ -998,7 +1309,10 @@ class _BarberPoleIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(width: 30, height: 30, child: CustomPaint(painter: _BarberPolePainter()));
+    return SizedBox(
+        width: 30,
+        height: 30,
+        child: CustomPaint(painter: _BarberPolePainter()));
   }
 }
 
@@ -1007,7 +1321,10 @@ class _BarberPoleIconSelected extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(width: 30, height: 30, child: CustomPaint(painter: _BarberPolePainterSelected()));
+    return SizedBox(
+        width: 30,
+        height: 30,
+        child: CustomPaint(painter: _BarberPolePainterSelected()));
   }
 }
 
@@ -1015,17 +1332,26 @@ class _BarberPolePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final scale = size.width / 32;
-    
-    final poleRect = RRect.fromRectAndRadius(Rect.fromLTWH(13 * scale, 4 * scale, 6 * scale, 24 * scale), Radius.circular(3 * scale));
-    final polePaint = Paint()..shader = const LinearGradient(begin: Alignment.centerLeft, end: Alignment.centerRight, colors: [Color(0xFFE8E8E8), Color(0xFFFFFFFF), Color(0xFFD0D0D0)]).createShader(poleRect.outerRect);
+
+    final poleRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(13 * scale, 4 * scale, 6 * scale, 24 * scale),
+        Radius.circular(3 * scale));
+    final polePaint = Paint()
+      ..shader = const LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [Color(0xFFE8E8E8), Color(0xFFFFFFFF), Color(0xFFD0D0D0)])
+          .createShader(poleRect.outerRect);
     canvas.drawRRect(poleRect, polePaint);
-    
+
     canvas.save();
     canvas.clipRRect(poleRect);
-    
-    final redPaint1 = Paint()..color = const Color(0xFFDC2626).withValues(alpha: 0.95);
-    final redPaint2 = Paint()..color = const Color(0xFFEF4444).withValues(alpha: 0.9);
-    
+
+    final redPaint1 = Paint()
+      ..color = const Color(0xFFDC2626).withValues(alpha: 0.95);
+    final redPaint2 = Paint()
+      ..color = const Color(0xFFEF4444).withValues(alpha: 0.9);
+
     for (int i = 0; i < 5; i++) {
       final path = Path()
         ..moveTo(13 * scale, (6 + i * 4) * scale)
@@ -1035,20 +1361,44 @@ class _BarberPolePainter extends CustomPainter {
         ..close();
       canvas.drawPath(path, i % 2 == 0 ? redPaint1 : redPaint2);
     }
-    
+
     final highlightPaint = Paint()..color = Colors.white.withValues(alpha: 0.4);
-    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(17.5 * scale, 5 * scale, 0.8 * scale, 22 * scale), Radius.circular(0.4 * scale)), highlightPaint);
+    canvas.drawRRect(
+        RRect.fromRectAndRadius(
+            Rect.fromLTWH(17.5 * scale, 5 * scale, 0.8 * scale, 22 * scale),
+            Radius.circular(0.4 * scale)),
+        highlightPaint);
     canvas.restore();
-    
+
     final topCapPaint1 = Paint()..color = const Color(0xFFF3F4F6);
     final topCapPaint2 = Paint()..color = const Color(0xFFFFFFFF);
-    canvas.drawOval(Rect.fromCenter(center: Offset(16 * scale, 4 * scale), width: 7 * scale, height: 3.6 * scale), topCapPaint1);
-    canvas.drawOval(Rect.fromCenter(center: Offset(16 * scale, 4 * scale), width: 5 * scale, height: 2.4 * scale), topCapPaint2);
-    
+    canvas.drawOval(
+        Rect.fromCenter(
+            center: Offset(16 * scale, 4 * scale),
+            width: 7 * scale,
+            height: 3.6 * scale),
+        topCapPaint1);
+    canvas.drawOval(
+        Rect.fromCenter(
+            center: Offset(16 * scale, 4 * scale),
+            width: 5 * scale,
+            height: 2.4 * scale),
+        topCapPaint2);
+
     final bottomCapPaint1 = Paint()..color = const Color(0xFFD1D5DB);
     final bottomCapPaint2 = Paint()..color = const Color(0xFFE5E7EB);
-    canvas.drawOval(Rect.fromCenter(center: Offset(16 * scale, 28 * scale), width: 7 * scale, height: 3.6 * scale), bottomCapPaint1);
-    canvas.drawOval(Rect.fromCenter(center: Offset(16 * scale, 28 * scale), width: 5 * scale, height: 2.4 * scale), bottomCapPaint2);
+    canvas.drawOval(
+        Rect.fromCenter(
+            center: Offset(16 * scale, 28 * scale),
+            width: 7 * scale,
+            height: 3.6 * scale),
+        bottomCapPaint1);
+    canvas.drawOval(
+        Rect.fromCenter(
+            center: Offset(16 * scale, 28 * scale),
+            width: 5 * scale,
+            height: 2.4 * scale),
+        bottomCapPaint2);
   }
 
   @override
@@ -1059,17 +1409,24 @@ class _BarberPolePainterSelected extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final scale = size.width / 32;
-    
-    final poleRect = RRect.fromRectAndRadius(Rect.fromLTWH(13 * scale, 4 * scale, 6 * scale, 24 * scale), Radius.circular(3 * scale));
-    final polePaint = Paint()..shader = const LinearGradient(begin: Alignment.centerLeft, end: Alignment.centerRight, colors: [Color(0xFFE5E7EB), Color(0xFFF9FAFB), Color(0xFFD1D5DB)]).createShader(poleRect.outerRect);
+
+    final poleRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(13 * scale, 4 * scale, 6 * scale, 24 * scale),
+        Radius.circular(3 * scale));
+    final polePaint = Paint()
+      ..shader = const LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [Color(0xFFE5E7EB), Color(0xFFF9FAFB), Color(0xFFD1D5DB)])
+          .createShader(poleRect.outerRect);
     canvas.drawRRect(poleRect, polePaint);
-    
+
     canvas.save();
     canvas.clipRRect(poleRect);
-    
+
     final redPaint1 = Paint()..color = const Color(0xFFB91C1C);
     final redPaint2 = Paint()..color = const Color(0xFFDC2626);
-    
+
     for (int i = 0; i < 5; i++) {
       final path = Path()
         ..moveTo(13 * scale, (6 + i * 4) * scale)
@@ -1079,18 +1436,38 @@ class _BarberPolePainterSelected extends CustomPainter {
         ..close();
       canvas.drawPath(path, i % 2 == 0 ? redPaint1 : redPaint2);
     }
-    
+
     canvas.restore();
-    
+
     final topCapPaint1 = Paint()..color = const Color(0xFFD1D5DB);
     final topCapPaint2 = Paint()..color = const Color(0xFFE5E7EB);
-    canvas.drawOval(Rect.fromCenter(center: Offset(16 * scale, 4 * scale), width: 7 * scale, height: 3.6 * scale), topCapPaint1);
-    canvas.drawOval(Rect.fromCenter(center: Offset(16 * scale, 4 * scale), width: 5 * scale, height: 2.4 * scale), topCapPaint2);
-    
+    canvas.drawOval(
+        Rect.fromCenter(
+            center: Offset(16 * scale, 4 * scale),
+            width: 7 * scale,
+            height: 3.6 * scale),
+        topCapPaint1);
+    canvas.drawOval(
+        Rect.fromCenter(
+            center: Offset(16 * scale, 4 * scale),
+            width: 5 * scale,
+            height: 2.4 * scale),
+        topCapPaint2);
+
     final bottomCapPaint1 = Paint()..color = const Color(0xFF9CA3AF);
     final bottomCapPaint2 = Paint()..color = const Color(0xFFD1D5DB);
-    canvas.drawOval(Rect.fromCenter(center: Offset(16 * scale, 28 * scale), width: 7 * scale, height: 3.6 * scale), bottomCapPaint1);
-    canvas.drawOval(Rect.fromCenter(center: Offset(16 * scale, 28 * scale), width: 5 * scale, height: 2.4 * scale), bottomCapPaint2);
+    canvas.drawOval(
+        Rect.fromCenter(
+            center: Offset(16 * scale, 28 * scale),
+            width: 7 * scale,
+            height: 3.6 * scale),
+        bottomCapPaint1);
+    canvas.drawOval(
+        Rect.fromCenter(
+            center: Offset(16 * scale, 28 * scale),
+            width: 5 * scale,
+            height: 2.4 * scale),
+        bottomCapPaint2);
   }
 
   @override

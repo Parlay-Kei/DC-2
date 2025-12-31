@@ -21,10 +21,10 @@ class NotificationService {
   final _client = SupabaseConfig.client;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
-  
+
   String? _playerId;
   bool _initialized = false;
-  
+
   // Stream controllers for notification events
   final _notificationOpenedController =
       StreamController<OSNotificationClickEvent>.broadcast();
@@ -51,7 +51,8 @@ class NotificationService {
       // Initialize OneSignal if configured
       if (AppConfig.isOneSignalConfigured) {
         await _initializeOneSignal();
-        Logger.info('NotificationService: OneSignal + Local notifications ready');
+        Logger.info(
+            'NotificationService: OneSignal + Local notifications ready');
       } else {
         Logger.info('NotificationService: Local notifications only');
       }
@@ -59,7 +60,7 @@ class NotificationService {
       Logger.error('NotificationService initialization failed', e);
     }
   }
-  
+
   /// OneSignal initialization
   Future<void> _initializeOneSignal() async {
     try {
@@ -195,12 +196,11 @@ class NotificationService {
     try {
       await _client
           .from('user_devices')
-          .update({'is_active': false})
-          .eq('device_token', _playerId!);
+          .update({'is_active': false}).eq('device_token', _playerId!);
 
       // Logout from OneSignal
       OneSignal.logout();
-      
+
       _playerId = null;
       return true;
     } catch (e) {
@@ -415,10 +415,14 @@ class NotificationService {
     if (userId == null) return false;
 
     try {
-      await _client.from('notifications').update({
-        'is_read': true,
-        'read_at': DateTime.now().toIso8601String(),
-      }).eq('user_id', userId).eq('is_read', false);
+      await _client
+          .from('notifications')
+          .update({
+            'is_read': true,
+            'read_at': DateTime.now().toIso8601String(),
+          })
+          .eq('user_id', userId)
+          .eq('is_read', false);
       return true;
     } catch (e) {
       Logger.error('Failed to mark all notifications as read', e);

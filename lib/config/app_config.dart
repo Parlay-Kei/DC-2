@@ -24,9 +24,10 @@ class AppConfig {
   /// Or set ONESIGNAL_APP_ID environment variable
   static String get oneSignalAppId {
     // Try dart-define first (for builds)
-    const dartDefine = String.fromEnvironment('ONESIGNAL_APP_ID', defaultValue: '');
+    const dartDefine =
+        String.fromEnvironment('ONESIGNAL_APP_ID', defaultValue: '');
     if (dartDefine.isNotEmpty) return dartDefine;
-    
+
     // Fallback to environment variable (for development)
     final envVar = Platform.environment['ONESIGNAL_APP_ID'] ?? '';
     return envVar;
@@ -40,21 +41,22 @@ class AppConfig {
   /// Get this from Mapbox Dashboard: Account > Access Tokens
   /// Set via --dart-define=MAPBOX_ACCESS_TOKEN=your-access-token
   /// Or set MAPBOX_ACCESS_TOKEN environment variable
-  /// 
+  ///
   /// NOTE: Mobile apps require a secret token (sk.*) with tiles:read scope.
   /// This is normal - Mapbox makes tokens secret when tiles:read is added.
   /// Secret tokens are safe for mobile apps when embedded in the app binary.
-  /// 
+  ///
   /// For development, a default token is provided in debug mode only.
   static String get mapboxAccessToken {
     // Try dart-define first (for builds)
-    const dartDefine = String.fromEnvironment('MAPBOX_ACCESS_TOKEN', defaultValue: '');
+    const dartDefine =
+        String.fromEnvironment('MAPBOX_ACCESS_TOKEN', defaultValue: '');
     if (dartDefine.isNotEmpty) return dartDefine;
-    
+
     // Fallback to environment variable (for development)
     final envVar = Platform.environment['MAPBOX_ACCESS_TOKEN'] ?? '';
     if (envVar.isNotEmpty) return envVar;
-    
+
     // No fallback token - must be provided via --dart-define or environment
     // For development setup, see docs/security/TOKEN_ROTATION_GUIDE.md
     // SECURITY: Never hardcode tokens in source code.
@@ -67,7 +69,7 @@ class AppConfig {
   /// Supabase Functions URL for Edge Functions
   /// Used for geocoding, map data, and other backend services
   static const String supabaseFunctionsUrl =
-    'https://dskpfnjbgocieoqyiznf.supabase.co/functions/v1';
+      'https://dskpfnjbgocieoqyiznf.supabase.co/functions/v1';
 
   /// Debug mode (enable verbose logging)
   static const bool debugMode = bool.fromEnvironment(

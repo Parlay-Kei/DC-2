@@ -1,0 +1,142 @@
+#===============================================================================
+# Direct Cuts - Snapshot Configuration (iOS Screenshots)
+#===============================================================================
+# This file configures automated iOS screenshot capture using Snapshot.
+#
+# STATUS: PLACEHOLDER - Requires UI test implementation
+#
+# Setup Steps:
+# 1. Create UI tests in ios/RunnerUITests/
+# 2. Add snapshot helper to tests
+# 3. Configure devices and languages below
+# 4. Run: bundle exec fastlane snapshot
+#
+# Documentation: https://docs.fastlane.tools/actions/snapshot/
+#===============================================================================
+
+#-------------------------------------------------------------------------------
+# Devices to Capture Screenshots On
+#-------------------------------------------------------------------------------
+
+# Required device sizes for App Store
+devices([
+  # 6.7" (iPhone 15 Pro Max, 14 Pro Max)
+  "iPhone 15 Pro Max",
+
+  # 6.5" (iPhone 14 Plus, 13 Pro Max)
+  "iPhone 14 Plus",
+
+  # 5.5" (iPhone 8 Plus, 7 Plus, 6s Plus)
+  "iPhone 8 Plus",
+
+  # iPad Pro 12.9" (6th generation) - if supporting iPad
+  # "iPad Pro (12.9-inch) (6th generation)",
+])
+
+#-------------------------------------------------------------------------------
+# Languages
+#-------------------------------------------------------------------------------
+
+languages([
+  "en-US",
+  # Add more languages as localized:
+  # "es-US",
+  # "es-MX",
+])
+
+#-------------------------------------------------------------------------------
+# Output Configuration
+#-------------------------------------------------------------------------------
+
+# Output directory
+output_directory("./screenshots")
+
+# Clear previous screenshots
+clear_previous_screenshots(true)
+
+# Override status bar (requires SimulatorStatusMagic)
+override_status_bar(true)
+
+#-------------------------------------------------------------------------------
+# Scheme and Workspace
+#-------------------------------------------------------------------------------
+
+# Xcode scheme to use
+scheme("Runner")
+
+# Workspace path
+workspace("../ios/Runner.xcworkspace")
+
+#-------------------------------------------------------------------------------
+# Screenshot Configuration
+#-------------------------------------------------------------------------------
+
+# Number of concurrent simulators
+concurrent_simulators(true)
+number_of_retries(1)
+
+# Stop on first error
+stop_after_first_error(false)
+
+# Skip building (if already built)
+# skip_open_summary(true)
+
+# Dark mode screenshots (iOS 13+)
+# dark_mode(true)
+
+#-------------------------------------------------------------------------------
+# Test Configuration
+#-------------------------------------------------------------------------------
+
+# Test target containing screenshot tests
+# test_target_name("DirectCutsUITests")
+
+# Specific tests to run (leave empty for all)
+# only_testing([
+#   "DirectCutsUITests/ScreenshotTests/testHomeScreen",
+#   "DirectCutsUITests/ScreenshotTests/testBarberProfile",
+# ])
+
+#-------------------------------------------------------------------------------
+# Simulator Configuration
+#-------------------------------------------------------------------------------
+
+# iOS version to use
+ios_version("17.0")
+
+# Reinstall app
+reinstall_app(false)
+
+# Erase simulator before running
+erase_simulator(false)
+
+# Disable slide to type
+disable_slide_to_type(true)
+
+#-------------------------------------------------------------------------------
+# Launch Arguments
+#-------------------------------------------------------------------------------
+
+# Arguments passed to the app
+launch_arguments([
+  "-UITests",
+  "-Screenshots",
+])
+
+#-------------------------------------------------------------------------------
+# Placeholder Screenshots (Manual)
+#-------------------------------------------------------------------------------
+
+# Until UI tests are implemented, create screenshots manually:
+#
+# 1. Run app in Simulator for each device size
+# 2. Navigate to each screen
+# 3. Take screenshot: Cmd + S
+# 4. Save to: fastlane/screenshots/<locale>/<device>/
+#
+# Required screenshots:
+# - Home/Map screen (barber discovery)
+# - Barber profile with verified badge
+# - Booking flow (date/time selection)
+# - Booking confirmation
+# - Reviews screen

@@ -8,7 +8,8 @@ final paymentServiceProvider = Provider<PaymentService>((ref) {
 });
 
 /// Saved payment methods provider
-final savedPaymentMethodsProvider = FutureProvider<List<SavedPaymentMethod>>((ref) async {
+final savedPaymentMethodsProvider =
+    FutureProvider<List<SavedPaymentMethod>>((ref) async {
   final service = ref.watch(paymentServiceProvider);
   return service.getSavedPaymentMethods();
 });
@@ -24,7 +25,8 @@ class PaymentStateNotifier extends StateNotifier<PaymentState> {
   final PaymentService _service;
   final Ref _ref;
 
-  PaymentStateNotifier(this._service, this._ref) : super(PaymentState.initial());
+  PaymentStateNotifier(this._service, this._ref)
+      : super(PaymentState.initial());
 
   /// Process payment for a booking
   Future<bool> processPayment({

@@ -1,0 +1,52 @@
+#===============================================================================
+# Direct Cuts - Fastlane Appfile
+#===============================================================================
+# This file contains the application identifiers for both iOS and Android.
+# These values are used by all Fastlane lanes.
+#
+# Documentation: https://docs.fastlane.tools/advanced/#appfile
+#===============================================================================
+
+#-------------------------------------------------------------------------------
+# iOS Configuration
+#-------------------------------------------------------------------------------
+
+# App Store Connect App Identifier (Bundle ID)
+app_identifier("com.directcuts.app")
+
+# Apple Developer Account Email
+# Set via environment variable or update when Apple Developer account is ready
+apple_id(ENV["APPLE_ID"] || "developer@direct-cuts.com")
+
+# Apple Developer Team ID (10 character string)
+# Find at: https://developer.apple.com/account/#/membership
+# Set via environment variable or update when Apple Developer account is ready
+team_id(ENV["APPLE_TEAM_ID"] || "XXXXXXXXXX")
+
+# App Store Connect Team ID (for App Store Connect API)
+# Find at: https://appstoreconnect.apple.com/access/users (in URL after /team/)
+itc_team_id(ENV["ITC_TEAM_ID"] || "XXXXXXXXXX")
+
+#-------------------------------------------------------------------------------
+# Android Configuration
+#-------------------------------------------------------------------------------
+
+# Google Play Package Name
+# This must match applicationId in android/app/build.gradle.kts
+for_platform :android do
+  package_name("com.directcuts.app")
+end
+
+#-------------------------------------------------------------------------------
+# Environment-Specific Overrides
+#-------------------------------------------------------------------------------
+
+# For different environments (staging, production), you can use:
+#
+# for_lane :beta do
+#   app_identifier("com.directcuts.app.beta")
+# end
+#
+# for_lane :staging do
+#   app_identifier("com.directcuts.app.staging")
+# end

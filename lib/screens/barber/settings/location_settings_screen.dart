@@ -143,8 +143,8 @@ class _LocationSettingsScreenState
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: DCTheme.surface,
-        title:
-            const Text('Clear Location?', style: TextStyle(color: DCTheme.text)),
+        title: const Text('Clear Location?',
+            style: TextStyle(color: DCTheme.text)),
         content: const Text(
           'This will remove your saved location. Customers won\'t be able to find you by location until you set a new one.',
           style: TextStyle(color: DCTheme.textMuted),
@@ -196,7 +196,8 @@ class _LocationSettingsScreenState
       ),
       body: crmState.isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: DCTheme.primary),)
+              child: CircularProgressIndicator(color: DCTheme.primary),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -230,7 +231,8 @@ class _LocationSettingsScreenState
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: crmState.isSaving ? null : _saveServiceSettings,
+                      onPressed:
+                          crmState.isSaving ? null : _saveServiceSettings,
                       child: crmState.isSaving
                           ? const SizedBox(
                               width: 20,
@@ -335,8 +337,10 @@ class _LocationSettingsScreenState
               labelText: 'Business Address',
               labelStyle: const TextStyle(color: DCTheme.textMuted),
               hintText: '123 Main St, City, State ZIP',
-              hintStyle: TextStyle(color: DCTheme.textMuted.withValues(alpha: 0.5)),
-              prefixIcon: const Icon(Icons.location_on, color: DCTheme.textMuted),
+              hintStyle:
+                  TextStyle(color: DCTheme.textMuted.withValues(alpha: 0.5)),
+              prefixIcon:
+                  const Icon(Icons.location_on, color: DCTheme.textMuted),
               filled: true,
               fillColor: DCTheme.background,
               border: OutlineInputBorder(
@@ -374,8 +378,10 @@ class _LocationSettingsScreenState
             TextButton.icon(
               onPressed: _clearLocation,
               icon: const Icon(Icons.clear, size: 18, color: DCTheme.error),
-              label: const Text('Clear Location',
-                  style: TextStyle(color: DCTheme.error),),
+              label: const Text(
+                'Clear Location',
+                style: TextStyle(color: DCTheme.error),
+              ),
             ),
           ],
         ],
@@ -548,8 +554,11 @@ class _LocationSettingsScreenState
             ),
             child: Row(
               children: [
-                Icon(Icons.info_outline,
-                    color: DCTheme.info.withValues(alpha: 0.8), size: 20,),
+                Icon(
+                  Icons.info_outline,
+                  color: DCTheme.info.withValues(alpha: 0.8),
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 const Expanded(
                   child: Text(

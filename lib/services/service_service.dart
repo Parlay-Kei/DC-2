@@ -84,10 +84,7 @@ class ServiceService {
       if (category != null) updates['category'] = category;
       if (isActive != null) updates['is_active'] = isActive;
 
-      await _client
-          .from('barber_services')
-          .update(updates)
-          .eq('id', serviceId);
+      await _client.from('barber_services').update(updates).eq('id', serviceId);
       return true;
     } catch (e) {
       rethrow;
@@ -99,8 +96,7 @@ class ServiceService {
     try {
       await _client
           .from('barber_services')
-          .update({'is_active': false})
-          .eq('id', serviceId);
+          .update({'is_active': false}).eq('id', serviceId);
       return true;
     } catch (e) {
       return false;
@@ -118,10 +114,8 @@ class ServiceService {
     if (barberId == null) return [];
 
     try {
-      var query = _client
-          .from('barber_services')
-          .select()
-          .eq('barber_id', barberId);
+      var query =
+          _client.from('barber_services').select().eq('barber_id', barberId);
 
       if (!includeInactive) {
         query = query.eq('is_active', true);
@@ -232,7 +226,8 @@ class ServiceService {
   }
 
   /// Create service from template
-  Future<Service?> createFromTemplate(String barberId, ServiceTemplate template) async {
+  Future<Service?> createFromTemplate(
+      String barberId, ServiceTemplate template) async {
     return createService(
       barberId: barberId,
       name: template.name,

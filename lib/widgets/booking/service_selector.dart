@@ -225,13 +225,15 @@ class _ServiceListState extends State<ServiceList> {
             },
           ),
           if (isExpanded)
-            ...entry.value.map((service) => ServiceCard(
-                  service: service,
-                  isSelected: widget.selectedIds.contains(service.id),
-                  onTap: widget.onServiceTap != null
-                      ? () => widget.onServiceTap!(service)
-                      : null,
-                ),),
+            ...entry.value.map(
+              (service) => ServiceCard(
+                service: service,
+                isSelected: widget.selectedIds.contains(service.id),
+                onTap: widget.onServiceTap != null
+                    ? () => widget.onServiceTap!(service)
+                    : null,
+              ),
+            ),
         ];
       }).toList(),
     );

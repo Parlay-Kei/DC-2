@@ -87,7 +87,9 @@ class DayCell extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.w500,
-                  color: isSelected ? Colors.white.withValues(alpha: 0.8) : DCTheme.success,
+                  color: isSelected
+                      ? Colors.white.withValues(alpha: 0.8)
+                      : DCTheme.success,
                 ),
               )
             else
@@ -151,8 +153,18 @@ class _WeekStripState extends State<WeekStrip> {
 
   String _formatMonthYear(DateTime date) {
     const months = [
-      'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
-      'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER',
+      'JANUARY',
+      'FEBRUARY',
+      'MARCH',
+      'APRIL',
+      'MAY',
+      'JUNE',
+      'JULY',
+      'AUGUST',
+      'SEPTEMBER',
+      'OCTOBER',
+      'NOVEMBER',
+      'DECEMBER',
     ];
     return '${months[date.month - 1]} ${date.year}';
   }
@@ -179,14 +191,14 @@ class _WeekStripState extends State<WeekStrip> {
             controller: _pageController,
             onPageChanged: (index) {
               final offset = index - 500;
-              final weekStart = _getWeekStart(DateTime.now())
-                  .add(Duration(days: offset * 7));
+              final weekStart =
+                  _getWeekStart(DateTime.now()).add(Duration(days: offset * 7));
               setState(() => _currentWeekStart = weekStart);
             },
             itemBuilder: (context, index) {
               final offset = index - 500;
-              final weekStart = _getWeekStart(DateTime.now())
-                  .add(Duration(days: offset * 7));
+              final weekStart =
+                  _getWeekStart(DateTime.now()).add(Duration(days: offset * 7));
               return _buildWeek(weekStart);
             },
           ),

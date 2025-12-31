@@ -36,7 +36,12 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
 
   // Selected category filter - matches web app
   String _selectedCategory = 'Haircuts';
-  final List<String> _categories = ['Haircuts', 'Fades', 'Beard Trims', 'Color'];
+  final List<String> _categories = [
+    'Haircuts',
+    'Fades',
+    'Beard Trims',
+    'Color'
+  ];
 
   // Search query for location
   String _locationText = 'Las Vegas, Nevada';
@@ -108,7 +113,8 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
       if (_annotationManager != null) {
         await _annotationManager!.deleteAll();
       } else {
-        _annotationManager = await _mapboxMap!.annotations.createPointAnnotationManager();
+        _annotationManager =
+            await _mapboxMap!.annotations.createPointAnnotationManager();
       }
 
       // Add new markers with DC-1 styling:
@@ -133,16 +139,22 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
           // DC-1 code shows #007CF (invalid hex), likely meant #0007CF or #1E3A8A (dark blue/navy)
           // Using #1E3A8A (slate-800) which matches the "dark-colored" appearance in DC-1
           iconSize: 1.2, // Slightly larger to match DC-1 pin size
-          iconColor: isShop ? 0xFF1E3A8A : 0xFF10B921, // Dark blue/navy for shops, green for mobile (matches DC-1)
+          iconColor: isShop
+              ? 0xFF1E3A8A
+              : 0xFF10B921, // Dark blue/navy for shops, green for mobile (matches DC-1)
           // Label styling to match DC-1's white badge effect exactly
           // DC-1 uses: white background (rgba(255,255,255,0.95)), 10px font, 600 weight, 4px border-radius
           textField: props.barberName,
           textSize: 10.0, // Matches DC-1's 10px font size exactly
           textOffset: [0, 2.5], // Position below pin (matches DC-1 spacing)
-          textColor: 0xFF1F2937, // Dark gray text (matches DC-1's #1f2937 exactly)
-          textHaloColor: 0xFFFFFFFF, // White halo creates badge background (matches DC-1's white badge)
-          textHaloWidth: 5.0, // Thicker halo for better badge effect (simulates DC-1's padding: 2px 6px)
-          textMaxWidth: 12.0, // Allow slightly wider for longer names (DC-1 uses max-width: 120px)
+          textColor:
+              0xFF1F2937, // Dark gray text (matches DC-1's #1f2937 exactly)
+          textHaloColor:
+              0xFFFFFFFF, // White halo creates badge background (matches DC-1's white badge)
+          textHaloWidth:
+              5.0, // Thicker halo for better badge effect (simulates DC-1's padding: 2px 6px)
+          textMaxWidth:
+              12.0, // Allow slightly wider for longer names (DC-1 uses max-width: 120px)
           textAnchor: TextAnchor.TOP, // Center text below pin
           // Note: Font styling is handled by the map style, not as a parameter
           // The map style should include 'Open Sans Semibold' or 'Arial Unicode MS Bold' for font-weight: 600 effect
@@ -158,7 +170,9 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
   }
 
   Future<void> _fitBoundsToAllPins() async {
-    if (_mapboxMap == null || _currentPins == null || _currentPins!.features.isEmpty) {
+    if (_mapboxMap == null ||
+        _currentPins == null ||
+        _currentPins!.features.isEmpty) {
       return;
     }
 
@@ -184,8 +198,10 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
       final lngPadding = (maxLng - minLng) * 0.1;
 
       final bounds = CoordinateBounds(
-        southwest: Point(coordinates: Position(minLng - lngPadding, minLat - latPadding)),
-        northeast: Point(coordinates: Position(maxLng + lngPadding, maxLat + latPadding)),
+        southwest: Point(
+            coordinates: Position(minLng - lngPadding, minLat - latPadding)),
+        northeast: Point(
+            coordinates: Position(maxLng + lngPadding, maxLat + latPadding)),
         infiniteBounds: false,
       );
 
@@ -276,7 +292,8 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
             right: 0,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: const Color(0xFF1F2937),
                   borderRadius: BorderRadius.circular(16),
@@ -411,7 +428,8 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
                     children: _categories.map((category) {
                       final isSelected = category == _selectedCategory;
                       return GestureDetector(
-                        onTap: () => setState(() => _selectedCategory = category),
+                        onTap: () =>
+                            setState(() => _selectedCategory = category),
                         child: Column(
                           children: [
                             Text(
@@ -420,7 +438,9 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
                                 color: isSelected
                                     ? Colors.white
                                     : const Color(0xFFFCA5A5),
-                                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                                fontWeight: isSelected
+                                    ? FontWeight.w500
+                                    : FontWeight.normal,
                                 fontSize: 14,
                               ),
                             ),
@@ -428,7 +448,9 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
                             Container(
                               height: 2,
                               width: 50,
-                              color: isSelected ? Colors.white : Colors.transparent,
+                              color: isSelected
+                                  ? Colors.white
+                                  : Colors.transparent,
                             ),
                           ],
                         ),
@@ -449,14 +471,19 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
                             _loadNearbyBarbers();
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 6),
                             decoration: BoxDecoration(
-                              color: isSelected ? Colors.white : Colors.transparent,
+                              color: isSelected
+                                  ? Colors.white
+                                  : Colors.transparent,
                               borderRadius: BorderRadius.circular(16),
-                              border: isSelected ? null : Border.all(
-                                color: const Color(0xFFFCA5A5),
-                                width: 1,
-                              ),
+                              border: isSelected
+                                  ? null
+                                  : Border.all(
+                                      color: const Color(0xFFFCA5A5),
+                                      width: 1,
+                                    ),
                             ),
                             child: Text(
                               '$radius mi',
@@ -839,7 +866,8 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
 
       await _mapboxMap!.flyTo(
         CameraOptions(
-          center: Point(coordinates: Position(position.longitude, position.latitude)),
+          center: Point(
+              coordinates: Position(position.longitude, position.latitude)),
           zoom: 14.0,
         ),
         MapAnimationOptions(duration: 1000, startDelay: 0),
@@ -847,7 +875,8 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
 
       _loadNearbyBarbers();
     } else {
-      final granted = await ref.read(userLocationProvider.notifier).requestPermission();
+      final granted =
+          await ref.read(userLocationProvider.notifier).requestPermission();
       if (!granted && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Location permission required')),
@@ -941,7 +970,8 @@ class _LocationSearchDialogState extends State<_LocationSearchDialog> {
                   itemBuilder: (context, index) {
                     final suggestion = _suggestions[index];
                     return ListTile(
-                      leading: const Icon(Icons.location_on, color: Color(0xFFEF4444)),
+                      leading: const Icon(Icons.location_on,
+                          color: Color(0xFFEF4444)),
                       title: Text(
                         suggestion.displayName,
                         style: const TextStyle(color: Colors.white),

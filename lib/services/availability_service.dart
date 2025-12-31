@@ -28,7 +28,7 @@ class AvailabilityService {
   }) async {
     try {
       final dayOfWeek = date.weekday % 7; // Convert to 0-6 (Sunday = 0)
-      
+
       // Get availability for this day
       final availabilityResponse = await _client
           .from('barber_availability')
@@ -101,13 +101,16 @@ class AvailabilityService {
   }) async {
     try {
       // Upsert availability
-      await _client.from('barber_availability').upsert({
-        'barber_id': barberId,
-        'day_of_week': dayOfWeek,
-        'start_time': startTime,
-        'end_time': endTime,
-        'is_active': !isClosed,
-      }, onConflict: 'barber_id,day_of_week',);
+      await _client.from('barber_availability').upsert(
+        {
+          'barber_id': barberId,
+          'day_of_week': dayOfWeek,
+          'start_time': startTime,
+          'end_time': endTime,
+          'is_active': !isClosed,
+        },
+        onConflict: 'barber_id,day_of_week',
+      );
 
       return true;
     } catch (e) {
@@ -139,7 +142,7 @@ class AvailabilityService {
 
     try {
       final defaults = <Map<String, dynamic>>[];
-      
+
       // Monday (1) to Friday (5)
       for (var day = 1; day <= 5; day++) {
         defaults.add({
@@ -150,7 +153,7 @@ class AvailabilityService {
           'is_active': true,
         });
       }
-      
+
       // Saturday (6) - shorter hours
       defaults.add({
         'barber_id': barberId,
@@ -159,7 +162,7 @@ class AvailabilityService {
         'end_time': '14:00',
         'is_active': true,
       });
-      
+
       // Sunday (0) - off
       defaults.add({
         'barber_id': barberId,
@@ -188,18 +191,17 @@ class AvailabilityService {
     DateTime date,
   ) {
     final slots = <TimeSlot>[];
-    
+
     final startParts = startTime.split(':');
     final endParts = endTime.split(':');
-    
+
     var currentMinutes =
         int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
     final endMinutes = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
 
     final now = DateTime.now();
-    final isToday = date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
+    final isToday =
+        date.year == now.year && date.month == now.month && date.day == now.day;
 
     while (currentMinutes + slotDuration <= endMinutes) {
       final hour = currentMinutes ~/ 60;
@@ -210,17 +212,20 @@ class AvailabilityService {
       // Check if slot is in the past (for today)
       bool isPast = false;
       if (isToday) {
-        final slotTime = DateTime(date.year, date.month, date.day, hour, minute);
+        final slotTime =
+            DateTime(date.year, date.month, date.day, hour, minute);
         isPast = slotTime.isBefore(now);
       }
 
       final isBooked = bookedTimes.containsKey(timeStr);
-      
-      slots.add(TimeSlot(
-        time: timeStr,
-        isAvailable: !isBooked && !isPast,
-        bookingId: bookedTimes[timeStr],
-      ),);
+
+      slots.add(
+        TimeSlot(
+          time: timeStr,
+          isAvailable: !isBooked && !isPast,
+          bookingId: bookedTimes[timeStr],
+        ),
+      );
 
       currentMinutes += slotDuration;
     }

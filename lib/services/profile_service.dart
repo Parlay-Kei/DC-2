@@ -17,11 +17,8 @@ class ProfileService {
     if (userId == null) return null;
 
     try {
-      final response = await _client
-          .from('profiles')
-          .select()
-          .eq('id', userId)
-          .single();
+      final response =
+          await _client.from('profiles').select().eq('id', userId).single();
 
       return Profile.fromJson(response);
     } catch (e) {
@@ -51,7 +48,8 @@ class ProfileService {
       if (phone != null) updates['phone'] = phone;
       if (email != null) updates['email'] = email;
       if (bio != null) updates['bio'] = bio;
-      if (preferredLanguage != null) updates['preferred_language'] = preferredLanguage;
+      if (preferredLanguage != null)
+        updates['preferred_language'] = preferredLanguage;
       if (notificationPreferences != null) {
         updates['notification_preferences'] = notificationPreferences;
       }
@@ -77,7 +75,8 @@ class ProfileService {
 
     try {
       final ext = file.path.split('.').last;
-      final filename = '$userId/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
+      final filename =
+          '$userId/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
 
       await _client.storage
           .from('avatars')
@@ -88,8 +87,7 @@ class ProfileService {
       // Update profile with new avatar URL
       await _client
           .from('profiles')
-          .update({'avatar_url': avatarUrl})
-          .eq('id', userId);
+          .update({'avatar_url': avatarUrl}).eq('id', userId);
 
       return avatarUrl;
     } catch (e) {
@@ -99,25 +97,25 @@ class ProfileService {
   }
 
   /// Upload avatar from bytes (for web)
-  Future<String?> uploadAvatarFromBytes(Uint8List bytes, String filename) async {
+  Future<String?> uploadAvatarFromBytes(
+      Uint8List bytes, String filename) async {
     final userId = SupabaseConfig.currentUserId;
     if (userId == null) return null;
 
     try {
       final ext = filename.split('.').last;
-      final path = '$userId/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
+      final path =
+          '$userId/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
 
-      await _client.storage
-          .from('avatars')
-          .uploadBinary(path, bytes, fileOptions: const FileOptions(upsert: true));
+      await _client.storage.from('avatars').uploadBinary(path, bytes,
+          fileOptions: const FileOptions(upsert: true));
 
       final avatarUrl = _client.storage.from('avatars').getPublicUrl(path);
 
       // Update profile with new avatar URL
       await _client
           .from('profiles')
-          .update({'avatar_url': avatarUrl})
-          .eq('id', userId);
+          .update({'avatar_url': avatarUrl}).eq('id', userId);
 
       return avatarUrl;
     } catch (e) {
@@ -146,8 +144,7 @@ class ProfileService {
       // Clear avatar URL in profile
       await _client
           .from('profiles')
-          .update({'avatar_url': null})
-          .eq('id', userId);
+          .update({'avatar_url': null}).eq('id', userId);
 
       return true;
     } catch (e) {
@@ -170,7 +167,8 @@ class ProfileService {
 
     try {
       final profile = await getCurrentProfile();
-      final currentPrefs = profile?.notificationPreferences.toJson() ?? <String, dynamic>{};
+      final currentPrefs =
+          profile?.notificationPreferences.toJson() ?? <String, dynamic>{};
 
       final newPrefs = {
         ...currentPrefs,
@@ -184,8 +182,7 @@ class ProfileService {
 
       await _client
           .from('profiles')
-          .update({'notification_preferences': newPrefs})
-          .eq('id', userId);
+          .update({'notification_preferences': newPrefs}).eq('id', userId);
 
       return true;
     } catch (e) {
@@ -326,7 +323,8 @@ class ProfileService {
       if (phone != null) updates['phone'] = phone;
       if (isMobile != null) updates['is_mobile'] = isMobile;
       if (travelRadius != null) updates['travel_radius'] = travelRadius;
-      if (travelFeePerMile != null) updates['travel_fee_per_mile'] = travelFeePerMile;
+      if (travelFeePerMile != null)
+        updates['travel_fee_per_mile'] = travelFeePerMile;
       if (shopAddress != null) updates['shop_address'] = shopAddress;
       if (shopLatitude != null) updates['shop_latitude'] = shopLatitude;
       if (shopLongitude != null) updates['shop_longitude'] = shopLongitude;
@@ -352,19 +350,20 @@ class ProfileService {
 
     try {
       final ext = file.path.split('.').last;
-      final filename = '$userId/profile_${DateTime.now().millisecondsSinceEpoch}.$ext';
+      final filename =
+          '$userId/profile_${DateTime.now().millisecondsSinceEpoch}.$ext';
 
       await _client.storage
           .from('barber-images')
           .upload(filename, file, fileOptions: const FileOptions(upsert: true));
 
-      final imageUrl = _client.storage.from('barber-images').getPublicUrl(filename);
+      final imageUrl =
+          _client.storage.from('barber-images').getPublicUrl(filename);
 
       // Update barber profile with new image URL
       await _client
           .from('barber_profiles')
-          .update({'profile_image_url': imageUrl})
-          .eq('id', userId);
+          .update({'profile_image_url': imageUrl}).eq('id', userId);
 
       return imageUrl;
     } catch (e) {

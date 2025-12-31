@@ -185,8 +185,10 @@ class SettingsScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel',
-                style: TextStyle(color: DCTheme.textMuted),),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: DCTheme.textMuted),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -196,8 +198,10 @@ class SettingsScreen extends ConsumerWidget {
                 context.go('/login');
               }
             },
-            child: const Text('Sign Out',
-                style: TextStyle(color: DCTheme.warning),),
+            child: const Text(
+              'Sign Out',
+              style: TextStyle(color: DCTheme.warning),
+            ),
           ),
         ],
       ),

@@ -12,9 +12,10 @@ final earningsDataProvider = FutureProvider<EarningsData>((ref) async {
   try {
     final client = Supabase.instance.client;
     final today = DateTime.now();
-    
+
     // Today
-    final todayStr = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    final todayStr =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
     final todayData = await client
         .from('appointments')
         .select('total_price, platform_fee')
@@ -29,7 +30,8 @@ final earningsDataProvider = FutureProvider<EarningsData>((ref) async {
 
     // This week
     final weekStart = today.subtract(Duration(days: today.weekday - 1));
-    final weekStartStr = '${weekStart.year}-${weekStart.month.toString().padLeft(2, '0')}-${weekStart.day.toString().padLeft(2, '0')}';
+    final weekStartStr =
+        '${weekStart.year}-${weekStart.month.toString().padLeft(2, '0')}-${weekStart.day.toString().padLeft(2, '0')}';
     final weekData = await client
         .from('appointments')
         .select('total_price, platform_fee')
@@ -45,7 +47,8 @@ final earningsDataProvider = FutureProvider<EarningsData>((ref) async {
     }
 
     // This month
-    final monthStartStr = '${today.year}-${today.month.toString().padLeft(2, '0')}-01';
+    final monthStartStr =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-01';
     final monthData = await client
         .from('appointments')
         .select('total_price, platform_fee, date')
@@ -65,19 +68,22 @@ final earningsDataProvider = FutureProvider<EarningsData>((ref) async {
       monthEarnings += earnings;
       totalFees += (apt['platform_fee'] ?? 0).toDouble();
       monthBookings++;
-      
+
       final date = apt['date'] as String;
       dailyMap[date] = (dailyMap[date] ?? 0) + earnings;
     }
 
     dailyMap.forEach((date, amount) {
-      dailyEarnings.add(DailyEarning(date: DateTime.parse(date), amount: amount));
+      dailyEarnings
+          .add(DailyEarning(date: DateTime.parse(date), amount: amount));
     });
 
     // Last month for comparison
     final lastMonth = DateTime(today.year, today.month - 1, 1);
-    final lastMonthStartStr = '${lastMonth.year}-${lastMonth.month.toString().padLeft(2, '0')}-01';
-    final lastMonthEndStr = '${today.year}-${today.month.toString().padLeft(2, '0')}-01';
+    final lastMonthStartStr =
+        '${lastMonth.year}-${lastMonth.month.toString().padLeft(2, '0')}-01';
+    final lastMonthEndStr =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-01';
     final lastMonthData = await client
         .from('appointments')
         .select('total_price, platform_fee')
@@ -88,7 +94,8 @@ final earningsDataProvider = FutureProvider<EarningsData>((ref) async {
 
     double lastMonthEarnings = 0;
     for (final apt in lastMonthData) {
-      lastMonthEarnings += (apt['total_price'] ?? 0) - (apt['platform_fee'] ?? 0);
+      lastMonthEarnings +=
+          (apt['total_price'] ?? 0) - (apt['platform_fee'] ?? 0);
     }
 
     return EarningsData(
@@ -128,15 +135,15 @@ class EarningsData {
   });
 
   factory EarningsData.empty() => EarningsData(
-    todayEarnings: 0,
-    weekEarnings: 0,
-    weekBookings: 0,
-    monthEarnings: 0,
-    monthBookings: 0,
-    lastMonthEarnings: 0,
-    totalFees: 0,
-    dailyEarnings: [],
-  );
+        todayEarnings: 0,
+        weekEarnings: 0,
+        weekBookings: 0,
+        monthEarnings: 0,
+        monthBookings: 0,
+        lastMonthEarnings: 0,
+        totalFees: 0,
+        dailyEarnings: [],
+      );
 
   double get monthChange {
     if (lastMonthEarnings == 0) return 0;
@@ -193,7 +200,8 @@ class EarningsScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, color: DCTheme.error, size: 48),
               const SizedBox(height: 16),
-              Text('Error: $e', style: const TextStyle(color: DCTheme.textMuted)),
+              Text('Error: $e',
+                  style: const TextStyle(color: DCTheme.textMuted)),
             ],
           ),
         ),
@@ -234,23 +242,29 @@ class EarningsScreen extends ConsumerWidget {
               if (data.monthChange != 0) ...[
                 const SizedBox(width: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: data.monthChange > 0 ? Colors.green.withValues(alpha: 0.3) : Colors.red.withValues(alpha: 0.3),
+                    color: data.monthChange > 0
+                        ? Colors.green.withValues(alpha: 0.3)
+                        : Colors.red.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        data.monthChange > 0 ? Icons.trending_up : Icons.trending_down,
+                        data.monthChange > 0
+                            ? Icons.trending_up
+                            : Icons.trending_down,
                         color: Colors.white,
                         size: 14,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         '${data.monthChange.abs().toStringAsFixed(0)}%',
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 12),
                       ),
                     ],
                   ),
@@ -311,7 +325,8 @@ class EarningsScreen extends ConsumerWidget {
         child: Center(
           child: Column(
             children: [
-              Icon(Icons.bar_chart, size: 48, color: DCTheme.textMuted.withValues(alpha: 0.3)),
+              Icon(Icons.bar_chart,
+                  size: 48, color: DCTheme.textMuted.withValues(alpha: 0.3)),
               const SizedBox(height: 12),
               const Text(
                 'No earnings data this month',
@@ -323,7 +338,8 @@ class EarningsScreen extends ConsumerWidget {
       );
     }
 
-    final maxAmount = data.dailyEarnings.map((e) => e.amount).reduce((a, b) => a > b ? a : b);
+    final maxAmount =
+        data.dailyEarnings.map((e) => e.amount).reduce((a, b) => a > b ? a : b);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -348,7 +364,8 @@ class EarningsScreen extends ConsumerWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: data.dailyEarnings.take(14).map((daily) {
-                final heightPercent = maxAmount > 0 ? daily.amount / maxAmount : 0.0;
+                final heightPercent =
+                    maxAmount > 0 ? daily.amount / maxAmount : 0.0;
                 return Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -368,7 +385,8 @@ class EarningsScreen extends ConsumerWidget {
                         const SizedBox(height: 4),
                         Text(
                           '${daily.date.day}',
-                          style: const TextStyle(color: DCTheme.textMuted, fontSize: 10),
+                          style: const TextStyle(
+                              color: DCTheme.textMuted, fontSize: 10),
                         ),
                       ],
                     ),
@@ -439,9 +457,12 @@ class _EarningsStat extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        Text(label,
+            style: const TextStyle(color: Colors.white70, fontSize: 12)),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        Text(value,
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.w600)),
       ],
     );
   }
@@ -474,7 +495,9 @@ class _StatCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: const TextStyle(color: DCTheme.textMuted, fontSize: 12)),
+              Text(title,
+                  style:
+                      const TextStyle(color: DCTheme.textMuted, fontSize: 12)),
               Icon(icon, color: DCTheme.primary, size: 18),
             ],
           ),
@@ -489,7 +512,8 @@ class _StatCard extends StatelessWidget {
           ),
           if (subtitle != null) ...[
             const SizedBox(height: 4),
-            Text(subtitle!, style: const TextStyle(color: DCTheme.textMuted, fontSize: 11)),
+            Text(subtitle!,
+                style: const TextStyle(color: DCTheme.textMuted, fontSize: 11)),
           ],
         ],
       ),

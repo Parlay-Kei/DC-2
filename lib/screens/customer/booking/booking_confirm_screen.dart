@@ -13,7 +13,8 @@ class BookingConfirmScreen extends ConsumerStatefulWidget {
   const BookingConfirmScreen({super.key, required this.barberId});
 
   @override
-  ConsumerState<BookingConfirmScreen> createState() => _BookingConfirmScreenState();
+  ConsumerState<BookingConfirmScreen> createState() =>
+      _BookingConfirmScreenState();
 }
 
 class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
@@ -118,7 +119,8 @@ class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
                     const SizedBox(width: 4),
                     Text(
                       '${barber.rating.toStringAsFixed(1)} (${barber.totalReviews} reviews)',
-                      style: const TextStyle(color: DCTheme.textMuted, fontSize: 13),
+                      style: const TextStyle(
+                          color: DCTheme.textMuted, fontSize: 13),
                     ),
                   ],
                 ),
@@ -440,10 +442,28 @@ class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
 
   String _formatDate(DateTime date) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const days = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday'
+    ];
     return '${days[date.weekday % 7]}, ${months[date.month - 1]} ${date.day}';
   }
 
@@ -483,7 +503,9 @@ class _PaymentOption extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? DCTheme.primary.withValues(alpha: 0.1) : DCTheme.surfaceSecondary,
+          color: isSelected
+              ? DCTheme.primary.withValues(alpha: 0.1)
+              : DCTheme.surfaceSecondary,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? DCTheme.primary : Colors.transparent,
@@ -562,7 +584,8 @@ class _PaymentOption extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(color: DCTheme.textMuted, fontSize: 13),
+                    style:
+                        const TextStyle(color: DCTheme.textMuted, fontSize: 13),
                   ),
                 ],
               ),

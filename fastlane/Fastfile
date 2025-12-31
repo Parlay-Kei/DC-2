@@ -1,0 +1,611 @@
+#===============================================================================
+# Direct Cuts - Fastlane Configuration
+#===============================================================================
+# This Fastfile automates the deployment process for Direct Cuts mobile app.
+#
+# Lanes:
+#   - beta:            Upload to TestFlight (iOS) + Play Internal (Android)
+#   - release:         Upload for production review (App Store + Play Store)
+#   - promote_internal: Promote from internal testing to production
+#   - screenshots:     Capture and frame screenshots (placeholder)
+#
+# Prerequisites:
+#   - Ruby 2.6+ with bundler
+#   - Fastlane: gem install fastlane
+#   - Flutter SDK
+#   - For iOS: Xcode, App Store Connect API key
+#   - For Android: Google Play Service Account JSON
+#
+# Environment Variables Required:
+#   iOS:
+#     - APP_STORE_CONNECT_API_KEY_ID
+#     - APP_STORE_CONNECT_API_ISSUER_ID
+#     - APP_STORE_CONNECT_API_KEY_CONTENT (base64 encoded .p8 key)
+#     - APPLE_TEAM_ID
+#     - MATCH_GIT_URL (for code signing)
+#     - MATCH_PASSWORD (encryption password)
+#
+#   Android:
+#     - GOOGLE_PLAY_JSON_KEY (path to service account JSON)
+#     - ANDROID_KEYSTORE_PATH
+#     - ANDROID_KEYSTORE_PASSWORD
+#     - ANDROID_KEY_ALIAS
+#     - ANDROID_KEY_PASSWORD
+#
+#   Both:
+#     - ONESIGNAL_APP_ID
+#     - MAPBOX_ACCESS_TOKEN
+#
+# Usage:
+#   fastlane beta                    # Deploy to TestFlight + Play Internal
+#   fastlane release                 # Submit to App Store + Play Store review
+#   fastlane ios beta                # iOS only - TestFlight
+#   fastlane android beta            # Android only - Play Internal
+#   fastlane promote_internal        # Promote internal builds to production
+#
+# Documentation: https://docs.fastlane.tools
+#===============================================================================
+
+# Minimum Fastlane version
+fastlane_version "2.220.0"
+
+# Default platform
+default_platform(:ios)
+
+# Import shared values
+import_from_git(url: 'https://github.com/fastlane/fastlane')
+
+#===============================================================================
+# Configuration
+#===============================================================================
+
+# App configuration
+APP_IDENTIFIER = "com.directcuts.app"
+APP_NAME = "Direct Cuts"
+SUPPORT_EMAIL = "support@direct-cuts.com"
+
+# Artifact paths (matches build_android.sh output structure)
+def artifact_dir(version)
+  "#{Dir.pwd}/../artifacts/mobile/#{version}"
+end
+
+def android_aab_path(version)
+  "#{artifact_dir(version)}/android/direct-cuts-#{version}.aab"
+end
+
+def android_apk_path(version)
+  "#{artifact_dir(version)}/android/direct-cuts-#{version}.apk"
+end
+
+def ios_ipa_path(version)
+  "#{artifact_dir(version)}/ios/DirectCuts-#{version}.ipa"
+end
+
+# Get version from pubspec.yaml
+def get_version_from_pubspec
+  pubspec_path = "#{Dir.pwd}/../pubspec.yaml"
+  pubspec_content = File.read(pubspec_path)
+  version_match = pubspec_content.match(/version:\s*(\d+\.\d+\.\d+)\+(\d+)/)
+  if version_match
+    {
+      version_name: version_match[1],
+      build_number: version_match[2].to_i,
+      full_version: "#{version_match[1]}+#{version_match[2]}"
+    }
+  else
+    UI.user_error!("Could not parse version from pubspec.yaml")
+  end
+end
+
+#===============================================================================
+# Before All - Validation
+#===============================================================================
+
+before_all do |lane, options|
+  # Ensure we're in the fastlane directory
+  ensure_git_status_clean unless options[:skip_git_check]
+
+  # Get version info
+  @version_info = get_version_from_pubspec
+  UI.message("App Version: #{@version_info[:version_name]} (Build #{@version_info[:build_number]})")
+end
+
+#===============================================================================
+# iOS Platform
+#===============================================================================
+
+platform :ios do
+
+  desc "Validate iOS environment and credentials"
+  lane :validate do
+    # Check for required environment variables
+    required_vars = [
+      "APPLE_TEAM_ID",
+    ]
+
+    missing_vars = required_vars.select { |var| ENV[var].nil? || ENV[var].empty? }
+
+    unless missing_vars.empty?
+      UI.user_error!("Missing required environment variables: #{missing_vars.join(', ')}")
+    end
+
+    UI.success("iOS environment validated successfully")
+  end
+
+  desc "Sync iOS certificates and provisioning profiles using Match"
+  lane :certificates do
+    # Only run if Match is configured
+    if ENV["MATCH_GIT_URL"]
+      match(
+        type: "appstore",
+        app_identifier: APP_IDENTIFIER,
+        readonly: is_ci
+      )
+    else
+      UI.important("MATCH_GIT_URL not set - skipping certificate sync")
+      UI.important("For production, set up Match: https://docs.fastlane.tools/actions/match/")
+    end
+  end
+
+  desc "Build iOS release IPA"
+  lane :build do |options|
+    version = @version_info[:version_name]
+    build_number = @version_info[:build_number]
+
+    # Ensure certificates are synced
+    certificates unless options[:skip_certificates]
+
+    # Build Flutter iOS app
+    Dir.chdir("..") do
+      sh("flutter build ipa --release " \
+         "--build-name=#{version} " \
+         "--build-number=#{build_number} " \
+         "--dart-define=ONESIGNAL_APP_ID=#{ENV['ONESIGNAL_APP_ID']} " \
+         "--dart-define=MAPBOX_ACCESS_TOKEN=#{ENV['MAPBOX_ACCESS_TOKEN']} " \
+         "--dart-define=DEBUG_MODE=false " \
+         "--export-options-plist=ios/ExportOptions.plist")
+    end
+
+    # Copy IPA to artifacts directory
+    ipa_source = "../build/ios/ipa/Direct Cuts.ipa"
+    ipa_dest_dir = "#{artifact_dir(version)}/ios"
+    FileUtils.mkdir_p(ipa_dest_dir)
+    FileUtils.cp(ipa_source, ios_ipa_path(version))
+
+    UI.success("iOS IPA built: #{ios_ipa_path(version)}")
+    ios_ipa_path(version)
+  end
+
+  desc "Upload to TestFlight for beta testing"
+  lane :beta do |options|
+    version = @version_info[:version_name]
+
+    # Build if IPA doesn't exist
+    ipa_path = ios_ipa_path(version)
+    unless File.exist?(ipa_path)
+      UI.message("IPA not found, building...")
+      ipa_path = build(skip_certificates: options[:skip_certificates])
+    end
+
+    # Configure App Store Connect API
+    api_key = app_store_connect_api_key(
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+      issuer_id: ENV["APP_STORE_CONNECT_API_ISSUER_ID"],
+      key_content: ENV["APP_STORE_CONNECT_API_KEY_CONTENT"],
+      is_key_content_base64: true,
+      in_house: false
+    )
+
+    # Upload to TestFlight
+    upload_to_testflight(
+      api_key: api_key,
+      ipa: ipa_path,
+      app_identifier: APP_IDENTIFIER,
+      skip_waiting_for_build_processing: options[:skip_waiting],
+      distribute_external: false,
+      notify_external_testers: false,
+      changelog: options[:changelog] || "New beta build #{version} (#{@version_info[:build_number]})"
+    )
+
+    UI.success("iOS beta uploaded to TestFlight!")
+  end
+
+  desc "Submit to App Store for review"
+  lane :release do |options|
+    version = @version_info[:version_name]
+
+    # Build if IPA doesn't exist
+    ipa_path = ios_ipa_path(version)
+    unless File.exist?(ipa_path)
+      UI.message("IPA not found, building...")
+      ipa_path = build(skip_certificates: options[:skip_certificates])
+    end
+
+    # Configure App Store Connect API
+    api_key = app_store_connect_api_key(
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+      issuer_id: ENV["APP_STORE_CONNECT_API_ISSUER_ID"],
+      key_content: ENV["APP_STORE_CONNECT_API_KEY_CONTENT"],
+      is_key_content_base64: true,
+      in_house: false
+    )
+
+    # Upload to App Store Connect
+    upload_to_app_store(
+      api_key: api_key,
+      ipa: ipa_path,
+      app_identifier: APP_IDENTIFIER,
+      skip_screenshots: options[:skip_screenshots] || true,
+      skip_metadata: options[:skip_metadata] || false,
+      submit_for_review: options[:submit_for_review] || false,
+      automatic_release: false,
+      force: true, # Skip HTML preview
+      precheck_include_in_app_purchases: false,
+      submission_information: {
+        add_id_info_limits_tracking: true,
+        add_id_info_serves_ads: false,
+        add_id_info_tracks_action: true,
+        add_id_info_tracks_install: true,
+        add_id_info_uses_idfa: true,
+        export_compliance_available_on_french_store: true,
+        export_compliance_contains_proprietary_cryptography: false,
+        export_compliance_contains_third_party_cryptography: true,
+        export_compliance_is_exempt: true,
+        export_compliance_uses_encryption: true,
+        export_compliance_platform: "ios"
+      }
+    )
+
+    UI.success("iOS release uploaded to App Store Connect!")
+  end
+end
+
+#===============================================================================
+# Android Platform
+#===============================================================================
+
+platform :android do
+
+  desc "Validate Android environment and credentials"
+  lane :validate do
+    # Check for Google Play JSON key
+    json_key_path = ENV["GOOGLE_PLAY_JSON_KEY"]
+
+    if json_key_path.nil? || json_key_path.empty?
+      UI.user_error!("GOOGLE_PLAY_JSON_KEY environment variable not set")
+    end
+
+    unless File.exist?(json_key_path)
+      UI.user_error!("Google Play JSON key file not found: #{json_key_path}")
+    end
+
+    # Validate the JSON key
+    validate_play_store_json_key(json_key: json_key_path)
+
+    UI.success("Android environment validated successfully")
+  end
+
+  desc "Build Android release AAB"
+  lane :build do |options|
+    version = @version_info[:version_name]
+    build_number = @version_info[:build_number]
+
+    # Build using existing build script (ensures consistent builds)
+    Dir.chdir("..") do
+      sh("bash scripts/mobile/build_android.sh --aab-only --skip-tests")
+    end
+
+    # Verify AAB was created
+    aab_path = android_aab_path(version)
+    unless File.exist?(aab_path)
+      UI.user_error!("AAB not found at expected path: #{aab_path}")
+    end
+
+    UI.success("Android AAB built: #{aab_path}")
+    aab_path
+  end
+
+  desc "Upload to Google Play Internal Testing track"
+  lane :beta do |options|
+    version = @version_info[:version_name]
+
+    # Build if AAB doesn't exist
+    aab_path = android_aab_path(version)
+    unless File.exist?(aab_path)
+      UI.message("AAB not found, building...")
+      aab_path = build
+    end
+
+    # Validate we have the JSON key
+    json_key_path = ENV["GOOGLE_PLAY_JSON_KEY"]
+    UI.user_error!("GOOGLE_PLAY_JSON_KEY not set") if json_key_path.nil?
+
+    # Upload to internal testing track
+    upload_to_play_store(
+      json_key: json_key_path,
+      package_name: APP_IDENTIFIER,
+      aab: aab_path,
+      track: "internal",
+      release_status: "completed",
+      skip_upload_apk: true,
+      skip_upload_metadata: options[:skip_metadata] || true,
+      skip_upload_changelogs: false,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      version_name: version,
+      version_code: @version_info[:build_number]
+    )
+
+    UI.success("Android beta uploaded to Play Internal Testing!")
+  end
+
+  desc "Upload to Google Play for production release"
+  lane :release do |options|
+    version = @version_info[:version_name]
+
+    # Build if AAB doesn't exist
+    aab_path = android_aab_path(version)
+    unless File.exist?(aab_path)
+      UI.message("AAB not found, building...")
+      aab_path = build
+    end
+
+    json_key_path = ENV["GOOGLE_PLAY_JSON_KEY"]
+    UI.user_error!("GOOGLE_PLAY_JSON_KEY not set") if json_key_path.nil?
+
+    # Upload to production track (staged rollout)
+    upload_to_play_store(
+      json_key: json_key_path,
+      package_name: APP_IDENTIFIER,
+      aab: aab_path,
+      track: "production",
+      release_status: options[:draft] ? "draft" : "completed",
+      rollout: options[:rollout] || "0.1", # 10% staged rollout
+      skip_upload_apk: true,
+      skip_upload_metadata: false,
+      skip_upload_changelogs: false,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      version_name: version,
+      version_code: @version_info[:build_number]
+    )
+
+    UI.success("Android release uploaded to Play Store!")
+  end
+
+  desc "Promote from internal testing to production"
+  lane :promote_internal do |options|
+    json_key_path = ENV["GOOGLE_PLAY_JSON_KEY"]
+    UI.user_error!("GOOGLE_PLAY_JSON_KEY not set") if json_key_path.nil?
+
+    # Promote internal track to production
+    upload_to_play_store(
+      json_key: json_key_path,
+      package_name: APP_IDENTIFIER,
+      track: "internal",
+      track_promote_to: "production",
+      release_status: options[:draft] ? "draft" : "completed",
+      rollout: options[:rollout] || "0.1", # Start with 10% rollout
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+
+    UI.success("Android internal build promoted to production!")
+  end
+end
+
+#===============================================================================
+# Cross-Platform Lanes
+#===============================================================================
+
+desc "Deploy to TestFlight (iOS) and Play Internal Testing (Android)"
+lane :beta do |options|
+  # Run iOS beta
+  begin
+    ios beta(
+      skip_waiting: true,
+      skip_certificates: options[:skip_certificates],
+      changelog: options[:changelog]
+    )
+  rescue => e
+    UI.error("iOS beta failed: #{e.message}")
+    UI.important("Continuing with Android...")
+  end
+
+  # Run Android beta
+  begin
+    android beta(skip_metadata: options[:skip_metadata])
+  rescue => e
+    UI.error("Android beta failed: #{e.message}")
+  end
+
+  UI.success("Beta deployment complete!")
+end
+
+desc "Submit to App Store and Play Store for production review"
+lane :release do |options|
+  # iOS release
+  begin
+    ios release(
+      skip_screenshots: options[:skip_screenshots],
+      skip_metadata: options[:skip_metadata],
+      submit_for_review: options[:submit_for_review]
+    )
+  rescue => e
+    UI.error("iOS release failed: #{e.message}")
+    UI.important("Continuing with Android...")
+  end
+
+  # Android release
+  begin
+    android release(
+      draft: options[:draft],
+      rollout: options[:rollout]
+    )
+  rescue => e
+    UI.error("Android release failed: #{e.message}")
+  end
+
+  UI.success("Production release complete!")
+end
+
+desc "Promote internal builds to production on both platforms"
+lane :promote_internal do |options|
+  # Note: iOS doesn't have a direct "promote" - TestFlight builds must be
+  # submitted separately to App Store. This lane primarily handles Android.
+
+  UI.message("For iOS: Submit TestFlight build via App Store Connect or run 'fastlane ios release'")
+
+  android promote_internal(
+    draft: options[:draft],
+    rollout: options[:rollout]
+  )
+
+  UI.success("Internal promotion complete!")
+end
+
+#===============================================================================
+# Screenshot Automation (Placeholder)
+#===============================================================================
+
+desc "Capture and frame app screenshots for store listings"
+lane :screenshots do |options|
+  UI.header("Screenshot Automation")
+  UI.important("Screenshot automation is a placeholder - asset generation required")
+
+  # This lane will be implemented when screenshot assets are ready
+  #
+  # Required setup:
+  # 1. Create test scenarios in test/screenshots/
+  # 2. Add device frames in fastlane/frames/
+  # 3. Create Screenshotfile configuration
+  #
+  # Implementation will use:
+  # - capture_ios_screenshots (Snapshot)
+  # - capture_android_screenshots (Screengrab)
+  # - frame_screenshots (Frameit)
+
+  UI.message("Screenshot Requirements:")
+  UI.message("")
+  UI.message("iOS Screenshots (App Store):")
+  UI.message("  - 6.7\" (iPhone 15 Pro Max): 1290 x 2796 px")
+  UI.message("  - 6.5\" (iPhone 14 Plus): 1284 x 2778 px")
+  UI.message("  - 5.5\" (iPhone 8 Plus): 1242 x 2208 px")
+  UI.message("  - iPad Pro 12.9\" 6th gen: 2048 x 2732 px")
+  UI.message("  - iPad Pro 12.9\" 2nd gen: 2048 x 2732 px")
+  UI.message("")
+  UI.message("Android Screenshots (Play Store):")
+  UI.message("  - Phone: 1080 x 1920 px (minimum)")
+  UI.message("  - 7\" Tablet: 1200 x 1920 px")
+  UI.message("  - 10\" Tablet: 1600 x 2560 px")
+  UI.message("")
+  UI.message("To implement:")
+  UI.message("  1. Create snapshot test files in test/screenshots/")
+  UI.message("  2. Run: fastlane snapshot init")
+  UI.message("  3. Run: fastlane frameit setup")
+  UI.message("  4. Configure Snapfile and Framefile")
+
+  # Placeholder directory structure
+  screenshots_dir = "#{Dir.pwd}/screenshots"
+  FileUtils.mkdir_p("#{screenshots_dir}/ios")
+  FileUtils.mkdir_p("#{screenshots_dir}/android")
+  FileUtils.mkdir_p("#{screenshots_dir}/frames")
+
+  # Create placeholder README
+  readme_content = <<~README
+    # Direct Cuts - Screenshot Assets
+
+    This directory contains app store screenshots.
+
+    ## Directory Structure
+
+    ```
+    screenshots/
+      ios/           # iOS screenshots by device
+      android/       # Android screenshots by device
+      frames/        # Device frames for Frameit
+    ```
+
+    ## Required Screenshots
+
+    See APP_STORE_CONNECT_CHECKLIST.md and GOOGLE_PLAY_CHECKLIST.md for
+    detailed screenshot requirements.
+
+    ## Automation
+
+    When ready, configure:
+    - Snapfile (iOS screenshot configuration)
+    - Screengrabfile (Android screenshot configuration)
+    - Framefile (device frame configuration)
+  README
+
+  File.write("#{screenshots_dir}/README.md", readme_content)
+
+  UI.success("Screenshot directories created at: #{screenshots_dir}")
+end
+
+#===============================================================================
+# Utility Lanes
+#===============================================================================
+
+desc "Clean build artifacts"
+lane :clean do
+  Dir.chdir("..") do
+    sh("flutter clean")
+    sh("rm -rf build/")
+    sh("rm -rf artifacts/")
+  end
+  UI.success("Build artifacts cleaned")
+end
+
+desc "Increment version number"
+lane :bump do |options|
+  type = options[:type] || "patch"
+
+  Dir.chdir("..") do
+    sh("bash scripts/mobile/bump_version.sh #{type}")
+  end
+
+  # Reload version info
+  @version_info = get_version_from_pubspec
+  UI.success("Version bumped to #{@version_info[:version_name]}")
+end
+
+desc "Print current version information"
+lane :version do
+  version_info = get_version_from_pubspec
+
+  UI.header("Direct Cuts Version Info")
+  UI.message("Version Name: #{version_info[:version_name]}")
+  UI.message("Build Number: #{version_info[:build_number]}")
+  UI.message("Full Version: #{version_info[:full_version]}")
+end
+
+#===============================================================================
+# Error Handling
+#===============================================================================
+
+error do |lane, exception, options|
+  UI.error("Lane '#{lane}' failed with error:")
+  UI.error(exception.message)
+
+  # Notify on error (can integrate with Slack, etc.)
+  # slack(
+  #   message: "Fastlane failed: #{exception.message}",
+  #   success: false,
+  #   channel: "#mobile-deployments"
+  # )
+end
+
+#===============================================================================
+# After All - Cleanup
+#===============================================================================
+
+after_all do |lane, options|
+  # Clean up temporary files if needed
+  UI.success("Lane '#{lane}' completed successfully!")
+end

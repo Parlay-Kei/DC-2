@@ -160,9 +160,12 @@ class BarberCrmNotifier extends StateNotifier<BarberCrmState> {
     try {
       final updates = <String, dynamic>{};
       if (isMobile != null) updates['is_mobile'] = isMobile;
-      if (offersHomeService != null) updates['offers_home_service'] = offersHomeService;
-      if (serviceRadiusMiles != null) updates['service_radius_miles'] = serviceRadiusMiles;
-      if (travelFeePerMile != null) updates['travel_fee_per_mile'] = travelFeePerMile;
+      if (offersHomeService != null)
+        updates['offers_home_service'] = offersHomeService;
+      if (serviceRadiusMiles != null)
+        updates['service_radius_miles'] = serviceRadiusMiles;
+      if (travelFeePerMile != null)
+        updates['travel_fee_per_mile'] = travelFeePerMile;
 
       if (updates.isEmpty) {
         state = state.copyWith(isSaving: false);

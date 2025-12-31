@@ -55,7 +55,8 @@ class MapService {
           );
 
       if (response.statusCode != 200) {
-        throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
+        throw Exception(
+            'HTTP ${response.statusCode}: ${response.reasonPhrase}');
       }
 
       final jsonData = json.decode(response.body) as Map<String, dynamic>;
@@ -173,7 +174,8 @@ class MapService {
           );
 
       if (response.statusCode != 200) {
-        throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
+        throw Exception(
+            'HTTP ${response.statusCode}: ${response.reasonPhrase}');
       }
 
       final jsonData = json.decode(response.body) as Map<String, dynamic>;
@@ -237,7 +239,8 @@ class MapService {
       // Cache result
       _cache[cacheKey] = _CacheEntry(geojson);
 
-      Logger.debug('MapService: Found ${geojson.features.length} mobile barbers');
+      Logger.debug(
+          'MapService: Found ${geojson.features.length} mobile barbers');
       return geojson;
     } catch (e) {
       Logger.error('MapService: Failed to fetch mobile barbers', e);
@@ -374,8 +377,9 @@ class GeocodingService {
     }
 
     // Create cache key
-    final proximityKey =
-        proximityLng != null && proximityLat != null ? '@$proximityLng,$proximityLat' : '';
+    final proximityKey = proximityLng != null && proximityLat != null
+        ? '@$proximityLng,$proximityLat'
+        : '';
     final cacheKey = 'autocomplete:${query.toLowerCase()}$proximityKey';
 
     // Check cache
@@ -385,7 +389,8 @@ class GeocodingService {
     }
 
     try {
-      var url = '${AppConfig.supabaseFunctionsUrl}/geo-autocomplete?q=${Uri.encodeComponent(query)}';
+      var url =
+          '${AppConfig.supabaseFunctionsUrl}/geo-autocomplete?q=${Uri.encodeComponent(query)}';
       if (proximityLng != null && proximityLat != null) {
         url += '&proximity=$proximityLng,$proximityLat';
       }
@@ -397,7 +402,8 @@ class GeocodingService {
           );
 
       if (response.statusCode != 200) {
-        throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
+        throw Exception(
+            'HTTP ${response.statusCode}: ${response.reasonPhrase}');
       }
 
       final jsonData = json.decode(response.body) as List<dynamic>;
@@ -419,7 +425,8 @@ class GeocodingService {
 
       return suggestions;
     } catch (e) {
-      Logger.error('GeocodingService: Failed to fetch autocomplete suggestions', e);
+      Logger.error(
+          'GeocodingService: Failed to fetch autocomplete suggestions', e);
       return [];
     }
   }
@@ -442,7 +449,8 @@ class GeocodingService {
     }
 
     try {
-      final url = '${AppConfig.supabaseFunctionsUrl}/geo-reverse?lng=$lng&lat=$lat';
+      final url =
+          '${AppConfig.supabaseFunctionsUrl}/geo-reverse?lng=$lng&lat=$lat';
 
       Logger.debug('GeocodingService: Fetching reverse geocode result');
 
@@ -451,7 +459,8 @@ class GeocodingService {
           );
 
       if (response.statusCode != 200) {
-        throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
+        throw Exception(
+            'HTTP ${response.statusCode}: ${response.reasonPhrase}');
       }
 
       final jsonData = json.decode(response.body) as Map<String, dynamic>;
@@ -462,7 +471,8 @@ class GeocodingService {
 
       return result;
     } catch (e) {
-      Logger.error('GeocodingService: Failed to fetch reverse geocode result', e);
+      Logger.error(
+          'GeocodingService: Failed to fetch reverse geocode result', e);
       return null;
     }
   }

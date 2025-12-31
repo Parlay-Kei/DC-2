@@ -37,7 +37,8 @@ class ServicesScreen extends ConsumerWidget {
               itemCount: services.length,
               itemBuilder: (context, index) => _ServiceCard(
                 service: services[index],
-                onEdit: () => context.push('/barber/services/edit/${services[index].id}'),
+                onEdit: () =>
+                    context.push('/barber/services/edit/${services[index].id}'),
                 onDelete: () => _confirmDelete(context, ref, services[index]),
               ),
             ),
@@ -52,7 +53,8 @@ class ServicesScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, color: DCTheme.error, size: 48),
               const SizedBox(height: 16),
-              const Text('Error loading services', style: TextStyle(color: DCTheme.textMuted)),
+              const Text('Error loading services',
+                  style: TextStyle(color: DCTheme.textMuted)),
               TextButton(
                 onPressed: () => ref.invalidate(myServicesProvider),
                 child: const Text('Retry'),
@@ -108,12 +110,14 @@ class ServicesScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _confirmDelete(BuildContext context, WidgetRef ref, Service service) async {
+  Future<void> _confirmDelete(
+      BuildContext context, WidgetRef ref, Service service) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: DCTheme.surface,
-        title: const Text('Delete Service?', style: TextStyle(color: DCTheme.text)),
+        title: const Text('Delete Service?',
+            style: TextStyle(color: DCTheme.text)),
         content: Text(
           'Are you sure you want to delete "${service.name}"? This action cannot be undone.',
           style: const TextStyle(color: DCTheme.textMuted),
@@ -193,23 +197,27 @@ class _ServiceCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.access_time, size: 14, color: DCTheme.textMuted),
+                          const Icon(Icons.access_time,
+                              size: 14, color: DCTheme.textMuted),
                           const SizedBox(width: 4),
                           Text(
                             service.formattedDuration,
-                            style: const TextStyle(color: DCTheme.textMuted, fontSize: 13),
+                            style: const TextStyle(
+                                color: DCTheme.textMuted, fontSize: 13),
                           ),
                           if (service.category != null) ...[
                             const SizedBox(width: 12),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
                                 color: DCTheme.surfaceSecondary,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 service.category!,
-                                style: const TextStyle(color: DCTheme.textMuted, fontSize: 11),
+                                style: const TextStyle(
+                                    color: DCTheme.textMuted, fontSize: 11),
                               ),
                             ),
                           ],
@@ -241,7 +249,8 @@ class _ServiceCard extends StatelessWidget {
                               color: DCTheme.surfaceSecondary,
                               borderRadius: BorderRadius.circular(6),
                             ),
-                            child: const Icon(Icons.edit, size: 16, color: DCTheme.textMuted),
+                            child: const Icon(Icons.edit,
+                                size: 16, color: DCTheme.textMuted),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -253,7 +262,8 @@ class _ServiceCard extends StatelessWidget {
                               color: DCTheme.error.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(6),
                             ),
-                            child: const Icon(Icons.delete, size: 16, color: DCTheme.error),
+                            child: const Icon(Icons.delete,
+                                size: 16, color: DCTheme.error),
                           ),
                         ),
                       ],

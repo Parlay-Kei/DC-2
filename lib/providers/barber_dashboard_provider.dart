@@ -12,8 +12,9 @@ final barberStatsProvider = FutureProvider<BarberStats>((ref) async {
   try {
     final client = Supabase.instance.client;
     final today = DateTime.now();
-    final todayStr = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-    
+    final todayStr =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
     // Get today's earnings
     final todayEarnings = await client
         .from('appointments')
@@ -37,8 +38,9 @@ final barberStatsProvider = FutureProvider<BarberStats>((ref) async {
 
     // Get week's earnings
     final weekStart = today.subtract(Duration(days: today.weekday - 1));
-    final weekStartStr = '${weekStart.year}-${weekStart.month.toString().padLeft(2, '0')}-${weekStart.day.toString().padLeft(2, '0')}';
-    
+    final weekStartStr =
+        '${weekStart.year}-${weekStart.month.toString().padLeft(2, '0')}-${weekStart.day.toString().padLeft(2, '0')}';
+
     final weekEarnings = await client
         .from('appointments')
         .select('total_price, platform_fee')
@@ -52,8 +54,9 @@ final barberStatsProvider = FutureProvider<BarberStats>((ref) async {
     }
 
     // Get month's earnings
-    final monthStartStr = '${today.year}-${today.month.toString().padLeft(2, '0')}-01';
-    
+    final monthStartStr =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-01';
+
     final monthEarnings = await client
         .from('appointments')
         .select('total_price, platform_fee')
@@ -109,25 +112,27 @@ class BarberStats {
   });
 
   factory BarberStats.empty() => BarberStats(
-    todayEarnings: 0,
-    todayAppointments: 0,
-    weekEarnings: 0,
-    monthEarnings: 0,
-    monthBookings: 0,
-    rating: 0,
-    totalReviews: 0,
-  );
+        todayEarnings: 0,
+        todayAppointments: 0,
+        weekEarnings: 0,
+        monthEarnings: 0,
+        monthBookings: 0,
+        rating: 0,
+        totalReviews: 0,
+      );
 }
 
 // Today's appointments for barber
-final barberTodayAppointmentsProvider = FutureProvider<List<Booking>>((ref) async {
+final barberTodayAppointmentsProvider =
+    FutureProvider<List<Booking>>((ref) async {
   final barberId = SupabaseConfig.currentUserId;
   if (barberId == null) return [];
 
   try {
     final today = DateTime.now();
-    final todayStr = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-    
+    final todayStr =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
     final response = await Supabase.instance.client
         .from('appointments')
         .select('''
@@ -158,16 +163,19 @@ final barberTodayAppointmentsProvider = FutureProvider<List<Booking>>((ref) asyn
 });
 
 // Upcoming appointments for barber (next 7 days)
-final barberUpcomingAppointmentsProvider = FutureProvider<List<Booking>>((ref) async {
+final barberUpcomingAppointmentsProvider =
+    FutureProvider<List<Booking>>((ref) async {
   final barberId = SupabaseConfig.currentUserId;
   if (barberId == null) return [];
 
   try {
     final today = DateTime.now();
-    final todayStr = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    final todayStr =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
     final weekEnd = today.add(const Duration(days: 7));
-    final weekEndStr = '${weekEnd.year}-${weekEnd.month.toString().padLeft(2, '0')}-${weekEnd.day.toString().padLeft(2, '0')}';
-    
+    final weekEndStr =
+        '${weekEnd.year}-${weekEnd.month.toString().padLeft(2, '0')}-${weekEnd.day.toString().padLeft(2, '0')}';
+
     final response = await Supabase.instance.client
         .from('appointments')
         .select('''
@@ -239,21 +247,18 @@ final barberClientsProvider = FutureProvider<List<ClientInfo>>((ref) async {
   if (barberId == null) return [];
 
   try {
-    final response = await Supabase.instance.client
-        .from('appointments')
-        .select('''
+    final response =
+        await Supabase.instance.client.from('appointments').select('''
           customer_id,
           profiles!appointments_customer_id_fkey(id, full_name, avatar_url, phone)
-        ''')
-        .eq('barber_id', barberId)
-        .eq('status', 'completed');
+        ''').eq('barber_id', barberId).eq('status', 'completed');
 
     // Group by customer and count
     final Map<String, ClientInfo> clientsMap = {};
     for (final apt in response) {
       final profile = apt['profiles'];
       if (profile == null) continue;
-      
+
       final customerId = profile['id'] as String;
       if (clientsMap.containsKey(customerId)) {
         clientsMap[customerId] = clientsMap[customerId]!.copyWith(

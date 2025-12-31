@@ -82,3 +82,42 @@
 -dontwarn com.google.android.play.core.splitcompat.SplitCompatApplication
 -dontwarn com.google.android.play.core.splitinstall.**
 -dontwarn com.google.android.play.core.tasks.**
+
+# ==========================================
+# Direct Cuts Security-Sensitive Classes
+# ==========================================
+
+# Obfuscate all application classes while keeping Flutter communication intact
+-keep,allowobfuscation class com.directcuts.app.** { *; }
+
+# Remove all debug logging in release builds
+-assumenosideeffects class android.util.Log {
+    public static *** d(...);
+    public static *** v(...);
+    public static *** i(...);
+    public static *** w(...);
+}
+
+# Obfuscate sensitive data handling
+-keepclassmembers class * {
+    private java.lang.String token;
+    private java.lang.String apiKey;
+    private java.lang.String password;
+    private java.lang.String deviceToken;
+}
+
+# Enhanced obfuscation settings
+-repackageclasses 'o'
+-allowaccessmodification
+-overloadaggressively
+
+# Remove source file names and line numbers for additional obfuscation
+# (Keep LineNumberTable for crash reporting, but rename source files)
+-renamesourcefileattribute SourceFile
+
+# OneSignal (keep required classes)
+-keep class com.onesignal.** { *; }
+-dontwarn com.onesignal.**
+
+# Flutter Secure Storage (keep for encryption)
+-keep class com.it_nomads.fluttersecurestorage.** { *; }

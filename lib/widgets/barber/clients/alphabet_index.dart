@@ -23,15 +23,41 @@ class _AlphabetIndexState extends State<AlphabetIndex> {
   bool _isDragging = false;
 
   static const _letters = [
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '#',
+    'A',
+    'B',
+    'C',
+    'D',
+    'E',
+    'F',
+    'G',
+    'H',
+    'I',
+    'J',
+    'K',
+    'L',
+    'M',
+    'N',
+    'O',
+    'P',
+    'Q',
+    'R',
+    'S',
+    'T',
+    'U',
+    'V',
+    'W',
+    'X',
+    'Y',
+    'Z',
+    '#',
   ];
 
   void _handleDrag(Offset globalPosition, BuildContext context) {
     final RenderBox box = context.findRenderObject() as RenderBox;
     final localPosition = box.globalToLocal(globalPosition);
     final letterHeight = box.size.height / _letters.length;
-    final index = (localPosition.dy / letterHeight).floor().clamp(0, _letters.length - 1);
+    final index =
+        (localPosition.dy / letterHeight).floor().clamp(0, _letters.length - 1);
     final letter = _letters[index];
 
     if (letter != _selectedLetter) {
@@ -153,10 +179,9 @@ class _ClientListWithIndexState extends State<ClientListWithIndex> {
     String? currentLetter;
 
     for (final client in _filteredClients) {
-      final letter = client.name.isNotEmpty
-          ? client.name[0].toUpperCase()
-          : '#';
-      
+      final letter =
+          client.name.isNotEmpty ? client.name[0].toUpperCase() : '#';
+
       if (letter != currentLetter) {
         _sectionOffsets[letter] = offset;
         currentLetter = letter;
@@ -171,7 +196,8 @@ class _ClientListWithIndexState extends State<ClientListWithIndex> {
       _filteredClients = widget.clients;
     } else {
       _filteredClients = widget.clients
-          .where((c) => c.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+          .where(
+              (c) => c.name.toLowerCase().contains(_searchQuery.toLowerCase()))
           .toList();
     }
     _calculateSectionOffsets();
@@ -193,9 +219,8 @@ class _ClientListWithIndexState extends State<ClientListWithIndex> {
     // Group clients by first letter
     final grouped = <String, List<ClientData>>{};
     for (final client in _filteredClients) {
-      final letter = client.name.isNotEmpty
-          ? client.name[0].toUpperCase()
-          : '#';
+      final letter =
+          client.name.isNotEmpty ? client.name[0].toUpperCase() : '#';
       grouped.putIfAbsent(letter, () => []).add(client);
     }
     final sortedKeys = grouped.keys.toList()..sort();
@@ -344,7 +369,8 @@ class _ClientListHeader extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(color: DCTheme.primary),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
           ),
         ),
@@ -422,8 +448,9 @@ class _ClientRow extends StatelessWidget {
           CircleAvatar(
             radius: 24,
             backgroundColor: DCTheme.surfaceSecondary,
-            backgroundImage:
-                client.avatarUrl != null ? NetworkImage(client.avatarUrl!) : null,
+            backgroundImage: client.avatarUrl != null
+                ? NetworkImage(client.avatarUrl!)
+                : null,
             child: client.avatarUrl == null
                 ? Text(
                     client.name.isNotEmpty ? client.name[0].toUpperCase() : '?',

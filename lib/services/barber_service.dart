@@ -17,11 +17,8 @@ class BarberService {
   Future<Barber?> getBarber(String barberId) async {
     try {
       // 1. Fetch barber
-      final barberResponse = await _client
-          .from('barbers')
-          .select('*')
-          .eq('id', barberId)
-          .single();
+      final barberResponse =
+          await _client.from('barbers').select('*').eq('id', barberId).single();
 
       // 2. Fetch user profile separately
       final userResponse = await _client
@@ -85,10 +82,8 @@ class BarberService {
   Future<List<Barber>> searchBarbers(String query) async {
     try {
       // 1. Fetch all active barbers
-      final barbersResponse = await _client
-          .from('barbers')
-          .select('*')
-          .eq('is_active', true);
+      final barbersResponse =
+          await _client.from('barbers').select('*').eq('is_active', true);
 
       final barbers = barbersResponse as List;
       if (barbers.isEmpty) return [];
@@ -113,16 +108,17 @@ class BarberService {
         final shopName = (barber['shop_name'] as String? ?? '').toLowerCase();
         final location = (barber['location'] as String? ?? '').toLowerCase();
         final userName = (user?['full_name'] as String? ?? '').toLowerCase();
-        
+
         return shopName.contains(lowerQuery) ||
-               location.contains(lowerQuery) ||
-               userName.contains(lowerQuery);
+            location.contains(lowerQuery) ||
+            userName.contains(lowerQuery);
       }).toList();
 
       if (filteredBarbers.isEmpty) return [];
 
       // 5. Fetch ratings for filtered barbers
-      final filteredIds = filteredBarbers.map((b) => b['id'] as String).toList();
+      final filteredIds =
+          filteredBarbers.map((b) => b['id'] as String).toList();
       final ratingsMap = await _getBarbersRatings(filteredIds);
 
       return filteredBarbers.map((barber) {
@@ -192,18 +188,20 @@ class BarberService {
 
       // 5. Map, calculate distances, filter by exact radius
       final results = <BarberWithDistance>[];
-      
+
       for (final barberData in barbers) {
         final barberLat = (barberData['latitude'] as num).toDouble();
         final barberLng = (barberData['longitude'] as num).toDouble();
-        
-        final distance = _calculateDistance(latitude, longitude, barberLat, barberLng);
-        
+
+        final distance =
+            _calculateDistance(latitude, longitude, barberLat, barberLng);
+
         if (distance <= radiusMiles) {
           final user = userMap[barberData['id']];
           final rating = ratingsMap[barberData['id']];
           final barber = _mapToBarber(barberData, user, rating);
-          results.add(BarberWithDistance(barber: barber, distanceMiles: distance));
+          results
+              .add(BarberWithDistance(barber: barber, distanceMiles: distance));
         }
       }
 
@@ -364,7 +362,8 @@ class BarberService {
         return {'averageRating': 0, 'totalReviews': 0};
       }
 
-      final total = reviews.fold<double>(0, (sum, r) => sum + (r['rating'] as num).toDouble());
+      final total = reviews.fold<double>(
+          0, (sum, r) => sum + (r['rating'] as num).toDouble());
       return {
         'averageRating': total / reviews.length,
         'totalReviews': reviews.length.toDouble(),
@@ -375,9 +374,10 @@ class BarberService {
   }
 
   /// Get ratings for multiple barbers
-  Future<Map<String, Map<String, double>>> _getBarbersRatings(List<String> barberIds) async {
+  Future<Map<String, Map<String, double>>> _getBarbersRatings(
+      List<String> barberIds) async {
     final Map<String, Map<String, double>> ratingsMap = {};
-    
+
     if (barberIds.isEmpty) return ratingsMap;
 
     try {
@@ -387,7 +387,7 @@ class BarberService {
           .inFilter('barber_id', barberIds);
 
       final reviews = response as List;
-      
+
       // Group reviews by barber_id
       final Map<String, List<double>> reviewsByBarber = {};
       for (final review in reviews) {
@@ -446,7 +446,8 @@ class BarberService {
       rating: rating?['averageRating'] ?? 0,
       totalReviews: (rating?['totalReviews'] ?? 0).toInt(),
       stripeAccountId: barberData['stripe_account_id'] as String?,
-      stripeOnboardingComplete: barberData['stripe_onboarding_complete'] as bool? ?? false,
+      stripeOnboardingComplete:
+          barberData['stripe_onboarding_complete'] as bool? ?? false,
       onboardingComplete: barberData['onboarding_complete'] as bool? ?? false,
       subscriptionTier: barberData['subscription_tier'] as String? ?? 'free',
       createdAt: barberData['created_at'] != null
@@ -456,14 +457,17 @@ class BarberService {
   }
 
   /// Calculate distance between two points using Haversine formula
-  double _calculateDistance(double lat1, double lng1, double lat2, double lng2) {
+  double _calculateDistance(
+      double lat1, double lng1, double lat2, double lng2) {
     const earthRadiusMiles = 3959.0;
     final dLat = _toRadians(lat2 - lat1);
     final dLng = _toRadians(lng2 - lng1);
 
     final a = sin(dLat / 2) * sin(dLat / 2) +
-        cos(_toRadians(lat1)) * cos(_toRadians(lat2)) *
-        sin(dLng / 2) * sin(dLng / 2);
+        cos(_toRadians(lat1)) *
+            cos(_toRadians(lat2)) *
+            sin(dLng / 2) *
+            sin(dLng / 2);
     final c = 2 * atan2(sqrt(a), sqrt(1 - a));
 
     return earthRadiusMiles * c;

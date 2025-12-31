@@ -84,9 +84,8 @@ class MessageService {
         query = query.lt('created_at', before.toIso8601String());
       }
 
-      final response = await query
-          .order('created_at', ascending: false)
-          .limit(limit);
+      final response =
+          await query.order('created_at', ascending: false).limit(limit);
 
       return (response as List)
           .map((m) => Message.fromJson(m))
@@ -146,18 +145,15 @@ class MessageService {
     try {
       // Generate unique filename
       final ext = file.path.split('.').last;
-      final filename = '${conversationId}_${DateTime.now().millisecondsSinceEpoch}.$ext';
+      final filename =
+          '${conversationId}_${DateTime.now().millisecondsSinceEpoch}.$ext';
       final path = 'messages/$filename';
 
       // Upload to Supabase Storage
-      await _client.storage
-          .from('chat-media')
-          .upload(path, file);
+      await _client.storage.from('chat-media').upload(path, file);
 
       // Get public URL
-      final mediaUrl = _client.storage
-          .from('chat-media')
-          .getPublicUrl(path);
+      final mediaUrl = _client.storage.from('chat-media').getPublicUrl(path);
 
       // Send message with media
       return sendMessage(
@@ -185,18 +181,15 @@ class MessageService {
     try {
       // Generate unique filename
       final ext = filename.split('.').last;
-      final uniqueFilename = '${conversationId}_${DateTime.now().millisecondsSinceEpoch}.$ext';
+      final uniqueFilename =
+          '${conversationId}_${DateTime.now().millisecondsSinceEpoch}.$ext';
       final path = 'messages/$uniqueFilename';
 
       // Upload to Supabase Storage
-      await _client.storage
-          .from('chat-media')
-          .uploadBinary(path, bytes);
+      await _client.storage.from('chat-media').uploadBinary(path, bytes);
 
       // Get public URL
-      final mediaUrl = _client.storage
-          .from('chat-media')
-          .getPublicUrl(path);
+      final mediaUrl = _client.storage.from('chat-media').getPublicUrl(path);
 
       // Send message with media
       return sendMessage(
@@ -299,14 +292,16 @@ class MessageService {
             final typingUserId = payload['user_id'] as String?;
             final isTyping = payload['is_typing'] as bool? ?? false;
             final userName = payload['user_name'] as String?;
-            
+
             // Don't show own typing indicator
             if (typingUserId != null && typingUserId != userId) {
-              controller.add(TypingStatus(
-                userId: typingUserId,
-                userName: userName,
-                isTyping: isTyping,
-              ),);
+              controller.add(
+                TypingStatus(
+                  userId: typingUserId,
+                  userName: userName,
+                  isTyping: isTyping,
+                ),
+              );
             }
           },
         )

@@ -19,9 +19,11 @@ export 'services/availability_service.dart';
 export 'services/review_service.dart';
 export 'services/favorites_service.dart';
 export 'services/location_service.dart';
-export 'services/message_service.dart' hide TypingStatus; // TypingStatus is internal, use TypingIndicator widget
+export 'services/message_service.dart'
+    hide TypingStatus; // TypingStatus is internal, use TypingIndicator widget
 export 'services/service_service.dart';
-export 'services/payment_service.dart' hide PaymentResultStatus; // Internal enum, use PaymentResult.isSuccess etc.
+export 'services/payment_service.dart'
+    hide PaymentResultStatus; // Internal enum, use PaymentResult.isSuccess etc.
 export 'services/profile_service.dart';
 export 'services/notification_service.dart';
 
@@ -35,7 +37,7 @@ export 'providers/barber_dashboard_provider.dart';
 export 'providers/payment_provider.dart';
 export 'providers/profile_provider.dart';
 
-// Note: barberAvailabilityProvider exists in both booking_provider.dart 
+// Note: barberAvailabilityProvider exists in both booking_provider.dart
 // and availability_screen.dart - use the specific import when needed.
 
 // Screens - Auth
@@ -61,7 +63,8 @@ export 'screens/barber/dashboard_tab.dart';
 export 'screens/barber/clients_tab.dart';
 export 'screens/barber/messages_tab.dart';
 export 'screens/barber/barber_profile_tab.dart';
-export 'screens/barber/availability_screen.dart' hide barberAvailabilityProvider, BarberDaySchedule;
+export 'screens/barber/availability_screen.dart'
+    hide barberAvailabilityProvider, BarberDaySchedule;
 export 'screens/barber/earnings_screen.dart';
 export 'screens/barber/schedule/schedule_tab.dart';
 export 'screens/barber/services/services_screen.dart';

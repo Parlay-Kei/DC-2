@@ -116,8 +116,11 @@ class BarberProfileTab extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.location_on,
-                    size: 14, color: DCTheme.success.withValues(alpha: 0.8),),
+                Icon(
+                  Icons.location_on,
+                  size: 14,
+                  color: DCTheme.success.withValues(alpha: 0.8),
+                ),
                 const SizedBox(width: 4),
                 Text(
                   'Location set',
@@ -138,8 +141,11 @@ class BarberProfileTab extends ConsumerWidget {
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.directions_car,
-                            size: 12, color: DCTheme.info,),
+                        Icon(
+                          Icons.directions_car,
+                          size: 12,
+                          color: DCTheme.info,
+                        ),
                         SizedBox(width: 4),
                         Text(
                           'Mobile',
@@ -160,8 +166,11 @@ class BarberProfileTab extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.location_off,
-                    size: 14, color: DCTheme.warning.withValues(alpha: 0.8),),
+                Icon(
+                  Icons.location_off,
+                  size: 14,
+                  color: DCTheme.warning.withValues(alpha: 0.8),
+                ),
                 const SizedBox(width: 4),
                 Text(
                   'Location not set',
@@ -284,8 +293,11 @@ class BarberProfileTab extends ConsumerWidget {
                   color: DCTheme.primary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.trending_up,
-                    color: DCTheme.primary, size: 20,),
+                child: const Icon(
+                  Icons.trending_up,
+                  color: DCTheme.primary,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -335,8 +347,7 @@ class BarberProfileTab extends ConsumerWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              if (barber.displayName.isEmpty)
-                _buildMissingItem('Display Name'),
+              if (barber.displayName.isEmpty) _buildMissingItem('Display Name'),
               if (barber.bio?.isEmpty != false) _buildMissingItem('Bio'),
               if (!barber.hasLocation) _buildMissingItem('Location'),
               if (barber.shopName?.isEmpty != false)
@@ -358,7 +369,8 @@ class BarberProfileTab extends ConsumerWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.add_circle_outline, size: 14, color: DCTheme.warning),
+          const Icon(Icons.add_circle_outline,
+              size: 14, color: DCTheme.warning),
           const SizedBox(width: 4),
           Text(
             label,
@@ -418,8 +430,11 @@ class BarberProfileTab extends ConsumerWidget {
               : 'Set your location to be discovered',
           trailing: hasLocation
               ? const Icon(Icons.check_circle, color: DCTheme.success, size: 20)
-              : Icon(Icons.warning_amber,
-                  color: DCTheme.warning.withValues(alpha: 0.8), size: 20,),
+              : Icon(
+                  Icons.warning_amber,
+                  color: DCTheme.warning.withValues(alpha: 0.8),
+                  size: 20,
+                ),
           onTap: () => context.push('/barber/location-settings'),
         ),
       ],

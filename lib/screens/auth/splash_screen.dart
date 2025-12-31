@@ -86,7 +86,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         },
         loading: () {
           // Still loading, retry after a short delay
-          Future.delayed(const Duration(milliseconds: 500), _checkAuthAndNavigate);
+          Future.delayed(
+              const Duration(milliseconds: 500), _checkAuthAndNavigate);
         },
         error: (_, __) {
           if (!mounted) return;

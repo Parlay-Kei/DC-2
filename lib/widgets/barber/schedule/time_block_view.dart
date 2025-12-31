@@ -137,7 +137,7 @@ class AppointmentBlock extends StatelessWidget {
     final startParts = booking.scheduledTime.split(':');
     final startHour = int.parse(startParts[0]);
     final startMinute = int.parse(startParts[1]);
-    
+
     final duration = booking.durationMinutes ?? 30;
     final endMinutes = startHour * 60 + startMinute + duration;
     final endHour = endMinutes ~/ 60;
@@ -223,8 +223,9 @@ class TimeBlockView extends StatelessWidget {
               final timeParts = apt.scheduledTime.split(':');
               final hour = int.parse(timeParts[0]);
               final minute = int.parse(timeParts[1]);
-              
-              final topOffset = ((hour - startHour) * hourHeight) + (minute / 60 * hourHeight);
+
+              final topOffset = ((hour - startHour) * hourHeight) +
+                  (minute / 60 * hourHeight);
               final duration = apt.durationMinutes ?? 30;
               final blockHeight = (duration / 60) * hourHeight;
 
@@ -232,7 +233,9 @@ class TimeBlockView extends StatelessWidget {
                 booking: apt,
                 topOffset: topOffset,
                 height: blockHeight.clamp(40, hourHeight * 2),
-                onTap: onAppointmentTap != null ? () => onAppointmentTap!(apt) : null,
+                onTap: onAppointmentTap != null
+                    ? () => onAppointmentTap!(apt)
+                    : null,
                 onComplete: onComplete != null ? () => onComplete!(apt) : null,
                 onNoShow: onNoShow != null ? () => onNoShow!(apt) : null,
               );
@@ -252,7 +255,8 @@ class TimeBlockView extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final topOffset = ((currentHour - startHour) * hourHeight) + (currentMinute / 60 * hourHeight);
+    final topOffset = ((currentHour - startHour) * hourHeight) +
+        (currentMinute / 60 * hourHeight);
 
     return Positioned(
       top: topOffset,

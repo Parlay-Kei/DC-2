@@ -133,7 +133,9 @@ class _ServiceCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: Material(
-        color: isSelected ? DCTheme.primary.withValues(alpha: 0.1) : DCTheme.surface,
+        color: isSelected
+            ? DCTheme.primary.withValues(alpha: 0.1)
+            : DCTheme.surface,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: onTap,
@@ -211,13 +213,16 @@ class _ServiceCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isSelected ? DCTheme.primary : DCTheme.textMuted,
+                          color:
+                              isSelected ? DCTheme.primary : DCTheme.textMuted,
                           width: 2,
                         ),
-                        color: isSelected ? DCTheme.primary : Colors.transparent,
+                        color:
+                            isSelected ? DCTheme.primary : Colors.transparent,
                       ),
                       child: isSelected
-                          ? const Icon(Icons.check, size: 16, color: Colors.white)
+                          ? const Icon(Icons.check,
+                              size: 16, color: Colors.white)
                           : null,
                     ),
                   ],

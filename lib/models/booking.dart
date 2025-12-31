@@ -17,7 +17,7 @@ class Booking {
   final double? longitude;
   final String? notes;
   final DateTime createdAt;
-  
+
   // Joined fields from related tables (populated when fetching with joins)
   final String? customerName;
   final String? customerAvatar;
@@ -63,7 +63,7 @@ class Booking {
       customerAvatar = json['customer']['avatar_url'] as String?;
       customerPhone = json['customer']['phone'] as String?;
     }
-    
+
     // Handle joined service data
     String? serviceName;
     int? durationMinutes;
@@ -71,7 +71,7 @@ class Booking {
       serviceName = json['service']['name'] as String?;
       durationMinutes = json['service']['duration'] as int?;
     }
-    
+
     // Handle review existence
     bool hasReview = false;
     if (json['reviews'] != null) {
@@ -81,7 +81,7 @@ class Booking {
         hasReview = true;
       }
     }
-    
+
     return Booking(
       id: json['id'] as String,
       customerId: json['customer_id'] as String,

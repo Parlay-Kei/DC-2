@@ -197,7 +197,8 @@ class _NotificationSettingsScreenState
     return ListTile(
       leading: Icon(icon, color: DCTheme.textMuted),
       title: Text(title, style: const TextStyle(color: DCTheme.text)),
-      subtitle: Text(subtitle, style: const TextStyle(color: DCTheme.textMuted)),
+      subtitle:
+          Text(subtitle, style: const TextStyle(color: DCTheme.textMuted)),
       trailing: isLoading
           ? const SizedBox(
               width: 20,

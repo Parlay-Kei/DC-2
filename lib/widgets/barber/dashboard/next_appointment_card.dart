@@ -121,15 +121,16 @@ class NextAppointmentCard extends StatelessWidget {
 
   Widget _buildTimelineBar() {
     final now = DateTime.now();
-    final dayStart = workDayStart ?? DateTime(now.year, now.month, now.day, 9, 0);
+    final dayStart =
+        workDayStart ?? DateTime(now.year, now.month, now.day, 9, 0);
     final dayEnd = workDayEnd ?? DateTime(now.year, now.month, now.day, 17, 0);
-    
+
     // Parse appointment time
     final timeParts = appointment!.scheduledTime.split(':');
     final aptHour = int.parse(timeParts[0]);
     final aptMinute = int.parse(timeParts[1]);
     final aptTime = DateTime(now.year, now.month, now.day, aptHour, aptMinute);
-    
+
     final totalMinutes = dayEnd.difference(dayStart).inMinutes;
     final elapsedMinutes = aptTime.difference(dayStart).inMinutes;
     final progress = (elapsedMinutes / totalMinutes).clamp(0.0, 1.0);
@@ -215,7 +216,7 @@ class NextAppointmentCard extends StatelessWidget {
     final initial = appointment?.customerName?.isNotEmpty == true
         ? appointment!.customerName![0].toUpperCase()
         : 'C';
-    
+
     return CircleAvatar(
       radius: 24,
       backgroundColor: DCTheme.primary,

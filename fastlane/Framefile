@@ -1,0 +1,132 @@
+#===============================================================================
+# Direct Cuts - Frameit Configuration (Screenshot Framing)
+#===============================================================================
+# This file configures device frame overlays for app screenshots.
+#
+# STATUS: PLACEHOLDER - Requires device frames and background assets
+#
+# Setup Steps:
+# 1. Download device frames from Apple Marketing Resources
+# 2. Place frames in fastlane/screenshots/frames/
+# 3. Create background templates in fastlane/screenshots/backgrounds/
+# 4. Run: bundle exec fastlane frameit
+#
+# Documentation: https://docs.fastlane.tools/actions/frameit/
+#===============================================================================
+
+#-------------------------------------------------------------------------------
+# Device Frame Configuration
+#-------------------------------------------------------------------------------
+
+# Device frame color
+# Options: SILVER, GOLD, ROSE_GOLD, SPACE_GRAY, MIDNIGHT, etc.
+device_frame_version("latest")
+
+#-------------------------------------------------------------------------------
+# Background Configuration
+#-------------------------------------------------------------------------------
+
+# Background color (hex)
+background_color("#121212")
+
+# Or use background image
+# background("./backgrounds/default.png")
+
+#-------------------------------------------------------------------------------
+# Title Configuration
+#-------------------------------------------------------------------------------
+
+# Title position
+title_below_image(false)
+
+# Title color
+title_color("#FFFFFF")
+
+# Title font
+# Use system fonts or provide path to .ttf file
+title_font("SF Pro Display Bold")
+
+# Title minimum font size (will shrink to fit if needed)
+title_min_font_size(24)
+
+# Title padding
+padding(50)
+
+#-------------------------------------------------------------------------------
+# Keyword Configuration
+#-------------------------------------------------------------------------------
+
+# Show keyword above title
+show_complete_frame(true)
+
+# Keyword color
+keyword_color("#E63946")
+
+# Keyword font
+keyword_font("SF Pro Display Regular")
+
+#-------------------------------------------------------------------------------
+# Text Strings (per screenshot)
+#-------------------------------------------------------------------------------
+# Create keyword.strings and title.strings files in each locale folder
+# Example: fastlane/screenshots/en-US/keyword.strings
+#
+# keyword.strings format:
+# "home" = "FIND";
+# "profile" = "VERIFIED";
+# "booking" = "BOOK";
+#
+# title.strings format:
+# "home" = "Discover Barbers Near You";
+# "profile" = "Identity-Verified Professionals";
+# "booking" = "Book in Seconds";
+
+#-------------------------------------------------------------------------------
+# Force Device Type (optional)
+#-------------------------------------------------------------------------------
+# Override automatic device detection
+# force_device_type("iPhone 14 Pro Max")
+
+#-------------------------------------------------------------------------------
+# Screenshot Naming Convention
+#-------------------------------------------------------------------------------
+# Screenshots should be named:
+# <order>_<name>_<device>.png
+# Example: 01_home_iphone15promax.png
+#
+# Order determines screenshot sequence in store listing
+# Name is used to look up title/keyword strings
+
+#-------------------------------------------------------------------------------
+# Frameit Template Structure
+#-------------------------------------------------------------------------------
+# Required directory structure:
+#
+# fastlane/
+#   screenshots/
+#     frames/
+#       Apple iPhone 15 Pro Max Space Black.png
+#       Apple iPhone 14 Plus Blue.png
+#       Apple iPhone 8 Plus Gold.png
+#     backgrounds/
+#       default.png (optional)
+#     en-US/
+#       keyword.strings
+#       title.strings
+#       01_home_iphone15promax.png
+#       02_profile_iphone15promax.png
+#       ...
+
+#-------------------------------------------------------------------------------
+# Direct Cuts Screenshot Titles
+#-------------------------------------------------------------------------------
+# Recommended title/keyword combinations:
+#
+# | Screenshot | Keyword | Title |
+# |------------|---------|-------|
+# | home | FIND | Discover Barbers Near You |
+# | profile | VERIFIED | Identity-Verified Professionals |
+# | booking | BOOK | Schedule in Seconds |
+# | reviews | TRUSTED | Real Customer Reviews |
+# | payment | SECURE | Safe, Easy Payments |
+# | confirm | BOOKED | You're All Set |
