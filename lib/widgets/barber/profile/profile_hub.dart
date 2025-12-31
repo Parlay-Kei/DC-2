@@ -348,7 +348,12 @@ class SettingsRow extends StatelessWidget {
               Switch(
                 value: toggleValue!,
                 onChanged: onToggleChanged,
-                activeThumbColor: DCTheme.primary,
+                thumbColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return DCTheme.primary;
+                  }
+                  return null;
+                }),
               )
             else if (value != null)
               Row(
