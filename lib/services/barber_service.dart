@@ -1,12 +1,12 @@
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/barber.dart';
 import '../models/service.dart';
 import '../models/review.dart';
+import '../utils/logger.dart';
 
 final barberServiceProvider = Provider((ref) => BarberService());
 
@@ -35,7 +35,7 @@ class BarberService {
 
       return _mapToBarber(barberResponse, userResponse, rating);
     } catch (e) {
-      debugPrint('Error getting barber $barberId: $e');
+      Logger.error('Failed to fetch barber details', e);
       return null;
     }
   }
@@ -76,7 +76,7 @@ class BarberService {
         return _mapToBarber(barber, user, rating);
       }).toList();
     } catch (e) {
-      debugPrint('Error fetching active barbers: $e');
+      Logger.error('Failed to fetch active barbers', e);
       return [];
     }
   }
@@ -131,7 +131,7 @@ class BarberService {
         return _mapToBarber(barber, user, rating);
       }).toList();
     } catch (e) {
-      debugPrint('Error searching barbers: $e');
+      Logger.error('Failed to search barbers', e);
       return [];
     }
   }
@@ -144,7 +144,7 @@ class BarberService {
     int limit = 50,
   }) async {
     try {
-      debugPrint('BarberService.getNearbyBarbers: Searching near ($latitude, $longitude)');
+      Logger.debug('Searching for nearby barbers');
 
       // Calculate bounding box for geographic query
       final latDelta = radiusMiles / 69;
@@ -155,7 +155,7 @@ class BarberService {
       final minLng = longitude - lngDelta;
       final maxLng = longitude + lngDelta;
 
-      debugPrint('BarberService: Bounding box: lat($minLat to $maxLat), lng($minLng to $maxLng)');
+      Logger.debug('Calculated bounding box for barber search');
 
       // 1. Fetch barbers within bounding box
       final barbersResponse = await _client
@@ -170,7 +170,7 @@ class BarberService {
           .lte('longitude', maxLng);
 
       final barbers = barbersResponse as List;
-      debugPrint('BarberService: Found ${barbers.length} barbers in bounding box');
+      Logger.debug('Found barbers in search area');
 
       if (barbers.isEmpty) return [];
 
@@ -210,10 +210,10 @@ class BarberService {
       // 6. Sort by distance
       results.sort((a, b) => a.distanceMiles.compareTo(b.distanceMiles));
 
-      debugPrint('BarberService: Returning ${results.length} barbers within $radiusMiles miles');
+      Logger.debug('Returning nearby barbers within radius');
       return results.take(limit).toList();
     } catch (e) {
-      debugPrint('Error fetching nearby barbers: $e');
+      Logger.error('Failed to fetch nearby barbers', e);
       return [];
     }
   }
@@ -253,10 +253,10 @@ class BarberService {
 
       // Sort by rating descending
       results.sort((a, b) => b.rating.compareTo(a.rating));
-      
+
       return results;
     } catch (e) {
-      debugPrint('Error fetching top rated barbers: $e');
+      Logger.error('Failed to fetch top rated barbers', e);
       return [];
     }
   }
@@ -293,7 +293,7 @@ class BarberService {
         return _mapToBarber(barber, user, rating);
       }).toList();
     } catch (e) {
-      debugPrint('Error fetching featured barbers: $e');
+      Logger.error('Failed to fetch featured barbers', e);
       return [];
     }
   }
@@ -310,7 +310,7 @@ class BarberService {
 
       return (response as List).map((s) => Service.fromJson(s)).toList();
     } catch (e) {
-      debugPrint('Error fetching barber services: $e');
+      Logger.error('Failed to fetch barber services', e);
       return [];
     }
   }
@@ -326,7 +326,7 @@ class BarberService {
 
       return (response as List).map((r) => Review.fromJson(r)).toList();
     } catch (e) {
-      debugPrint('Error fetching barber reviews: $e');
+      Logger.error('Failed to fetch barber reviews', e);
       return [];
     }
   }
@@ -344,7 +344,7 @@ class BarberService {
           .map((item) => item['image_url'] as String)
           .toList();
     } catch (e) {
-      debugPrint('Error fetching barber portfolio: $e');
+      Logger.error('Failed to fetch barber portfolio', e);
       return [];
     }
   }
@@ -410,7 +410,7 @@ class BarberService {
         }
       }
     } catch (e) {
-      debugPrint('Error fetching ratings: $e');
+      Logger.error('Failed to fetch ratings', e);
       // Return empty ratings for all
       for (final barberId in barberIds) {
         ratingsMap[barberId] = {'averageRating': 0, 'totalReviews': 0};

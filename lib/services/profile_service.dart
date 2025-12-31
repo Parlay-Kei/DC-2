@@ -1,10 +1,11 @@
 import 'dart:io';
+import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/supabase_config.dart';
 import '../models/profile.dart';
+import '../utils/logger.dart';
 
 /// Service for managing user profiles
 class ProfileService {
@@ -24,7 +25,7 @@ class ProfileService {
 
       return Profile.fromJson(response);
     } catch (e) {
-      debugPrint('Get profile error: $e');
+      Logger.error('Get profile error', e);
       return null;
     }
   }
@@ -64,7 +65,7 @@ class ProfileService {
 
       return Profile.fromJson(response);
     } catch (e) {
-      debugPrint('Update profile error: $e');
+      Logger.error('Update profile error', e);
       return null;
     }
   }
@@ -92,7 +93,7 @@ class ProfileService {
 
       return avatarUrl;
     } catch (e) {
-      debugPrint('Upload avatar error: $e');
+      Logger.error('Upload avatar error', e);
       return null;
     }
   }
@@ -120,7 +121,7 @@ class ProfileService {
 
       return avatarUrl;
     } catch (e) {
-      debugPrint('Upload avatar error: $e');
+      Logger.error('Upload avatar error', e);
       return null;
     }
   }
@@ -150,7 +151,7 @@ class ProfileService {
 
       return true;
     } catch (e) {
-      debugPrint('Delete avatar error: $e');
+      Logger.error('Delete avatar error', e);
       return false;
     }
   }
@@ -188,7 +189,7 @@ class ProfileService {
 
       return true;
     } catch (e) {
-      debugPrint('Update notification prefs error: $e');
+      Logger.error('Update notification prefs error', e);
       return false;
     }
   }
@@ -232,7 +233,7 @@ class ProfileService {
       await _client.auth.resetPasswordForEmail(email);
       return true;
     } catch (e) {
-      debugPrint('Password reset error: $e');
+      Logger.error('Password reset error', e);
       return false;
     }
   }
@@ -295,7 +296,7 @@ class ProfileService {
 
       return BarberProfile.fromJson(response);
     } catch (e) {
-      debugPrint('Get barber profile error: $e');
+      Logger.error('Get barber profile error', e);
       return null;
     }
   }
@@ -339,7 +340,7 @@ class ProfileService {
 
       return BarberProfile.fromJson(response);
     } catch (e) {
-      debugPrint('Update barber profile error: $e');
+      Logger.error('Update barber profile error', e);
       return null;
     }
   }
@@ -367,7 +368,7 @@ class ProfileService {
 
       return imageUrl;
     } catch (e) {
-      debugPrint('Upload barber image error: $e');
+      Logger.error('Upload barber image error', e);
       return null;
     }
   }

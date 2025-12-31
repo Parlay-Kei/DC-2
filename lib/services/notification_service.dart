@@ -1,16 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 
+import '../config/app_config.dart';
 import '../config/supabase_config.dart';
-
-/// OneSignal App ID - Replace with your actual OneSignal App ID
-const String _oneSignalAppId = 'YOUR_ONESIGNAL_APP_ID';
+import '../utils/logger.dart';
 
 /// Service for handling push notifications via OneSignal
 class NotificationService {
@@ -38,7 +36,7 @@ class NotificationService {
   Stream<OSNotificationWillDisplayEvent> get onNotificationReceived =>
       _notificationReceivedController.stream;
 
-  /// Initialize local notifications only (OneSignal disabled for now)
+  /// Initialize notifications (OneSignal + local)
   Future<void> initialize() async {
     if (_initialized) return;
     _initialized = true;
@@ -46,48 +44,73 @@ class NotificationService {
     try {
       // Initialize timezone data
       tz_data.initializeTimeZones();
-      
-      // Initialize local notifications only
+
+      // Initialize local notifications
       await _initializeLocalNotifications();
-      
-      debugPrint('NotificationService: Local notifications ready (OneSignal disabled)');
+
+      // Initialize OneSignal if configured
+      if (AppConfig.isOneSignalConfigured) {
+        await _initializeOneSignal();
+        Logger.info('NotificationService: OneSignal + Local notifications ready');
+      } else {
+        Logger.info('NotificationService: Local notifications only');
+      }
     } catch (e) {
-      debugPrint('NotificationService init error: $e');
+      Logger.error('NotificationService initialization failed', e);
     }
-    
-    // OneSignal completely disabled - uncomment when you have a real app ID
-    // _initializeOneSignal();
   }
   
-  /// OneSignal initialization (disabled)
+  /// OneSignal initialization
   Future<void> _initializeOneSignal() async {
-    if (_oneSignalAppId == 'YOUR_ONESIGNAL_APP_ID') return;
-    
     try {
-      OneSignal.Debug.setLogLevel(OSLogLevel.none);
-      OneSignal.initialize(_oneSignalAppId);
+      // Set log level based on debug mode
+      OneSignal.Debug.setLogLevel(
+        AppConfig.debugMode ? OSLogLevel.verbose : OSLogLevel.none,
+      );
+
+      // Initialize with App ID from config
+      OneSignal.initialize(AppConfig.oneSignalAppId);
+
+      // Request permission (shows prompt on iOS)
       OneSignal.Notifications.requestPermission(true);
+
+      // Setup notification handlers
       _setupNotificationHandlers();
+
+      // Get player ID for device registration
       _playerId = OneSignal.User.pushSubscription.id;
-      if (_playerId != null) registerDeviceToken(_playerId!);
+      if (_playerId != null) {
+        await registerDeviceToken(_playerId!);
+      }
+
+      // Listen for subscription changes
+      OneSignal.User.pushSubscription.addObserver((state) {
+        final newId = state.current.id;
+        if (newId != null && newId != _playerId) {
+          _playerId = newId;
+          registerDeviceToken(newId);
+        }
+      });
+
+      Logger.debug('OneSignal initialized');
     } catch (e) {
-      debugPrint('OneSignal init failed: $e');
+      Logger.error('OneSignal initialization failed', e);
     }
   }
 
   void _setupNotificationHandlers() {
     // Handle notification opened (user tapped)
     OneSignal.Notifications.addClickListener((event) {
-      debugPrint('Notification clicked: ${event.notification.title}');
+      Logger.debug('Notification clicked');
       _notificationOpenedController.add(event);
       _handleNotificationClick(event);
     });
 
     // Handle notification received in foreground
     OneSignal.Notifications.addForegroundWillDisplayListener((event) {
-      debugPrint('Notification received: ${event.notification.title}');
+      Logger.debug('Notification received');
       _notificationReceivedController.add(event);
-      
+
       // Show the notification
       event.preventDefault();
       _showLocalNotification(
@@ -115,7 +138,7 @@ class NotificationService {
     await _localNotifications.initialize(
       initSettings,
       onDidReceiveNotificationResponse: (response) {
-        debugPrint('Local notification tapped: ${response.payload}');
+        Logger.debug('Local notification tapped');
       },
     );
 
@@ -157,10 +180,10 @@ class NotificationService {
       // Also set external user ID in OneSignal for targeting
       OneSignal.login(userId);
 
-      debugPrint('Device token registered: $token');
+      Logger.debug('Device token registered successfully');
       return true;
     } catch (e) {
-      debugPrint('Register device token error: $e');
+      Logger.error('Device token registration failed', e);
       return false;
     }
   }
@@ -181,7 +204,7 @@ class NotificationService {
       _playerId = null;
       return true;
     } catch (e) {
-      debugPrint('Unregister device token error: $e');
+      Logger.error('Device token unregistration failed', e);
       return false;
     }
   }
@@ -191,7 +214,7 @@ class NotificationService {
     try {
       OneSignal.User.addTags(tags);
     } catch (e) {
-      debugPrint('Set user tags error: $e');
+      Logger.error('Failed to set user tags', e);
     }
   }
 
@@ -200,7 +223,7 @@ class NotificationService {
     try {
       OneSignal.User.removeTags(keys);
     } catch (e) {
-      debugPrint('Remove user tags error: $e');
+      Logger.error('Failed to remove user tags', e);
     }
   }
 
@@ -310,24 +333,21 @@ class NotificationService {
         _handleReviewNotification(data);
         break;
       default:
-        debugPrint('Unknown notification type: $type');
+        Logger.warning('Unknown notification type received');
     }
   }
 
   void _handleBookingNotification(Map<String, dynamic> data) {
-    final bookingId = data['booking_id'] as String?;
-    debugPrint('Navigate to booking: $bookingId');
+    Logger.debug('Navigating to booking');
     // Navigation would be handled by the app's router
   }
 
   void _handleMessageNotification(Map<String, dynamic> data) {
-    final conversationId = data['conversation_id'] as String?;
-    debugPrint('Navigate to conversation: $conversationId');
+    Logger.debug('Navigating to conversation');
   }
 
   void _handleReviewNotification(Map<String, dynamic> data) {
-    final reviewId = data['review_id'] as String?;
-    debugPrint('Navigate to review: $reviewId');
+    Logger.debug('Navigating to review');
   }
 
   /// Get pending notifications from server
@@ -348,7 +368,7 @@ class NotificationService {
           .map((n) => AppNotification.fromJson(n))
           .toList();
     } catch (e) {
-      debugPrint('Get notifications error: $e');
+      Logger.error('Failed to get notifications', e);
       return [];
     }
   }
@@ -370,7 +390,7 @@ class NotificationService {
           .map((n) => AppNotification.fromJson(n))
           .toList();
     } catch (e) {
-      debugPrint('Get all notifications error: $e');
+      Logger.error('Failed to get all notifications', e);
       return [];
     }
   }
@@ -384,7 +404,7 @@ class NotificationService {
       }).eq('id', notificationId);
       return true;
     } catch (e) {
-      debugPrint('Mark as read error: $e');
+      Logger.error('Failed to mark notification as read', e);
       return false;
     }
   }
@@ -401,7 +421,7 @@ class NotificationService {
       }).eq('user_id', userId).eq('is_read', false);
       return true;
     } catch (e) {
-      debugPrint('Mark all as read error: $e');
+      Logger.error('Failed to mark all notifications as read', e);
       return false;
     }
   }
@@ -412,7 +432,7 @@ class NotificationService {
       await _client.from('notifications').delete().eq('id', notificationId);
       return true;
     } catch (e) {
-      debugPrint('Delete notification error: $e');
+      Logger.error('Failed to delete notification', e);
       return false;
     }
   }

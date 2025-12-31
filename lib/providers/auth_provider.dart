@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/supabase_config.dart';
 import '../models/profile.dart';
+import '../utils/logger.dart';
 
 // Auth state stream provider
 final authStateProvider = StreamProvider<User?>((ref) {
@@ -20,16 +21,16 @@ final currentUserProvider = Provider<User?>((ref) {
 final userProfileProvider =
     FutureProvider.family<Profile?, String>((ref, userId) async {
   try {
-    print('DEBUG: Querying profiles table for id: $userId');
+    Logger.debug('Querying profiles table');
     final response = await SupabaseConfig.client
         .from('profiles')
         .select()
         .eq('id', userId)
         .single();
-    print('DEBUG: Raw profile response: $response');
+    Logger.debug('Profile query completed');
     return Profile.fromJson(response);
   } catch (e) {
-    print('DEBUG: Profile query error: $e');
+    Logger.error('Profile query failed', e);
     return null;
   }
 });
@@ -38,20 +39,18 @@ final userProfileProvider =
 final currentProfileProvider = FutureProvider<Profile?>((ref) async {
   final user = ref.watch(currentUserProvider);
   if (user == null) {
-    print('DEBUG: No current user found');
+    Logger.debug('No current user found');
     return null;
   }
-  
-  print('DEBUG: User ID: ${user.id}');
-  print('DEBUG: User email: ${user.email}');
-  print('DEBUG: User metadata: ${user.userMetadata}');
-  
+
+  Logger.debug('Current user authenticated');
+
   // Try to build profile from auth metadata first
   final metadata = user.userMetadata;
   if (metadata != null && metadata.isNotEmpty) {
     final fullName = metadata['full_name'] as String? ?? metadata['name'] as String?;
     if (fullName != null && fullName.isNotEmpty) {
-      print('DEBUG: Building profile from auth metadata: $fullName');
+      Logger.debug('Building profile from auth metadata');
       return Profile(
         id: user.id,
         fullName: fullName,
@@ -59,26 +58,26 @@ final currentProfileProvider = FutureProvider<Profile?>((ref) async {
         avatarUrl: metadata['avatar_url'] as String? ?? metadata['picture'] as String?,
         phone: metadata['phone'] as String?,
         role: metadata['role'] as String? ?? 'customer',
-        createdAt: user.createdAt != null ? DateTime.parse(user.createdAt!) : DateTime.now(),
+        createdAt: DateTime.parse(user.createdAt!),
         updatedAt: DateTime.now(),
       );
     }
   }
-  
+
   // Fallback: try database query
-  print('DEBUG: Trying database query for profile');
+  Logger.debug('Fetching profile from database');
   try {
     final profile = await ref.watch(userProfileProvider(user.id).future);
-    print('DEBUG: Profile from DB: ${profile?.fullName}');
+    Logger.debug('Profile loaded from database');
     return profile;
   } catch (e) {
-    print('DEBUG: Profile fetch error: $e');
+    Logger.error('Profile fetch failed', e);
     // Return minimal profile from auth
     return Profile(
       id: user.id,
       email: user.email,
       role: 'customer',
-      createdAt: user.createdAt != null ? DateTime.parse(user.createdAt!) : DateTime.now(),
+      createdAt: DateTime.parse(user.createdAt!),
       updatedAt: DateTime.now(),
     );
   }

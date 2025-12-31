@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 
 import '../config/supabase_config.dart';
+import '../utils/logger.dart';
 
 /// Payment service handling Stripe integration
 class PaymentService {
@@ -37,7 +38,7 @@ class PaymentService {
       );
 
       if (response.status != 200) {
-        debugPrint('Payment intent error: ${response.data}');
+        Logger.error('Payment intent creation failed');
         return null;
       }
 
@@ -49,7 +50,7 @@ class PaymentService {
         customerId: data['customerId'] as String?,
       );
     } catch (e) {
-      debugPrint('Create payment intent error: $e');
+      Logger.error('Create payment intent error', e);
       return null;
     }
   }
@@ -112,7 +113,7 @@ class PaymentService {
 
       return true;
     } catch (e) {
-      debugPrint('Confirm payment error: $e');
+      Logger.error('Confirm payment error', e);
       return false;
     }
   }
