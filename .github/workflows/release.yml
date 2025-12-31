@@ -77,6 +77,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: create-release
     timeout-minutes: 45
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
