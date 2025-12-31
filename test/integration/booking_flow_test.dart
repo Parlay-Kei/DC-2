@@ -54,7 +54,6 @@ void main() {
           price: 35.00,
           durationMinutes: 30,
           isActive: true,
-          sortOrder: 1,
           createdAt: DateTime.now(),
         ),
         Service(
@@ -65,7 +64,6 @@ void main() {
           price: 20.00,
           durationMinutes: 15,
           isActive: true,
-          sortOrder: 2,
           createdAt: DateTime.now(),
         ),
         Service(
@@ -76,7 +74,6 @@ void main() {
           price: 50.00,
           durationMinutes: 45,
           isActive: true,
-          sortOrder: 3,
           createdAt: DateTime.now(),
         ),
       ];
