@@ -141,7 +141,7 @@ jobs:
           echo "Dependency licenses checked. Review dependencies.json for details."
 
       - name: Upload dependencies
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dependency-licenses
           path: dependencies.json
