@@ -3,13 +3,22 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+
 import 'config/supabase_config.dart';
+import 'config/app_config.dart';
 import 'config/router.dart';
 import 'config/theme.dart';
 import 'services/notification_service.dart';
+import 'utils/logger.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Debug: Log environment configuration (stripped in release)
+  Logger.info('App starting');
+  Logger.debug('OneSignal configured: ${AppConfig.isOneSignalConfigured}');
+  Logger.debug('Mapbox configured: ${AppConfig.isMapboxConfigured}');
 
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
@@ -35,6 +44,12 @@ void main() async {
 
   // Initialize Push Notifications (non-blocking, errors handled internally)
   NotificationService.instance.initialize();
+
+  // Initialize Mapbox SDK with access token (must be done before any Mapbox widgets)
+  if (AppConfig.isMapboxConfigured) {
+    MapboxOptions.setAccessToken(AppConfig.mapboxAccessToken);
+    Logger.debug('Mapbox SDK initialized');
+  }
 
   runApp(
     const ProviderScope(
@@ -70,7 +85,7 @@ class _DirectCutsAppState extends ConsumerState<DirectCutsApp>
     // Handle app lifecycle changes for notifications
     if (state == AppLifecycleState.resumed) {
       // App came to foreground - refresh notification count
-      debugPrint('App resumed - checking notifications');
+      Logger.debug('App resumed');
     }
   }
 

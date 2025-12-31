@@ -1,5 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'logger.dart';
 
 /// Seed test barbers in Las Vegas area for development
 class BarberSeeder {
@@ -89,12 +90,12 @@ class BarberSeeder {
         if (existing == null) {
           // Create a dummy user_id (in production this would be a real auth user)
           final userId = 'test-${displayName.toLowerCase().replaceAll(' ', '-')}';
-          
+
           await _client.from('barbers').insert({
             ...barber,
             'user_id': userId,
           });
-          debugPrint('✓ Added barber: $displayName');
+          Logger.debug('Added test barber');
         } else {
           // Update existing barber with location data
           await _client.from('barbers').update({
@@ -103,10 +104,10 @@ class BarberSeeder {
             'shop_address': barber['shop_address'],
             'is_active': true,
           }).eq('display_name', displayName);
-          debugPrint('✓ Updated barber: $displayName');
+          Logger.debug('Updated test barber');
         }
       } catch (e) {
-        debugPrint('✗ Error with ${barber['display_name']}: $e');
+        Logger.error('Error seeding barber', e);
       }
     }
   }
@@ -118,9 +119,9 @@ class BarberSeeder {
           .from('barbers')
           .delete()
           .like('user_id', 'test-%');
-      debugPrint('✓ Cleared test barbers');
+      Logger.debug('Cleared test barbers');
     } catch (e) {
-      debugPrint('✗ Error clearing test barbers: $e');
+      Logger.error('Error clearing test barbers', e);
     }
   }
 }

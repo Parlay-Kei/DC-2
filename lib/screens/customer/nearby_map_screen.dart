@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
-import '../../config/theme.dart';
-import '../../models/barber.dart';
+import '../../config/app_config.dart';
+import '../../models/geojson.dart';
 import '../../providers/barber_provider.dart';
-import '../../services/barber_service.dart';
+import '../../services/map_service.dart';
+import '../../utils/logger.dart';
 
 class NearbyMapScreen extends ConsumerStatefulWidget {
   const NearbyMapScreen({super.key});
@@ -18,81 +18,311 @@ class NearbyMapScreen extends ConsumerStatefulWidget {
 }
 
 class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
-  final _mapController = MapController();
-  
+  MapboxMap? _mapboxMap;
+  PointAnnotationManager? _annotationManager;
+  bool _mapboxInitialized = false;
+
   // Default to Las Vegas (matches web app)
-  static const _lasVegas = LatLng(36.1699, -115.1398);
-  LatLng _currentCenter = _lasVegas;
+  static const _lasVegasLat = 36.1699;
+  static const _lasVegasLng = -115.1398;
+
+  double _currentCenterLat = _lasVegasLat;
+  double _currentCenterLng = _lasVegasLng;
   double _currentZoom = 11.0;
-  
+
   // Selected distance filter (in miles) - matches web app options
   int _selectedRadius = 25;
   final List<int> _radiusOptions = [10, 25, 50, 100];
-  
+
   // Selected category filter - matches web app
   String _selectedCategory = 'Haircuts';
   final List<String> _categories = ['Haircuts', 'Fades', 'Beard Trims', 'Color'];
-  
+
   // Search query for location
   String _locationText = 'Las Vegas, Nevada';
+
+  // Map data
+  GeoJSONFeatureCollection? _currentPins;
+  bool _isLoadingPins = false;
 
   @override
   void initState() {
     super.initState();
+    _initializeMapbox();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initLocation();
+      _loadNearbyBarbers();
     });
   }
 
-  Future<void> _initLocation() async {
-    if (mounted) {
-      _mapController.move(_lasVegas, _currentZoom);
+  /// Initialize Mapbox SDK with access token - MUST be called before MapWidget is built
+  void _initializeMapbox() {
+    if (AppConfig.isMapboxConfigured && !_mapboxInitialized) {
+      MapboxOptions.setAccessToken(AppConfig.mapboxAccessToken);
+      _mapboxInitialized = true;
+      Logger.debug('Mapbox initialized');
+    }
+  }
+
+  Future<void> _loadNearbyBarbers() async {
+    if (_isLoadingPins) return;
+
+    setState(() {
+      _isLoadingPins = true;
+    });
+
+    try {
+      // Convert miles to meters
+      final radiusMeters = _selectedRadius * 1609.34;
+
+      final pins = await MapService.instance.getPinsWithinRadius(
+        centerLat: _currentCenterLat,
+        centerLng: _currentCenterLng,
+        radiusMeters: radiusMeters,
+      );
+
+      setState(() {
+        _currentPins = pins;
+        _isLoadingPins = false;
+      });
+
+      // Update map markers
+      await _updateMapMarkers();
+
+      // Fit bounds to show all pins
+      if (pins.features.isNotEmpty) {
+        await _fitBoundsToAllPins();
+      }
+    } catch (e) {
+      Logger.error('Error loading nearby barbers', e);
+      setState(() {
+        _isLoadingPins = false;
+      });
+    }
+  }
+
+  Future<void> _updateMapMarkers() async {
+    if (_mapboxMap == null || _currentPins == null) return;
+
+    try {
+      // Clear existing annotations
+      if (_annotationManager != null) {
+        await _annotationManager!.deleteAll();
+      } else {
+        _annotationManager = await _mapboxMap!.annotations.createPointAnnotationManager();
+      }
+
+      // Add new markers with DC-1 styling:
+      // - Red marker icon (default Mapbox marker)
+      // - White label badge with dark text below pin
+      final options = <PointAnnotationOptions>[];
+
+      for (final feature in _currentPins!.features) {
+        final props = feature.properties;
+        final lng = feature.geometry.longitude;
+        final lat = feature.geometry.latitude;
+
+        // Determine icon color based on pin type (shop = red, mobile = green)
+        final isShop = props.pinType == 'shop';
+
+        // Create marker with styled label matching DC-1 exactly
+        // DC-1 uses: teardrop pin with white badge label below
+        final option = PointAnnotationOptions(
+          geometry: Point(coordinates: Position(lng, lat)),
+          // Use default marker but with proper colors matching DC-1
+          // Shop pins: Dark blue/navy to match DC-1's appearance
+          // DC-1 code shows #007CF (invalid hex), likely meant #0007CF or #1E3A8A (dark blue/navy)
+          // Using #1E3A8A (slate-800) which matches the "dark-colored" appearance in DC-1
+          iconSize: 1.2, // Slightly larger to match DC-1 pin size
+          iconColor: isShop ? 0xFF1E3A8A : 0xFF10B921, // Dark blue/navy for shops, green for mobile (matches DC-1)
+          // Label styling to match DC-1's white badge effect exactly
+          // DC-1 uses: white background (rgba(255,255,255,0.95)), 10px font, 600 weight, 4px border-radius
+          textField: props.barberName,
+          textSize: 10.0, // Matches DC-1's 10px font size exactly
+          textOffset: [0, 2.5], // Position below pin (matches DC-1 spacing)
+          textColor: 0xFF1F2937, // Dark gray text (matches DC-1's #1f2937 exactly)
+          textHaloColor: 0xFFFFFFFF, // White halo creates badge background (matches DC-1's white badge)
+          textHaloWidth: 5.0, // Thicker halo for better badge effect (simulates DC-1's padding: 2px 6px)
+          textMaxWidth: 12.0, // Allow slightly wider for longer names (DC-1 uses max-width: 120px)
+          textAnchor: TextAnchor.TOP, // Center text below pin
+          // Note: Font styling is handled by the map style, not as a parameter
+          // The map style should include 'Open Sans Semibold' or 'Arial Unicode MS Bold' for font-weight: 600 effect
+        );
+
+        options.add(option);
+      }
+
+      await _annotationManager!.createMulti(options);
+    } catch (e) {
+      Logger.error('Error updating map markers', e);
+    }
+  }
+
+  Future<void> _fitBoundsToAllPins() async {
+    if (_mapboxMap == null || _currentPins == null || _currentPins!.features.isEmpty) {
+      return;
+    }
+
+    try {
+      // Calculate bounds
+      double minLat = double.infinity;
+      double maxLat = -double.infinity;
+      double minLng = double.infinity;
+      double maxLng = -double.infinity;
+
+      for (final feature in _currentPins!.features) {
+        final lat = feature.geometry.latitude;
+        final lng = feature.geometry.longitude;
+
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+        if (lng < minLng) minLng = lng;
+        if (lng > maxLng) maxLng = lng;
+      }
+
+      // Add padding
+      final latPadding = (maxLat - minLat) * 0.1;
+      final lngPadding = (maxLng - minLng) * 0.1;
+
+      final bounds = CoordinateBounds(
+        southwest: Point(coordinates: Position(minLng - lngPadding, minLat - latPadding)),
+        northeast: Point(coordinates: Position(maxLng + lngPadding, maxLat + latPadding)),
+        infiniteBounds: false,
+      );
+
+      final cameraOptions = await _mapboxMap!.cameraForCoordinateBounds(
+        bounds,
+        MbxEdgeInsets(top: 200, left: 50, bottom: 150, right: 50),
+        null,
+        null,
+        null,
+        null,
+      );
+
+      await _mapboxMap!.flyTo(
+        cameraOptions,
+        MapAnimationOptions(duration: 1000, startDelay: 0),
+      );
+    } catch (e) {
+      Logger.error('Error fitting map bounds', e);
     }
   }
 
   @override
-  void dispose() {
-    _mapController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: DCTheme.background,
-      body: Stack(
-        children: [
-          // Map fills entire screen
-          Positioned.fill(
-            child: _buildMap(),
+    Logger.debug('Mapbox configured: ${AppConfig.isMapboxConfigured}');
+
+    if (!AppConfig.isMapboxConfigured) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF121212),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.map_outlined, size: 64, color: Colors.grey[600]),
+                const SizedBox(height: 16),
+                Text(
+                  'Mapbox Not Configured',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[400],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Token length: ${AppConfig.mapboxAccessToken.length}',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Run with --dart-define=MAPBOX_ACCESS_TOKEN=your-token',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ],
+            ),
           ),
-          // Header overlay at top
+        ),
+      );
+    }
+
+    return Stack(
+      children: [
+        // Map fills entire screen
+        Positioned.fill(
+          child: _buildMap(),
+        ),
+        // Header overlay at top
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: _buildHeader(),
+        ),
+        // Map controls (zoom buttons)
+        _buildMapControls(),
+        // Barber count badge
+        _buildBarberCountBadge(),
+        // Bottom barber cards carousel
+        _buildBottomCarousel(),
+        // Loading indicator
+        if (_isLoadingPins)
           Positioned(
-            top: 0,
+            top: 200,
             left: 0,
             right: 0,
-            child: _buildHeader(),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1F2937),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.25),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFFEF4444),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Searching...',
+                      style: TextStyle(
+                        color: Color(0xFF9CA3AF),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-          // Map controls (zoom buttons)
-          _buildMapControls(),
-          // Barber count badge
-          _buildBarberCountBadge(),
-          // Bottom barber cards carousel
-          _buildBottomCarousel(),
-        ],
-      ),
+      ],
     );
   }
 
   Widget _buildHeader() {
     return Container(
       decoration: const BoxDecoration(
-        // Matches web red-500 header
         color: Color(0xFFEF4444),
       ),
       child: Stack(
         children: [
-          // Large Watermark Logo - matching web opacity-20
+          // Large Watermark Logo
           Positioned.fill(
             child: Center(
               child: Opacity(
@@ -114,141 +344,138 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
               child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Search bar - dark themed matching web (bg-white dark:bg-gray-800)
-              Container(
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1F2937), // gray-800 dark mode
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    const SizedBox(width: 14),
-                    // Location icon inside pill (matching web)
-                    Icon(
-                      Icons.location_on_outlined,
-                      color: Colors.grey[500], // gray-500 for dark mode
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    // Location text - white for dark mode
-                    Expanded(
-                      child: Text(
-                        _locationText,
-                        style: const TextStyle(
-                          color: Colors.white, // white text on dark bg
-                          fontSize: 14,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    // Search button - darker gray circle
-                    _buildInlineButton(
-                      icon: Icons.search,
-                      backgroundColor: const Color(0xFF374151), // gray-700
-                      iconColor: const Color(0xFF9CA3AF), // gray-400
-                      onTap: _showLocationSearch,
-                    ),
-                    const SizedBox(width: 4),
-                    // Navigation button - red circle
-                    _buildInlineButton(
-                      icon: Icons.navigation,
-                      backgroundColor: const Color(0xFFEF4444),
-                      iconColor: Colors.white,
-                      onTap: _goToCurrentLocation,
-                    ),
-                    const SizedBox(width: 4),
-                    // Close button - darker gray circle
-                    _buildInlineButton(
-                      icon: Icons.close,
-                      backgroundColor: const Color(0xFF374151), // gray-700
-                      iconColor: const Color(0xFF9CA3AF), // gray-400
-                      onTap: () {},
-                      size: 28,
-                    ),
-                    const SizedBox(width: 6),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Category tabs - matching web exactly
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: _categories.map((category) {
-                  final isSelected = category == _selectedCategory;
-                  return GestureDetector(
-                    onTap: () => setState(() => _selectedCategory = category),
-                    child: Column(
-                      children: [
-                        Text(
-                          category,
-                          style: TextStyle(
-                            color: isSelected 
-                                ? Colors.white 
-                                : const Color(0xFFFCA5A5), // red-300
-                            fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        // Underline for selected category
-                        Container(
-                          height: 2,
-                          width: 50,
-                          color: isSelected ? Colors.white : Colors.transparent,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Search bar
+                  Container(
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1F2937),
+                      borderRadius: BorderRadius.circular(22),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 12),
-              // Radius pills - matching web: selected=white bg, unselected=transparent with border
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: _radiusOptions.map((radius) {
-                  final isSelected = radius == _selectedRadius;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: GestureDetector(
-                      onTap: () => setState(() => _selectedRadius = radius),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: isSelected ? Colors.white : Colors.transparent,
-                          borderRadius: BorderRadius.circular(16),
-                          border: isSelected ? null : Border.all(
-                            color: const Color(0xFFFCA5A5), // red-300
-                            width: 1,
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 14),
+                        Icon(
+                          Icons.location_on_outlined,
+                          color: Colors.grey[500],
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _locationText,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        child: Text(
-                          '$radius mi',
-                          style: TextStyle(
-                            color: isSelected 
-                                ? const Color(0xFFEF4444)
-                                : Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        _buildInlineButton(
+                          icon: Icons.search,
+                          backgroundColor: const Color(0xFF374151),
+                          iconColor: const Color(0xFF9CA3AF),
+                          onTap: _showLocationSearch,
                         ),
-                      ),
+                        const SizedBox(width: 4),
+                        _buildInlineButton(
+                          icon: Icons.navigation,
+                          backgroundColor: const Color(0xFFEF4444),
+                          iconColor: Colors.white,
+                          onTap: _goToCurrentLocation,
+                        ),
+                        const SizedBox(width: 4),
+                        _buildInlineButton(
+                          icon: Icons.close,
+                          backgroundColor: const Color(0xFF374151),
+                          iconColor: const Color(0xFF9CA3AF),
+                          onTap: () => context.pop(),
+                          size: 28,
+                        ),
+                        const SizedBox(width: 6),
+                      ],
                     ),
-                  );
-                }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  // Category tabs
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: _categories.map((category) {
+                      final isSelected = category == _selectedCategory;
+                      return GestureDetector(
+                        onTap: () => setState(() => _selectedCategory = category),
+                        child: Column(
+                          children: [
+                            Text(
+                              category,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? Colors.white
+                                    : const Color(0xFFFCA5A5),
+                                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              height: 2,
+                              width: 50,
+                              color: isSelected ? Colors.white : Colors.transparent,
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 12),
+                  // Radius pills
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: _radiusOptions.map((radius) {
+                      final isSelected = radius == _selectedRadius;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() => _selectedRadius = radius);
+                            _loadNearbyBarbers();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: isSelected ? Colors.white : Colors.transparent,
+                              borderRadius: BorderRadius.circular(16),
+                              border: isSelected ? null : Border.all(
+                                color: const Color(0xFFFCA5A5),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              '$radius mi',
+                              style: TextStyle(
+                                color: isSelected
+                                    ? const Color(0xFFEF4444)
+                                    : Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
           ),
         ],
       ),
@@ -277,61 +504,34 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
   }
 
   Widget _buildMap() {
-    final nearbyAsync = ref.watch(nearbyBarbersProvider);
-    
-    return FlutterMap(
-      mapController: _mapController,
-      options: MapOptions(
-        initialCenter: _lasVegas,
-        initialZoom: _currentZoom,
-        minZoom: 8,
-        maxZoom: 18,
-        interactionOptions: const InteractionOptions(
-          flags: InteractiveFlag.all,
-        ),
+    return MapWidget(
+      key: const ValueKey('mapbox'),
+      cameraOptions: CameraOptions(
+        center: Point(coordinates: Position(_lasVegasLng, _lasVegasLat)),
+        zoom: _currentZoom,
       ),
-      children: [
-        // OpenStreetMap tile layer
-        TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.directcuts.app',
-        ),
-        // User location marker - DC logo matching web exactly
-        MarkerLayer(
-          markers: [
-            Marker(
-              point: _currentCenter,
-              width: 60,
-              height: 60,
-              child: _buildUserLocationMarker(),
-            ),
-          ],
-        ),
-        // Barber markers
-        nearbyAsync.when(
-          data: (barbers) => MarkerLayer(
-            markers: barbers.map((barberWithDistance) {
-              final barber = barberWithDistance.barber;
-              final lat = barber.latitude;
-              final lng = barber.longitude;
-              if (lat == null || lng == null) return null;
-              
-              return Marker(
-                point: LatLng(lat, lng),
-                width: 44,
-                height: 44,
-                child: GestureDetector(
-                  onTap: () => context.push('/barber/${barber.id}'),
-                  child: _buildBarberMarker(barber),
-                ),
-              );
-            }).whereType<Marker>().toList(),
-          ),
-          loading: () => const MarkerLayer(markers: []),
-          error: (_, __) => const MarkerLayer(markers: []),
-        ),
-      ],
+      // Use streets-v12 style URL to match DC-1 web app exactly (light theme with streets)
+      // This matches DC-1's mapbox://styles/mapbox/streets-v12 style
+      styleUri: 'mapbox://styles/mapbox/streets-v12',
+      textureView: true,
+      onMapCreated: _onMapCreated,
+      onStyleLoadedListener: (_) {
+        Logger.debug('Map style loaded successfully');
+      },
+      onMapLoadErrorListener: (error) {
+        // Mapbox will often surface tile-related failures here.
+        // Logging more fields helps identify 403/401 root causes (token/scope/restrictions).
+        Logger.error('Map load error: ${error.type}', error.message);
+      },
+      onTapListener: (coordinate) {
+        // Handle pin selection via bottom carousel
+      },
     );
+  }
+
+  void _onMapCreated(MapboxMap mapboxMap) {
+    _mapboxMap = mapboxMap;
+    _loadNearbyBarbers();
   }
 
   Widget _buildMapControls() {
@@ -351,16 +551,24 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
         ),
         child: Column(
           children: [
-            _buildZoomButton(Icons.add, () {
-              final newZoom = (_currentZoom + 1).clamp(1.0, 18.0);
-              _mapController.move(_currentCenter, newZoom);
-              setState(() => _currentZoom = newZoom);
+            _buildZoomButton(Icons.add, () async {
+              if (_mapboxMap != null) {
+                final newZoom = (_currentZoom + 1).clamp(1.0, 18.0);
+                await _mapboxMap!.setCamera(
+                  CameraOptions(zoom: newZoom),
+                );
+                setState(() => _currentZoom = newZoom);
+              }
             }),
             Container(height: 1, width: 28, color: Colors.grey[300]),
-            _buildZoomButton(Icons.remove, () {
-              final newZoom = (_currentZoom - 1).clamp(1.0, 18.0);
-              _mapController.move(_currentCenter, newZoom);
-              setState(() => _currentZoom = newZoom);
+            _buildZoomButton(Icons.remove, () async {
+              if (_mapboxMap != null) {
+                final newZoom = (_currentZoom - 1).clamp(1.0, 18.0);
+                await _mapboxMap!.setCamera(
+                  CameraOptions(zoom: newZoom),
+                );
+                setState(() => _currentZoom = newZoom);
+              }
             }),
           ],
         ),
@@ -379,204 +587,78 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
     );
   }
 
-  /// User location marker - matches web app's icon.png exactly
-  /// Uses the same icon from the deployed web app (has transparent background)
-  Widget _buildUserLocationMarker() {
-    return Image.network(
-      'https://direct-cuts.vercel.app/icon.png',
-      width: 60,
-      height: 60,
-      fit: BoxFit.contain,
-      errorBuilder: (_, __, ___) => _buildFallbackLocationIcon(),
-    );
-  }
-
-  Widget _buildFallbackLocationIcon() {
-    return Container(
-      width: 60,
-      height: 60,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white,
-      ),
-      child: const Icon(
-        Icons.location_on,
-        color: Color(0xFFE63946),
-        size: 32,
-      ),
-    );
-  }
-
-  /// Barber marker - red circle with photo, white border
-  Widget _buildBarberMarker(Barber barber) {
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: const Color(0xFFEF4444),
-        border: Border.all(color: Colors.white, width: 3),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ClipOval(
-        child: barber.profileImageUrl != null
-            ? Image.network(
-                barber.profileImageUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _markerFallback(barber),
-              )
-            : _markerFallback(barber),
-      ),
-    );
-  }
-
-  Widget _markerFallback(Barber barber) {
-    return Container(
-      color: const Color(0xFFEF4444),
-      child: Center(
-        child: Text(
-          barber.displayName.isNotEmpty ? barber.displayName[0].toUpperCase() : 'B',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildBarberCountBadge() {
-    final nearbyAsync = ref.watch(nearbyBarbersProvider);
-    
-    return nearbyAsync.when(
-      data: (barbers) {
-        if (barbers.isEmpty) return const SizedBox.shrink();
-        return Positioned(
-          top: 200,
-          right: 16,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1F2937), // gray-800 dark mode
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.25),
-                  blurRadius: 8,
-                ),
-              ],
+    if (_currentPins == null || _currentPins!.features.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Positioned(
+      top: 200,
+      right: 16,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1F2937),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 8,
             ),
-            child: Text(
-              '${barbers.length} barber${barbers.length == 1 ? '' : 's'} found',
-              style: const TextStyle(
-                color: Color(0xFF9CA3AF), // gray-400
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        );
-      },
-      loading: () => Positioned(
-        top: 200,
-        left: 0,
-        right: 0,
-        child: Center(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1F2937), // gray-800 dark mode
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.25),
-                  blurRadius: 8,
-                ),
-              ],
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Color(0xFFEF4444),
-                  ),
-                ),
-                SizedBox(width: 8),
-                Text(
-                  'Searching...',
-                  style: TextStyle(
-                    color: Color(0xFF9CA3AF), // gray-400
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
+          ],
+        ),
+        child: Text(
+          '${_currentPins!.features.length} barber${_currentPins!.features.length == 1 ? '' : 's'} found',
+          style: const TextStyle(
+            color: Color(0xFF9CA3AF),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
-      error: (_, __) => const SizedBox.shrink(),
     );
   }
 
-  /// Bottom carousel of barber cards - dark theme matching web
   Widget _buildBottomCarousel() {
-    final nearbyAsync = ref.watch(nearbyBarbersProvider);
-    
-    return nearbyAsync.when(
-      data: (barbers) {
-        if (barbers.isEmpty) return const SizedBox.shrink();
-        
-        return Positioned(
-          left: 0,
-          right: 0,
-          bottom: 16,
-          child: SizedBox(
-            height: 90,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: barbers.length,
-              itemBuilder: (context, index) {
-                final barberWithDistance = barbers[index];
-                final barber = barberWithDistance.barber;
-                
-                return Padding(
-                  padding: EdgeInsets.only(
-                    right: index < barbers.length - 1 ? 12 : 0,
-                  ),
-                  child: GestureDetector(
-                    onTap: () => context.push('/barber/${barber.id}'),
-                    child: _buildBarberCard(barber, barberWithDistance.formattedDistance),
-                  ),
-                );
-              },
-            ),
-          ),
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+    if (_currentPins == null || _currentPins!.features.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 16,
+      child: SizedBox(
+        height: 90,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: _currentPins!.features.length,
+          itemBuilder: (context, index) {
+            final feature = _currentPins!.features[index];
+            final props = feature.properties;
+
+            return Padding(
+              padding: EdgeInsets.only(
+                right: index < _currentPins!.features.length - 1 ? 12 : 0,
+              ),
+              child: GestureDetector(
+                onTap: () => context.push('/barber/${props.barberId}'),
+                child: _buildBarberCard(props),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 
-  /// Barber card - dark theme matching web's dark mode
-  Widget _buildBarberCard(Barber barber, String distance) {
+  Widget _buildBarberCard(PinProperties props) {
     return Container(
       width: 220,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1F2937), // gray-800 dark card
+        color: const Color(0xFF1F2937),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -594,16 +676,21 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
             height: 48,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFEF4444), width: 2),
+              border: Border.all(
+                color: props.pinType == 'shop'
+                    ? const Color(0xFFEF4444)
+                    : const Color(0xFF10B981), // green for mobile
+                width: 2,
+              ),
             ),
             child: ClipOval(
-              child: barber.profileImageUrl != null
+              child: props.image != null
                   ? Image.network(
-                      barber.profileImageUrl!,
+                      props.image!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _cardAvatarFallback(barber),
+                      errorBuilder: (_, __, ___) => _cardAvatarFallback(props),
                     )
-                  : _cardAvatarFallback(barber),
+                  : _cardAvatarFallback(props),
             ),
           ),
           const SizedBox(width: 12),
@@ -613,9 +700,9 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Name - white text
+                // Name
                 Text(
-                  barber.displayName,
+                  props.barberName,
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -628,19 +715,22 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
                 // Star rating
                 Row(
                   children: [
-                    ...List.generate(5, (i) => Text(
-                      '★',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: i < barber.rating.floor() 
-                            ? const Color(0xFFFBBF24)
-                            : const Color(0xFF4B5563), // gray-600
+                    ...List.generate(
+                      5,
+                      (i) => Text(
+                        '★',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: i < props.rating.floor()
+                              ? const Color(0xFFFBBF24)
+                              : const Color(0xFF4B5563),
+                        ),
                       ),
-                    )),
-                    if (barber.totalReviews > 0) ...[
+                    ),
+                    if (props.reviews > 0) ...[
                       const SizedBox(width: 4),
                       Text(
-                        '(${barber.totalReviews})',
+                        '(${props.reviews})',
                         style: const TextStyle(
                           fontSize: 10,
                           color: Color(0xFF9CA3AF),
@@ -650,11 +740,11 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
                   ],
                 ),
                 const SizedBox(height: 2),
-                // Distance and shop name
+                // Distance and type
                 Row(
                   children: [
                     Text(
-                      distance,
+                      props.distanceDisplay ?? '',
                       style: const TextStyle(
                         fontSize: 11,
                         color: Color(0xFFEF4444),
@@ -670,7 +760,9 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
                     ),
                     Expanded(
                       child: Text(
-                        barber.shopName ?? barber.shopAddress ?? '',
+                        props.pinType == 'shop'
+                            ? (props as ShopPinProperties).shopName ?? 'Shop'
+                            : 'Mobile',
                         style: const TextStyle(
                           fontSize: 11,
                           color: Color(0xFF9CA3AF),
@@ -689,12 +781,12 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
     );
   }
 
-  Widget _cardAvatarFallback(Barber barber) {
+  Widget _cardAvatarFallback(PinProperties props) {
     return Container(
-      color: const Color(0xFF374151), // gray-700
+      color: const Color(0xFF374151),
       child: Center(
         child: Text(
-          barber.displayName.isNotEmpty ? barber.displayName[0].toUpperCase() : 'B',
+          props.barberName.isNotEmpty ? props.barberName[0].toUpperCase() : 'B',
           style: const TextStyle(
             color: Color(0xFF9CA3AF),
             fontWeight: FontWeight.bold,
@@ -705,28 +797,55 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
     );
   }
 
-  void _showLocationSearch() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Location search coming soon')),
+  void _showLocationSearch() async {
+    final result = await showDialog<GeocodeSuggestion>(
+      context: context,
+      builder: (context) => _LocationSearchDialog(),
     );
+
+    if (result != null) {
+      setState(() {
+        _locationText = result.displayName;
+        _currentCenterLat = result.lat;
+        _currentCenterLng = result.lng;
+      });
+
+      // Move map to new location
+      if (_mapboxMap != null) {
+        await _mapboxMap!.flyTo(
+          CameraOptions(
+            center: Point(coordinates: Position(result.lng, result.lat)),
+            zoom: 12.0,
+          ),
+          MapAnimationOptions(duration: 1000, startDelay: 0),
+        );
+      }
+
+      // Reload barbers
+      _loadNearbyBarbers();
+    }
   }
 
   void _goToCurrentLocation() async {
     await ref.read(userLocationProvider.notifier).refresh();
     final position = ref.read(userLocationProvider).valueOrNull;
-    
-    if (position != null) {
-      final userLocation = LatLng(position.latitude, position.longitude);
-      _mapController.move(userLocation, 14.0);
+
+    if (position != null && _mapboxMap != null) {
       setState(() {
-        _currentCenter = userLocation;
-        _currentZoom = 14.0;
+        _currentCenterLat = position.latitude;
+        _currentCenterLng = position.longitude;
+        _locationText = 'Current Location';
       });
-      
-      ref.read(searchLocationProvider.notifier).state = (
-        lat: position.latitude,
-        lng: position.longitude,
+
+      await _mapboxMap!.flyTo(
+        CameraOptions(
+          center: Point(coordinates: Position(position.longitude, position.latitude)),
+          zoom: 14.0,
+        ),
+        MapAnimationOptions(duration: 1000, startDelay: 0),
       );
+
+      _loadNearbyBarbers();
     } else {
       final granted = await ref.read(userLocationProvider.notifier).requestPermission();
       if (!granted && mounted) {
@@ -735,5 +854,106 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
         );
       }
     }
+  }
+}
+
+class _LocationSearchDialog extends StatefulWidget {
+  @override
+  State<_LocationSearchDialog> createState() => _LocationSearchDialogState();
+}
+
+class _LocationSearchDialogState extends State<_LocationSearchDialog> {
+  final _searchController = TextEditingController();
+  List<GeocodeSuggestion> _suggestions = [];
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String query) async {
+    if (query.length < 2) {
+      setState(() {
+        _suggestions = [];
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final results = await GeocodingService.instance.autocomplete(
+      query: query,
+      proximityLng: -115.1398,
+      proximityLat: 36.1699,
+    );
+
+    setState(() {
+      _suggestions = results;
+      _isLoading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: const Color(0xFF1F2937),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Search field
+            TextField(
+              controller: _searchController,
+              autofocus: true,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Search location...',
+                hintStyle: TextStyle(color: Colors.grey[500]),
+                prefixIcon: Icon(Icons.search, color: Colors.grey[500]),
+                filled: true,
+                fillColor: const Color(0xFF374151),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              onChanged: _onSearchChanged,
+            ),
+            const SizedBox(height: 16),
+            // Results
+            if (_isLoading)
+              const CircularProgressIndicator(color: Color(0xFFEF4444))
+            else if (_suggestions.isEmpty)
+              Text(
+                'Start typing to search',
+                style: TextStyle(color: Colors.grey[500]),
+              )
+            else
+              SizedBox(
+                height: 300,
+                child: ListView.builder(
+                  itemCount: _suggestions.length,
+                  itemBuilder: (context, index) {
+                    final suggestion = _suggestions[index];
+                    return ListTile(
+                      leading: const Icon(Icons.location_on, color: Color(0xFFEF4444)),
+                      title: Text(
+                        suggestion.displayName,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      onTap: () => Navigator.of(context).pop(suggestion),
+                    );
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }

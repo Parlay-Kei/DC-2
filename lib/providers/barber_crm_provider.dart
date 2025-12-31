@@ -1,10 +1,10 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/supabase_config.dart';
 import '../models/barber.dart';
 import '../services/location_service.dart';
+import '../utils/logger.dart';
 
 // Current barber's full profile for CRM
 final currentBarberProvider = FutureProvider<Barber?>((ref) async {
@@ -20,7 +20,7 @@ final currentBarberProvider = FutureProvider<Barber?>((ref) async {
 
     return Barber.fromJson(response);
   } catch (e) {
-    debugPrint('Get current barber error: $e');
+    Logger.error('Failed to get current barber', e);
     return null;
   }
 });
