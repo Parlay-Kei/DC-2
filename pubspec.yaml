@@ -14,47 +14,47 @@ dependencies:
 
   # Backend & Auth
   supabase_flutter: ^2.3.0
-  
+
   # State Management
   flutter_riverpod: ^2.4.9
   riverpod_annotation: ^2.3.3
-  
+
   # Navigation
   go_router: ^13.2.0
-  
+
   # Payments
   flutter_stripe: ^10.1.1
-  
+
   # Maps & Location
-  flutter_map: ^6.1.0
-  latlong2: ^0.9.0
+  mapbox_maps_flutter: ^2.3.0
   geolocator: ^11.0.0
   geocoding: ^2.1.1
-  
+  http: ^1.1.0
+
   # UI Components
   cached_network_image: ^3.3.1
   shimmer: ^3.0.0
   flutter_svg: ^2.0.9
   fl_chart: ^0.68.0
-  
+
   # Storage & Security
   flutter_secure_storage: ^9.0.0
   shared_preferences: ^2.2.2
-  
+
   # Utilities
   url_launcher: ^6.2.4
   image_picker: ^1.0.7
   permission_handler: ^11.3.0
-  intl: ^0.20.2
+  # intl version managed by flutter_localizations SDK - do not pin explicitly
   timezone: ^0.9.4
-  
+
   # Push Notifications
-  onesignal_flutter: ^5.1.6
+  onesignal_flutter: ^5.3.5
   flutter_local_notifications: ^17.0.0
-  
+
   # Splash Screen
   flutter_native_splash: ^2.3.10
-  
+
   # Icons
   cupertino_icons: ^1.0.6
   lucide_icons: ^0.257.0
@@ -63,7 +63,12 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.1
-  
+
+  # Testing
+  mocktail: ^1.0.3
+  integration_test:
+    sdk: flutter
+
   # Code Generation
   build_runner: ^2.4.8
   freezed: ^2.4.6
@@ -71,7 +76,7 @@ dev_dependencies:
   json_serializable: ^6.7.1
   json_annotation: ^4.8.1
   riverpod_generator: ^2.3.9
-  
+
   # App Icon Generation
   flutter_launcher_icons: ^0.13.1
 
@@ -104,7 +109,7 @@ flutter_native_splash:
 
 flutter:
   uses-material-design: true
-  
+
   assets:
     - assets/images/
     - assets/icons/
