@@ -12,6 +12,14 @@
 # Claude Code
 .claude/
 
+# Environment and Secrets (SECURITY: Never commit these)
+.env
+.env.*
+*.env
+!.env.example
+secrets/
+*.secret
+
 # Duplicate/test folders
 direct_cuts_v2/
 test-write.txt
@@ -73,6 +81,12 @@ unlinked_spec.ds
 **/android/**/GeneratedPluginRegistrant.java
 **/android/key.properties
 *.jks
+*.keystore
+
+# Build artifacts (DO NOT commit release builds)
+artifacts/mobile/*/android/*.aab
+artifacts/mobile/*/android/*.apk
+artifacts/mobile/*/ios/*.ipa
 
 # iOS/XCode related
 **/ios/**/*.mode1v3
@@ -135,3 +149,47 @@ app.*.symbols
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
 nul
+
+#===============================================================================
+# Fastlane
+#===============================================================================
+
+# Fastlane local environment (contains secrets)
+fastlane/.env
+fastlane/.env.*
+!fastlane/.env.example
+
+# Fastlane temporary files
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/test_output/
+
+# Fastlane screenshots (large binary files)
+# Consider using Git LFS for these
+fastlane/screenshots/**/*.png
+fastlane/screenshots/**/*.jpg
+!fastlane/screenshots/**/.gitkeep
+
+# Fastlane metadata backup
+fastlane/metadata/trade_representative_contact_information.json
+
+# Ruby bundler
+vendor/bundle/
+.bundle/
+Gemfile.lock
+
+# Derived data and caches
+*.xcarchive
+*.dSYM.zip
+*.dSYM
+
+#===============================================================================
+# Match (iOS Certificate Management)
+#===============================================================================
+
+# Match certificates repo is separate - never commit locally
+# These patterns are just for safety
+*.p12
+*.cer
+*.mobileprovision
+*.provisionprofile
