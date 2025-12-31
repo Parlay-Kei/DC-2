@@ -1,7 +1,7 @@
 name: direct_cuts_v2
 description: Direct Cuts - Peer-to-peer barber booking platform
 publish_to: 'none'
-version: 2.0.1+2
+version: 2.0.2+3
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
