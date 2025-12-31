@@ -57,9 +57,7 @@ class AppConfig {
     
     // No fallback token - must be provided via --dart-define or environment
     // For development setup, see docs/security/TOKEN_ROTATION_GUIDE.md
-    //
     // SECURITY: Never hardcode tokens in source code.
-    // The exposed token sk.eyJ1...NXkifQ has been revoked and must be rotated.
     return '';
   }
 
