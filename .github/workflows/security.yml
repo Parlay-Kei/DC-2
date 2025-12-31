@@ -146,3 +146,180 @@ jobs:
           name: dependency-licenses
           path: dependencies.json
           retention-days: 30
+
+  #=============================================================================
+  # P0-3: Code Hygiene Security Gates
+  #=============================================================================
+  # These checks enforce security best practices established in PR 1 and PR 2:
+  # - No print/debugPrint outside logger.dart (VULN-001)
+  # - No PII patterns in log strings
+  # - No tracked .env files (VULN-002)
+  #=============================================================================
+  code-hygiene:
+    name: Code Hygiene Gates
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for print/debugPrint outside logger
+        id: check-print
+        run: |
+          echo "## Print Statement Check" >> $GITHUB_STEP_SUMMARY
+
+          # Find print/debugPrint in lib/ excluding logger.dart
+          VIOLATIONS=$(grep -rn "print\s*(" lib/ --include="*.dart" | grep -v "logger.dart" | grep -v "debugPrint\s*(" || true)
+          DEBUG_VIOLATIONS=$(grep -rn "debugPrint\s*(" lib/ --include="*.dart" | grep -v "logger.dart" || true)
+
+          ALL_VIOLATIONS=""
+          if [ -n "$VIOLATIONS" ]; then
+            ALL_VIOLATIONS="$VIOLATIONS"
+          fi
+          if [ -n "$DEBUG_VIOLATIONS" ]; then
+            if [ -n "$ALL_VIOLATIONS" ]; then
+              ALL_VIOLATIONS="$ALL_VIOLATIONS\n$DEBUG_VIOLATIONS"
+            else
+              ALL_VIOLATIONS="$DEBUG_VIOLATIONS"
+            fi
+          fi
+
+          if [ -n "$ALL_VIOLATIONS" ]; then
+            echo "::error::Found print/debugPrint statements outside logger.dart"
+            echo "### ❌ FAILED: print/debugPrint found outside logger.dart" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The following files contain unauthorized logging statements:" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo -e "$ALL_VIOLATIONS" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Fix:** Replace print() and debugPrint() with Logger.debug(), Logger.info(), etc." >> $GITHUB_STEP_SUMMARY
+            echo "See lib/utils/logger.dart for the approved logging API." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "### ✅ PASSED: No unauthorized print statements" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check for PII in log strings
+        id: check-pii
+        run: |
+          echo "## PII in Logs Check" >> $GITHUB_STEP_SUMMARY
+
+          # Patterns that indicate PII being logged
+          # Look for string interpolation with common PII field names
+          PII_PATTERNS=(
+            'user\.id'
+            'user\.email'
+            'userId'
+            'userEmail'
+            'user_id'
+            'user_email'
+            'device_token'
+            'deviceToken'
+            'player_?[iI]d'
+            'accessToken'
+            'access_token'
+            'refreshToken'
+            'refresh_token'
+            'password'
+            'userMetadata'
+          )
+
+          FOUND_PII=false
+          PII_RESULTS=""
+
+          for pattern in "${PII_PATTERNS[@]}"; do
+            # Look for these patterns in print, debugPrint, or Logger calls
+            MATCHES=$(grep -rn "$pattern" lib/ --include="*.dart" | grep -E "(print|debugPrint|Logger\.(debug|info|warning|error))" | grep -v "// safe:" || true)
+            if [ -n "$MATCHES" ]; then
+              FOUND_PII=true
+              PII_RESULTS="${PII_RESULTS}\n${MATCHES}"
+            fi
+          done
+
+          if [ "$FOUND_PII" = true ]; then
+            echo "::error::Found potential PII being logged"
+            echo "### ⚠️ WARNING: Potential PII in log statements" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Review these lines for PII exposure:" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo -e "$PII_RESULTS" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Fix:** Remove user identifiers from log messages. Log actions, not identities." >> $GITHUB_STEP_SUMMARY
+            echo "Add \`// safe:\` comment if the log is intentionally safe (e.g., redacted or hashed)." >> $GITHUB_STEP_SUMMARY
+            # Warning only - don't fail build but flag for review
+            echo "::warning::Potential PII detected in logs - please review"
+          else
+            echo "### ✅ PASSED: No PII patterns detected in logs" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check for tracked .env files
+        id: check-env
+        run: |
+          echo "## Tracked .env Check" >> $GITHUB_STEP_SUMMARY
+
+          # Check if any .env files are tracked in git
+          ENV_FILES=$(git ls-files | grep -E "\.env$|\.env\." || true)
+
+          if [ -n "$ENV_FILES" ]; then
+            echo "::error::Found .env files tracked in git"
+            echo "### ❌ FAILED: .env files are tracked in git" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The following .env files should not be in version control:" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "$ENV_FILES" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Fix:** Remove with \`git rm --cached <file>\` and add to .gitignore" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "### ✅ PASSED: No .env files tracked" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check for secret patterns in code
+        id: check-secrets
+        run: |
+          echo "## Secret Patterns Check" >> $GITHUB_STEP_SUMMARY
+
+          # Look for hardcoded secrets (common patterns)
+          SECRET_PATTERNS=(
+            'sk\.[a-zA-Z0-9]{20,}'  # Mapbox secret tokens
+            'sk_live_[a-zA-Z0-9]+'  # Stripe live keys
+            'sk_test_[a-zA-Z0-9]+'  # Stripe test keys
+            'eyJhbGci[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+'  # JWT tokens
+          )
+
+          FOUND_SECRETS=false
+
+          for pattern in "${SECRET_PATTERNS[@]}"; do
+            MATCHES=$(grep -rn "$pattern" lib/ --include="*.dart" || true)
+            if [ -n "$MATCHES" ]; then
+              FOUND_SECRETS=true
+              echo "::error::Found potential hardcoded secret"
+            fi
+          done
+
+          if [ "$FOUND_SECRETS" = true ]; then
+            echo "### ❌ FAILED: Potential hardcoded secrets found" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Secrets should be injected at build time via --dart-define or environment variables." >> $GITHUB_STEP_SUMMARY
+            echo "See docs/security/TOKEN_ROTATION_GUIDE.md for proper secret management." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "### ✅ PASSED: No hardcoded secret patterns detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "## Security Gate Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "These checks enforce security standards from:" >> $GITHUB_STEP_SUMMARY
+          echo "- **VULN-001**: No PII in production logs (PR 1)" >> $GITHUB_STEP_SUMMARY
+          echo "- **VULN-002**: No secrets in version control (PR 2)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "For questions, see \`docs/security/TOKEN_ROTATION_GUIDE.md\`" >> $GITHUB_STEP_SUMMARY
