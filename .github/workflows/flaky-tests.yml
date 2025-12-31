@@ -6,6 +6,11 @@ on:
     - cron: '0 2 * * *'
   workflow_dispatch:
 
+# Required for creating/updating issues
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   flaky-tests:
     name: Run Flaky Tests
@@ -34,17 +39,33 @@ jobs:
       - name: Run flaky tests (with retry)
         id: flaky-tests
         run: |
-          # Run flaky tests with retry - pass if any attempt succeeds
-          flutter test --tags flaky --reporter expanded 2>&1 | tee flaky-test-output.txt || true
+          # Run flaky tests with 3 attempts - track all results
+          PASS_COUNT=0
+          FAIL_COUNT=0
 
-          # Count failures
-          FAILURES=$(grep -c "Some tests failed" flaky-test-output.txt || echo "0")
-          echo "failures=$FAILURES" >> $GITHUB_OUTPUT
+          for attempt in 1 2 3; do
+            echo "=== Attempt $attempt ===" >> flaky-test-output.txt
+            if flutter test --tags flaky --reporter expanded 2>&1 | tee -a flaky-test-output.txt; then
+              PASS_COUNT=$((PASS_COUNT + 1))
+            else
+              FAIL_COUNT=$((FAIL_COUNT + 1))
+            fi
+          done
+
+          echo "passes=$PASS_COUNT" >> $GITHUB_OUTPUT
+          echo "failures=$FAIL_COUNT" >> $GITHUB_OUTPUT
+
+          # Flaky = sometimes passes, sometimes fails
+          if [ $PASS_COUNT -gt 0 ] && [ $FAIL_COUNT -gt 0 ]; then
+            echo "flaky=true" >> $GITHUB_OUTPUT
+          else
+            echo "flaky=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Upload flaky test results
         uses: actions/upload-artifact@v4
         with:
-          name: flaky-test-results
+          name: flaky-test-results-${{ github.run_number }}
           path: flaky-test-output.txt
           retention-days: 30
 
@@ -55,37 +76,59 @@ jobs:
           script: |
             const fs = require('fs');
             const output = fs.readFileSync('flaky-test-output.txt', 'utf8');
+            const passes = '${{ steps.flaky-tests.outputs.passes }}';
+            const failures = '${{ steps.flaky-tests.outputs.failures }}';
+            const isFlaky = '${{ steps.flaky-tests.outputs.flaky }}' === 'true';
 
             // Find existing flaky tests issue
             const issues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              labels: 'flaky-tests',
+              labels: 'flaky-test',
               state: 'open'
             });
 
             const date = new Date().toISOString().split('T')[0];
+            const status = isFlaky ? '🟡 FLAKY' : '🔴 FAILING';
+
             const body = `## Flaky Tests Report - ${date}
 
-            The nightly flaky test run detected failures.
+**Status:** ${status}
+**Passes:** ${passes}/3 attempts
+**Failures:** ${failures}/3 attempts
 
-            <details>
-            <summary>Test Output</summary>
+${isFlaky ? '⚠️ Tests are intermittently failing - classic flakiness detected.' : '❌ Tests failed all attempts - may be broken, not just flaky.'}
 
-            \`\`\`
-            ${output.slice(-5000)}
-            \`\`\`
+<details>
+<summary>Test Output (last 5000 chars)</summary>
 
-            </details>
+\`\`\`
+${output.slice(-5000)}
+\`\`\`
 
-            ### Action Required
-            - [ ] Review failing tests
-            - [ ] Fix timing issues (replace pumpAndSettle with bounded pumps)
-            - [ ] Disable animations in affected tests
-            - [ ] Remove flaky tag once tests are stable
+</details>
 
-            ---
-            *This issue is automatically updated by the Flaky Tests Monitor workflow.*`;
+### Quarantined Tests
+- \`test/integration/auth_flow_test.dart\`
+- \`test/integration/barber_search_test.dart\`
+- \`test/integration/booking_flow_test.dart\`
+- \`test/integration/payment_flow_test.dart\`
+
+### Action Required
+- [ ] Review failing tests
+- [ ] Fix timing issues (replace \`pumpAndSettle\` with bounded pumps)
+- [ ] Disable animations in affected tests
+- [ ] Remove \`@Tags(['flaky'])\` once tests are stable
+
+### KPI Target
+**Flaky test count must trend DOWN weekly.**
+
+| Week | Count | Trend |
+|------|-------|-------|
+| Current | 4 | - |
+
+---
+*Auto-updated by Flaky Tests Monitor. Owner: @Parlay-Kei*`;
 
             if (issues.data.length > 0) {
               // Update existing issue
@@ -97,13 +140,25 @@ jobs:
               });
               console.log(`Updated issue #${issues.data[0].number}`);
             } else {
-              // Create new issue
+              // Create new issue with proper labels
               await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 title: '🔴 Flaky Tests Require Attention',
                 body: body,
-                labels: ['flaky-tests', 'tech-debt']
+                labels: ['flaky-test', 'tech-debt', 'testing'],
+                assignees: ['Parlay-Kei']
               });
               console.log('Created new flaky tests tracking issue');
             }
+
+      - name: Track flaky test metrics
+        run: |
+          echo "## Flaky Test Metrics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Passes | ${{ steps.flaky-tests.outputs.passes }}/3 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Failures | ${{ steps.flaky-tests.outputs.failures }}/3 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Flaky | ${{ steps.flaky-tests.outputs.flaky }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Quarantined Tests | 4 |" >> $GITHUB_STEP_SUMMARY
