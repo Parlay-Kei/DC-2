@@ -178,7 +178,12 @@ class _AvailabilityScreenState extends ConsumerState<AvailabilityScreen> {
                     _hasChanges = true;
                   });
                 },
-                activeThumbColor: DCTheme.primary,
+                thumbColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return DCTheme.primary;
+                  }
+                  return null;
+                }),
               ),
             ],
           ),

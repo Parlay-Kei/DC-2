@@ -211,7 +211,12 @@ class _NotificationSettingsScreenState
           : Switch(
               value: value,
               onChanged: onChanged,
-              activeThumbColor: DCTheme.primary,
+              thumbColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return DCTheme.primary;
+                }
+                return null;
+              }),
             ),
     );
   }
