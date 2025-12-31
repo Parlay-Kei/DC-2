@@ -18,23 +18,27 @@
 1. Click **"Create a token"**
 2. Configure:
    - **Name:** `direct-cuts-mobile-prod`
-   - **Scopes:** Select ONLY what's needed:
-     - `styles:tiles` - Read map tiles
-     - `styles:read` - Read map styles
-     - `fonts:read` - Read fonts (if needed)
-   - **URL Restrictions:** Leave empty for mobile (can't restrict mobile apps)
-3. Copy the new token (will start with `pk.` for public or `sk.` for secret with tiles)
+   - **Scopes:** Select ONLY what's needed for mobile:
+     - `styles:tiles` - Download map tiles (REQUIRED)
+     - `styles:read` - Read map styles (REQUIRED)
+     - `fonts:read` - Read fonts (REQUIRED for labels)
+   - **URL Restrictions:** Leave empty - mobile apps cannot use URL restrictions
+
+   > **Note:** When you add `tiles:read` scope, the token automatically becomes
+   > a secret token (`sk.*`). This is normal and expected for mobile apps.
+
+3. Copy the new token (will be `sk.*` with tiles scope)
 
 ### 3. Set in GitHub Secrets
 
 ```bash
-# Using GitHub CLI
-gh secret set MAPBOX_ACCESS_TOKEN --body "pk.your-new-token-here"
+# Using GitHub CLI - use the sk.* token you just created
+gh secret set MAPBOX_ACCESS_TOKEN --body "sk.eyJ...your-new-token"
 
 # Or via GitHub UI:
 # Repository → Settings → Secrets and variables → Actions → New repository secret
 # Name: MAPBOX_ACCESS_TOKEN
-# Value: pk.your-new-token-here
+# Value: sk.eyJ...your-new-token
 ```
 
 ### 4. Set for Local Development
@@ -42,16 +46,16 @@ gh secret set MAPBOX_ACCESS_TOKEN --body "pk.your-new-token-here"
 Create `.env` file (already in .gitignore):
 ```bash
 # .env (NEVER commit this file)
-MAPBOX_ACCESS_TOKEN=pk.your-new-token-here
+MAPBOX_ACCESS_TOKEN=sk.eyJ...your-new-token
 ```
 
 Or set environment variable:
 ```bash
 # PowerShell
-$env:MAPBOX_ACCESS_TOKEN = "pk.your-new-token-here"
+$env:MAPBOX_ACCESS_TOKEN = "sk.eyJ...your-new-token"
 
 # Bash
-export MAPBOX_ACCESS_TOKEN="pk.your-new-token-here"
+export MAPBOX_ACCESS_TOKEN="sk.eyJ...your-new-token"
 ```
 
 ### 5. Verify Build Uses --dart-define Only
@@ -67,10 +71,23 @@ The token is NOT read from any committed file. Verified in `lib/config/app_confi
 - Falls back to environment variable
 - Returns empty string if neither set (no hardcoded fallback)
 
+## Why sk.* (Secret) Tokens for Mobile?
+
+| Token Type | Prefix | Use Case | URL Restrictions |
+|------------|--------|----------|------------------|
+| Public | `pk.*` | Web apps, public APIs | Yes - can restrict to domains |
+| Secret | `sk.*` | Mobile apps, server-side | No - embedded in binary |
+
+**Mobile apps MUST use `sk.*` tokens** because:
+1. `tiles:read` scope is required for offline/cached map tiles
+2. Adding `tiles:read` automatically converts to secret token
+3. Secret tokens are safe when embedded in compiled binaries (APK/IPA)
+4. The risk is in SOURCE CODE, not compiled apps
+
 ## Verification Checklist
 
 - [ ] Old token revoked in Mapbox dashboard
-- [ ] New token created with minimal scopes
+- [ ] New `sk.*` token created with: `styles:tiles`, `styles:read`, `fonts:read`
 - [ ] Token set in GitHub Secrets as `MAPBOX_ACCESS_TOKEN`
 - [ ] Local `.env` created with new token (not committed)
 - [ ] Build succeeds with `--dart-define`
