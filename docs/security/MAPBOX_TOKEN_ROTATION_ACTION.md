@@ -18,27 +18,25 @@
 1. Click **"Create a token"**
 2. Configure:
    - **Name:** `direct-cuts-mobile-prod`
-   - **Scopes:** Select ONLY what's needed for mobile:
-     - `styles:tiles` - Download map tiles (REQUIRED)
-     - `styles:read` - Read map styles (REQUIRED)
-     - `fonts:read` - Read fonts (REQUIRED for labels)
+   - **Public Scopes (check these):**
+     - `STYLES:TILES` - Download map tiles (REQUIRED)
+     - `STYLES:READ` - Read map styles (REQUIRED)
+     - `FONTS:READ` - Read fonts for labels (REQUIRED)
+   - **Secret Scopes:** Leave ALL unchecked (none needed for basic maps)
    - **URL Restrictions:** Leave empty - mobile apps cannot use URL restrictions
 
-   > **Note:** When you add `tiles:read` scope, the token automatically becomes
-   > a secret token (`sk.*`). This is normal and expected for mobile apps.
-
-3. Copy the new token (will be `sk.*` with tiles scope)
+3. Copy the new token (will be `pk.*` - public token)
 
 ### 3. Set in GitHub Secrets
 
 ```bash
-# Using GitHub CLI - use the sk.* token you just created
-gh secret set MAPBOX_ACCESS_TOKEN --body "sk.eyJ...your-new-token"
+# Using GitHub CLI - use the pk.* token you just created
+gh secret set MAPBOX_ACCESS_TOKEN --body "pk.eyJ...your-new-token"
 
 # Or via GitHub UI:
 # Repository → Settings → Secrets and variables → Actions → New repository secret
 # Name: MAPBOX_ACCESS_TOKEN
-# Value: sk.eyJ...your-new-token
+# Value: pk.eyJ...your-new-token
 ```
 
 ### 4. Set for Local Development
@@ -46,16 +44,16 @@ gh secret set MAPBOX_ACCESS_TOKEN --body "sk.eyJ...your-new-token"
 Create `.env` file (already in .gitignore):
 ```bash
 # .env (NEVER commit this file)
-MAPBOX_ACCESS_TOKEN=sk.eyJ...your-new-token
+MAPBOX_ACCESS_TOKEN=pk.eyJ...your-new-token
 ```
 
 Or set environment variable:
 ```bash
 # PowerShell
-$env:MAPBOX_ACCESS_TOKEN = "sk.eyJ...your-new-token"
+$env:MAPBOX_ACCESS_TOKEN = "pk.eyJ...your-new-token"
 
 # Bash
-export MAPBOX_ACCESS_TOKEN="sk.eyJ...your-new-token"
+export MAPBOX_ACCESS_TOKEN="pk.eyJ...your-new-token"
 ```
 
 ### 5. Verify Build Uses --dart-define Only
@@ -71,23 +69,23 @@ The token is NOT read from any committed file. Verified in `lib/config/app_confi
 - Falls back to environment variable
 - Returns empty string if neither set (no hardcoded fallback)
 
-## Why sk.* (Secret) Tokens for Mobile?
+## Token Types Explained
 
-| Token Type | Prefix | Use Case | URL Restrictions |
-|------------|--------|----------|------------------|
-| Public | `pk.*` | Web apps, public APIs | Yes - can restrict to domains |
-| Secret | `sk.*` | Mobile apps, server-side | No - embedded in binary |
+| Token Type | Prefix | When to Use |
+|------------|--------|-------------|
+| Public | `pk.*` | Standard map display, geocoding, directions |
+| Secret | `sk.*` | Only if you need SECRET scopes (downloads, offline, uploads) |
 
-**Mobile apps MUST use `sk.*` tokens** because:
-1. `tiles:read` scope is required for offline/cached map tiles
-2. Adding `tiles:read` automatically converts to secret token
-3. Secret tokens are safe when embedded in compiled binaries (APK/IPA)
-4. The risk is in SOURCE CODE, not compiled apps
+**For Direct Cuts mobile app:**
+- We only need basic map display and geocoding
+- Public scopes (STYLES:TILES, STYLES:READ, FONTS:READ) are sufficient
+- Use a `pk.*` public token
+- Secret scopes are NOT required
 
 ## Verification Checklist
 
 - [ ] Old token revoked in Mapbox dashboard
-- [ ] New `sk.*` token created with: `styles:tiles`, `styles:read`, `fonts:read`
+- [ ] New `pk.*` token created with public scopes only
 - [ ] Token set in GitHub Secrets as `MAPBOX_ACCESS_TOKEN`
 - [ ] Local `.env` created with new token (not committed)
 - [ ] Build succeeds with `--dart-define`
