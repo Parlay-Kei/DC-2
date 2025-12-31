@@ -139,7 +139,7 @@ jobs:
           asset_content_type: application/vnd.android.package-archive
 
       - name: Upload App Bundle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: android-appbundle
           path: build/app/outputs/bundle/release/app-release.aab
@@ -182,7 +182,7 @@ jobs:
           echo "Note: Code signing and TestFlight upload require additional setup" >> ios-build-info.txt
 
       - name: Upload iOS build info
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ios-build-info
           path: ios-build-info.txt

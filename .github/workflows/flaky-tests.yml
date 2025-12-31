@@ -63,7 +63,7 @@ jobs:
           fi
 
       - name: Upload flaky test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: flaky-test-results-${{ github.run_number }}
           path: flaky-test-output.txt
