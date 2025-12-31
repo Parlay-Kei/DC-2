@@ -105,10 +105,18 @@ jobs:
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Build APK
-        run: flutter build apk --release --split-per-abi
+        env:
+          MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
+        run: |
+          flutter build apk --release --split-per-abi \
+            --dart-define=MAPBOX_ACCESS_TOKEN="${MAPBOX_ACCESS_TOKEN}"
 
       - name: Build App Bundle
-        run: flutter build appbundle --release
+        env:
+          MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
+        run: |
+          flutter build appbundle --release \
+            --dart-define=MAPBOX_ACCESS_TOKEN="${MAPBOX_ACCESS_TOKEN}"
 
       - name: Upload APK to Release
         uses: actions/upload-release-asset@v1
@@ -161,7 +169,11 @@ jobs:
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Build iOS (no codesign for now)
-        run: flutter build ios --release --no-codesign
+        env:
+          MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
+        run: |
+          flutter build ios --release --no-codesign \
+            --dart-define=MAPBOX_ACCESS_TOKEN="${MAPBOX_ACCESS_TOKEN}"
 
       - name: Create iOS Archive Info
         run: |
