@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../config/theme.dart';
 import '../../models/barber.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/barber_provider.dart';
 
 class BarberListScreen extends ConsumerStatefulWidget {
@@ -15,6 +17,8 @@ class BarberListScreen extends ConsumerStatefulWidget {
 
 class _BarberListScreenState extends ConsumerState<BarberListScreen> {
   final _searchController = TextEditingController();
+  int _lastQueryTimeMs = 0;
+  int _lastBarberCount = 0;
 
   @override
   void initState() {
@@ -35,11 +39,45 @@ class _BarberListScreenState extends ConsumerState<BarberListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: DCTheme.background,
-      body: Column(
+      body: Stack(
         children: [
-          _buildHeader(),
-          Expanded(child: _buildBarberList()),
+          Column(
+            children: [
+              _buildHeader(),
+              Expanded(child: _buildBarberList()),
+            ],
+          ),
+          if (kDebugMode) _buildDebugStrip(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDebugStrip() {
+    final isAuthed = ref.watch(currentUserProvider) != null;
+
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 120,
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: DCTheme.primary, width: 1),
+          ),
+          child: Text(
+            'DEBUG: barbers=$_lastBarberCount | queryTime=${_lastQueryTimeMs}ms | auth=$isAuthed',
+            style: const TextStyle(
+              color: Color(0xFF10B981),
+              fontSize: 10,
+              fontFamily: 'monospace',
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -128,7 +166,16 @@ class _BarberListScreenState extends ConsumerState<BarberListScreen> {
     if (searchQuery.isNotEmpty) {
       final searchResults = ref.watch(barberSearchProvider(searchQuery));
       return searchResults.when(
-        data: (barbers) => _buildBarberListView(barbers),
+        data: (barbers) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                _lastBarberCount = barbers.length;
+              });
+            }
+          });
+          return _buildBarberListView(barbers);
+        },
         loading: () => _buildLoadingList(),
         error: (e, _) => _buildError(e.toString()),
       );
@@ -141,12 +188,21 @@ class _BarberListScreenState extends ConsumerState<BarberListScreen> {
           return _buildLocationPermissionPrompt();
         }
         return nearbyAsync.when(
-          data: (barbers) => _buildBarberListView(
-            barbers.map((b) => b.barber).toList(),
-            distances: {
-              for (var b in barbers) b.barber.id: b.formattedDistance
-            },
-          ),
+          data: (barbers) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                setState(() {
+                  _lastBarberCount = barbers.length;
+                });
+              }
+            });
+            return _buildBarberListView(
+              barbers.map((b) => b.barber).toList(),
+              distances: {
+                for (var b in barbers) b.barber.id: b.formattedDistance
+              },
+            );
+          },
           loading: () => _buildLoadingList(),
           error: (e, _) => _buildError(e.toString()),
         );

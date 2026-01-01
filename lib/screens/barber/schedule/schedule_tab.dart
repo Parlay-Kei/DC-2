@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../config/theme.dart';
 import '../../../models/booking.dart';
@@ -69,6 +70,23 @@ class _ScheduleTabState extends ConsumerState<ScheduleTab> {
           ),
           Row(
             children: [
+              // Block Time button
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                child: TextButton.icon(
+                  onPressed: () => _showBlockTimeSheet(),
+                  icon: const Icon(Icons.block, size: 18),
+                  label: const Text('Block'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: DCTheme.warning,
+                    backgroundColor: DCTheme.warning.withValues(alpha: 0.1),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
               IconButton(
                 icon: const Icon(Icons.today, color: DCTheme.primary),
                 onPressed: () {
@@ -81,9 +99,39 @@ class _ScheduleTabState extends ConsumerState<ScheduleTab> {
                 },
                 tooltip: 'Today',
               ),
+              IconButton(
+                icon: const Icon(Icons.settings, color: DCTheme.textMuted),
+                onPressed: () => context.push('/barber/availability'),
+                tooltip: 'Manage Hours',
+              ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  void _showBlockTimeSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _BlockTimeSheet(
+        selectedDate: _selectedDate,
+        onSave: (reason, startTime, endTime, isAllDay) {
+          // TODO: Save blocked time to database
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(isAllDay
+                ? 'Blocked all day: ${reason ?? "Personal time"}'
+                : 'Blocked $startTime - $endTime: ${reason ?? "Personal time"}'),
+              backgroundColor: DCTheme.success,
+            ),
+          );
+          // Refresh the schedule
+          ref.invalidate(barberUpcomingAppointmentsProvider);
+        },
       ),
     );
   }
@@ -222,36 +270,203 @@ class _ScheduleTabState extends ConsumerState<ScheduleTab> {
     final isPast = _selectedDate
         .isBefore(DateTime.now().subtract(const Duration(days: 1)));
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isPast ? Icons.history : Icons.event_available,
-              size: 64,
-              color: DCTheme.textMuted.withValues(alpha: 0.3),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Day status card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: DCTheme.surface,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  isPast ? Icons.history : Icons.event_available,
+                  size: 48,
+                  color: DCTheme.success.withValues(alpha: 0.5),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  isPast
+                      ? 'No appointments on this day'
+                      : 'All Clear!',
+                  style: const TextStyle(
+                    color: DCTheme.text,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  isPast
+                      ? _formatFullDate(_selectedDate)
+                      : 'No appointments scheduled for ${_formatFullDate(_selectedDate)}',
+                  style: const TextStyle(color: DCTheme.textMuted, fontSize: 13),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          if (!isPast) ...[
+            const SizedBox(height: 16),
+            // Availability summary
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: DCTheme.surface,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.access_time, color: DCTheme.info, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Today\'s Availability',
+                        style: TextStyle(
+                          color: DCTheme.text,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Visual timeline
+                  _buildAvailabilityTimeline(),
+                  const SizedBox(height: 16),
+                  // Quick stats
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildQuickStat(
+                          'Open Slots',
+                          '8',
+                          DCTheme.success,
+                          Icons.check_circle_outline,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildQuickStat(
+                          'Working Hours',
+                          '9 AM - 5 PM',
+                          DCTheme.info,
+                          Icons.schedule,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
-            Text(
-              isPast
-                  ? 'No appointments on this day'
-                  : 'No appointments scheduled',
-              style: const TextStyle(
-                color: DCTheme.textMuted,
-                fontSize: 16,
+            // Quick actions
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showBlockTimeSheet(),
+                    icon: const Icon(Icons.block, size: 18),
+                    label: const Text('Block Time'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: DCTheme.warning,
+                      side: const BorderSide(color: DCTheme.warning),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push('/barber/availability'),
+                    icon: const Icon(Icons.settings, size: 18),
+                    label: const Text('Edit Hours'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvailabilityTimeline() {
+    // Simplified timeline showing 9 AM to 5 PM
+    return Container(
+      height: 40,
+      decoration: BoxDecoration(
+        color: DCTheme.surfaceSecondary,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: List.generate(8, (index) {
+          // Each block represents 1 hour from 9 AM to 5 PM
+          final hour = 9 + index;
+          // All slots available when no appointments
+          return Expanded(
+            child: Container(
+              margin: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: DCTheme.success.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Center(
+                child: Text(
+                  '$hour',
+                  style: const TextStyle(
+                    color: DCTheme.success,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
-            if (!isPast) ...[
-              const SizedBox(height: 8),
-              Text(
-                _formatFullDate(_selectedDate),
-                style: const TextStyle(color: DCTheme.textDark),
-              ),
-            ],
-          ],
-        ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildQuickStat(String label, String value, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(color: DCTheme.textMuted, fontSize: 11),
+                ),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -610,5 +825,327 @@ class _ScheduleAppointmentCard extends StatelessWidget {
   String _getAmPm(String time) {
     final hour = int.parse(time.split(':')[0]);
     return hour >= 12 ? 'PM' : 'AM';
+  }
+}
+
+class _BlockTimeSheet extends StatefulWidget {
+  final DateTime selectedDate;
+  final Function(String? reason, String startTime, String endTime, bool isAllDay) onSave;
+
+  const _BlockTimeSheet({
+    required this.selectedDate,
+    required this.onSave,
+  });
+
+  @override
+  State<_BlockTimeSheet> createState() => _BlockTimeSheetState();
+}
+
+class _BlockTimeSheetState extends State<_BlockTimeSheet> {
+  final _reasonController = TextEditingController();
+  bool _isAllDay = false;
+  String _startTime = '12:00';
+  String _endTime = '13:00';
+  String? _selectedReason;
+
+  final List<String> _quickReasons = [
+    'Lunch Break',
+    'Personal Time',
+    'Appointment',
+    'Day Off',
+    'Vacation',
+    'Other',
+  ];
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: DCTheme.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: DCTheme.textMuted,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Title
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: DCTheme.warning.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.block, color: DCTheme.warning),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Block Time',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: DCTheme.text,
+                      ),
+                    ),
+                    Text(
+                      _formatDate(widget.selectedDate),
+                      style: const TextStyle(color: DCTheme.textMuted),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            // All day toggle
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: DCTheme.surfaceSecondary,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.calendar_today, color: DCTheme.textMuted, size: 20),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Block entire day',
+                      style: TextStyle(color: DCTheme.text),
+                    ),
+                  ),
+                  Switch(
+                    value: _isAllDay,
+                    onChanged: (value) => setState(() => _isAllDay = value),
+                    thumbColor: WidgetStateProperty.resolveWith((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return DCTheme.warning;
+                      }
+                      return null;
+                    }),
+                  ),
+                ],
+              ),
+            ),
+            // Time selectors (only show if not all day)
+            if (!_isAllDay) ...[
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTimeSelector('From', _startTime, (time) {
+                      setState(() => _startTime = time);
+                    }),
+                  ),
+                  const SizedBox(width: 16),
+                  const Icon(Icons.arrow_forward, color: DCTheme.textMuted),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildTimeSelector('To', _endTime, (time) {
+                      setState(() => _endTime = time);
+                    }),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 24),
+            // Reason quick select
+            const Text(
+              'Reason',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: DCTheme.text,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _quickReasons.map((reason) {
+                final isSelected = _selectedReason == reason;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedReason = reason;
+                      if (reason != 'Other') {
+                        _reasonController.text = reason;
+                      } else {
+                        _reasonController.clear();
+                      }
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? DCTheme.warning.withValues(alpha: 0.15)
+                          : DCTheme.surfaceSecondary,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isSelected ? DCTheme.warning : Colors.transparent,
+                      ),
+                    ),
+                    child: Text(
+                      reason,
+                      style: TextStyle(
+                        color: isSelected ? DCTheme.warning : DCTheme.text,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            // Custom reason input (only if "Other" selected)
+            if (_selectedReason == 'Other') ...[
+              const SizedBox(height: 16),
+              TextField(
+                controller: _reasonController,
+                style: const TextStyle(color: DCTheme.text),
+                decoration: const InputDecoration(
+                  hintText: 'Enter custom reason...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+            const SizedBox(height: 24),
+            // Action buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      final reason = _selectedReason == 'Other'
+                          ? _reasonController.text
+                          : _selectedReason;
+                      widget.onSave(
+                        reason,
+                        _startTime,
+                        _endTime,
+                        _isAllDay,
+                      );
+                    },
+                    icon: const Icon(Icons.block, size: 18),
+                    label: const Text('Block Time'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: DCTheme.warning,
+                      foregroundColor: Colors.black,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimeSelector(String label, String time, Function(String) onChanged) {
+    return GestureDetector(
+      onTap: () async {
+        final parts = time.split(':');
+        final hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+
+        final picked = await showTimePicker(
+          context: context,
+          initialTime: TimeOfDay(hour: hour, minute: minute),
+          builder: (context, child) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: const ColorScheme.dark(
+                  primary: DCTheme.warning,
+                  surface: DCTheme.surface,
+                ),
+              ),
+              child: child!,
+            );
+          },
+        );
+
+        if (picked != null) {
+          final newTime =
+              '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+          onChanged(newTime);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: DCTheme.surfaceSecondary,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(color: DCTheme.textMuted, fontSize: 11),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _formatTime(time),
+              style: const TextStyle(
+                color: DCTheme.text,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatTime(String time) {
+    final parts = time.split(':');
+    final hour = int.parse(parts[0]);
+    final minute = parts[1];
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+    return '$displayHour:$minute $period';
+  }
+
+  String _formatDate(DateTime date) {
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${days[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
   }
 }

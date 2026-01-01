@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../config/theme.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/startup_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -58,45 +58,39 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (!mounted) return;
 
     try {
-      final authState = ref.read(authStateProvider);
+      // Load startup state
+      final startupState = await ref.read(appStartupProvider.future);
 
-      authState.when(
-        data: (user) async {
-          if (user != null) {
-            // User is logged in, check their role
-            try {
-              final profile = await ref.read(currentProfileProvider.future);
-              if (!mounted) return;
-
-              if (profile?.isBarber == true) {
-                context.go('/barber-dashboard');
-              } else {
-                context.go('/customer');
-              }
-            } catch (e) {
-              // Profile fetch failed, default to customer
-              if (!mounted) return;
-              context.go('/customer');
-            }
-          } else {
-            // Not logged in
-            if (!mounted) return;
-            context.go('/login');
-          }
-        },
-        loading: () {
-          // Still loading, retry after a short delay
-          Future.delayed(
-              const Duration(milliseconds: 500), _checkAuthAndNavigate);
-        },
-        error: (_, __) {
-          if (!mounted) return;
-          context.go('/login');
-        },
-      );
-    } catch (e) {
       if (!mounted) return;
-      context.go('/login');
+
+      final hasSeenWelcome = startupState.hasSeenWelcome;
+      final hasSession = startupState.hasSession;
+      final role = startupState.role;
+
+      // Debug log as requested
+      print('Startup: seenWelcome=$hasSeenWelcome, hasSession=$hasSession, role=$role');
+
+      // Routing rules:
+      // 1. If hasn't seen welcome -> Welcome screen
+      // 2. Else if no session -> Login
+      // 3. Else -> Home (role-aware: /customer or /barber-dashboard)
+
+      if (!hasSeenWelcome) {
+        context.go('/welcome');
+      } else if (!hasSession) {
+        context.go('/login');
+      } else {
+        // User is authenticated, navigate based on role
+        if (role == 'barber') {
+          context.go('/barber-dashboard');
+        } else {
+          context.go('/customer');
+        }
+      }
+    } catch (e) {
+      // On error, default to welcome screen for new users
+      if (!mounted) return;
+      context.go('/welcome');
     }
   }
 
@@ -115,11 +109,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo - DC SVG
+                    // Logo - DC SVG with explicit white color for visibility on dark background
                     SvgPicture.asset(
                       'assets/images/dc_logo.svg',
                       width: 140,
                       height: 140,
+                      colorFilter: const ColorFilter.mode(
+                        Colors.white,
+                        BlendMode.srcIn,
+                      ),
                     ),
                     const SizedBox(height: 24),
 

@@ -590,6 +590,10 @@ class _BookingCard extends ConsumerWidget {
         color = DCTheme.error;
         label = 'Cancelled';
         break;
+      case 'expired':
+        color = DCTheme.textDark;
+        label = 'Expired';
+        break;
       case 'no_show':
         color = DCTheme.textMuted;
         label = 'No Show';

@@ -45,6 +45,7 @@ dependencies:
   url_launcher: ^6.2.4
   image_picker: ^1.0.7
   permission_handler: ^11.3.0
+  share_plus: ^9.0.0
   # intl version managed by flutter_localizations SDK - do not pin explicitly
   timezone: ^0.9.4
 
@@ -58,6 +59,7 @@ dependencies:
   # Icons
   cupertino_icons: ^1.0.6
   lucide_icons: ^0.257.0
+  package_info_plus: ^9.0.0
 
 dev_dependencies:
   flutter_test:

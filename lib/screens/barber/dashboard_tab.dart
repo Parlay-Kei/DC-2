@@ -7,6 +7,8 @@ import '../../models/booking.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/barber_dashboard_provider.dart';
 import '../../services/booking_service.dart';
+import '../../widgets/barber/onboarding_progress.dart';
+import '../../widgets/barber/referral_card.dart';
 
 class DashboardTab extends ConsumerWidget {
   const DashboardTab({super.key});
@@ -32,6 +34,12 @@ class DashboardTab extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(profile),
+              const SizedBox(height: 24),
+              // Go Live Checklist - shown until all steps complete
+              const OnboardingProgressCard(),
+              const SizedBox(height: 16),
+              // Referral card - grow your business
+              const ReferralCard(),
               const SizedBox(height: 24),
               _buildStatsGrid(stats),
               const SizedBox(height: 24),

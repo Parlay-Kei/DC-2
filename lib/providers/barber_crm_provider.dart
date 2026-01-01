@@ -6,6 +6,29 @@ import '../models/barber.dart';
 import '../services/location_service.dart';
 import '../utils/logger.dart';
 
+/// Parse database errors into user-friendly messages
+String _parseDbError(dynamic error) {
+  final msg = error.toString().toLowerCase();
+
+  // Constraint violation: coords without location_type
+  if (msg.contains('barbers_location_type_required_when_coords_present') ||
+      (msg.contains('location_type') && msg.contains('check'))) {
+    return 'Please confirm your location type to continue.';
+  }
+
+  // Generic constraint violation
+  if (msg.contains('violates check constraint')) {
+    return 'Invalid data. Please check your input.';
+  }
+
+  // RLS policy violation
+  if (msg.contains('row-level security') || msg.contains('rls')) {
+    return 'Permission denied. Please try logging in again.';
+  }
+
+  return error.toString();
+}
+
 // Current barber's full profile for CRM
 final currentBarberProvider = FutureProvider<Barber?>((ref) async {
   final userId = SupabaseConfig.currentUserId;
@@ -107,7 +130,7 @@ class BarberCrmNotifier extends StateNotifier<BarberCrmState> {
       await refresh();
       return true;
     } catch (e) {
-      state = state.copyWith(isSaving: false, error: e.toString());
+      state = state.copyWith(isSaving: false, error: _parseDbError(e));
       return false;
     }
   }
@@ -116,6 +139,7 @@ class BarberCrmNotifier extends StateNotifier<BarberCrmState> {
     String? shopAddress,
     double? latitude,
     double? longitude,
+    LocationType? locationType,
   }) async {
     final userId = SupabaseConfig.currentUserId;
     if (userId == null) return false;
@@ -127,6 +151,10 @@ class BarberCrmNotifier extends StateNotifier<BarberCrmState> {
       if (shopAddress != null) updates['shop_address'] = shopAddress;
       if (latitude != null) updates['latitude'] = latitude;
       if (longitude != null) updates['longitude'] = longitude;
+      if (locationType != null) {
+        updates['location_type'] = locationType.toJson();
+        updates['location_confirmed_at'] = DateTime.now().toIso8601String();
+      }
 
       if (updates.isEmpty) {
         state = state.copyWith(isSaving: false);
@@ -141,7 +169,29 @@ class BarberCrmNotifier extends StateNotifier<BarberCrmState> {
       await refresh();
       return true;
     } catch (e) {
-      state = state.copyWith(isSaving: false, error: e.toString());
+      state = state.copyWith(isSaving: false, error: _parseDbError(e));
+      return false;
+    }
+  }
+
+  /// Update location type with consent confirmation
+  /// This is the critical gate for marketplace visibility
+  Future<bool> updateLocationType(LocationType locationType) async {
+    final userId = SupabaseConfig.currentUserId;
+    if (userId == null) return false;
+
+    state = state.copyWith(isSaving: true, error: null);
+
+    try {
+      await Supabase.instance.client.from('barbers').update({
+        'location_type': locationType.toJson(),
+        'location_confirmed_at': DateTime.now().toIso8601String(),
+      }).eq('user_id', userId);
+
+      await refresh();
+      return true;
+    } catch (e) {
+      state = state.copyWith(isSaving: false, error: _parseDbError(e));
       return false;
     }
   }
@@ -180,12 +230,15 @@ class BarberCrmNotifier extends StateNotifier<BarberCrmState> {
       await refresh();
       return true;
     } catch (e) {
-      state = state.copyWith(isSaving: false, error: e.toString());
+      state = state.copyWith(isSaving: false, error: _parseDbError(e));
       return false;
     }
   }
 
-  Future<bool> updateLocationFromGPS() async {
+  /// Update location from GPS - requires location type for marketplace visibility
+  Future<bool> updateLocationFromGPS({
+    required LocationType locationType,
+  }) async {
     final userId = SupabaseConfig.currentUserId;
     if (userId == null) return false;
 
@@ -212,6 +265,8 @@ class BarberCrmNotifier extends StateNotifier<BarberCrmState> {
       final updates = <String, dynamic>{
         'latitude': position.latitude,
         'longitude': position.longitude,
+        'location_type': locationType.toJson(),
+        'location_confirmed_at': DateTime.now().toIso8601String(),
       };
       if (address != null) {
         updates['shop_address'] = address;
@@ -225,12 +280,16 @@ class BarberCrmNotifier extends StateNotifier<BarberCrmState> {
       await refresh();
       return true;
     } catch (e) {
-      state = state.copyWith(isSaving: false, error: e.toString());
+      state = state.copyWith(isSaving: false, error: _parseDbError(e));
       return false;
     }
   }
 
-  Future<bool> updateLocationFromAddress(String address) async {
+  /// Update location from address - requires location type for marketplace visibility
+  Future<bool> updateLocationFromAddress(
+    String address, {
+    required LocationType locationType,
+  }) async {
     final userId = SupabaseConfig.currentUserId;
     if (userId == null) return false;
 
@@ -252,12 +311,14 @@ class BarberCrmNotifier extends StateNotifier<BarberCrmState> {
         'shop_address': address,
         'latitude': coords.latitude,
         'longitude': coords.longitude,
+        'location_type': locationType.toJson(),
+        'location_confirmed_at': DateTime.now().toIso8601String(),
       }).eq('user_id', userId);
 
       await refresh();
       return true;
     } catch (e) {
-      state = state.copyWith(isSaving: false, error: e.toString());
+      state = state.copyWith(isSaving: false, error: _parseDbError(e));
       return false;
     }
   }
@@ -273,12 +334,14 @@ class BarberCrmNotifier extends StateNotifier<BarberCrmState> {
         'shop_address': null,
         'latitude': null,
         'longitude': null,
+        'location_type': null,
+        'location_confirmed_at': null,
       }).eq('user_id', userId);
 
       await refresh();
       return true;
     } catch (e) {
-      state = state.copyWith(isSaving: false, error: e.toString());
+      state = state.copyWith(isSaving: false, error: _parseDbError(e));
       return false;
     }
   }

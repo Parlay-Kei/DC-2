@@ -28,7 +28,7 @@ class Service {
       name: json['name'] as String,
       description: json['description'] as String?,
       price: (json['price'] as num).toDouble(),
-      durationMinutes: json['duration_minutes'] as int,
+      durationMinutes: (json['duration_minutes'] ?? json['duration']) as int,
       isActive: json['is_active'] as bool? ?? true,
       category: json['category'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../config/theme.dart';
+import '../../config/profile_menu.dart';
 import '../../providers/auth_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -17,158 +18,122 @@ class SettingsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Settings'),
       ),
-      body: ListView(
-        children: [
-          // Profile section
-          profileAsync.when(
-            loading: () => const _SettingsTile(
-              icon: Icons.person_outline,
-              title: 'Loading...',
-              subtitle: '',
-            ),
-            error: (_, __) => const _SettingsTile(
-              icon: Icons.person_outline,
-              title: 'Error loading profile',
-              subtitle: '',
-            ),
-            data: (profile) => _SettingsTile(
-              icon: Icons.person_outline,
-              title: profile?.fullName ?? 'Your Profile',
-              subtitle: profile?.email ?? 'Tap to edit',
-              onTap: () => context.push('/settings/edit-profile'),
-            ),
+      body: profileAsync.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: DCTheme.primary),
+        ),
+        error: (error, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: DCTheme.error),
+              const SizedBox(height: 16),
+              Text(
+                'Error loading profile',
+                style: const TextStyle(color: DCTheme.text, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                error.toString(),
+                style: const TextStyle(color: DCTheme.textMuted, fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
-          const Divider(color: DCTheme.border, height: 1),
+        ),
+        data: (profile) {
+          // Determine which menu sections to show based on role
+          final menuSections = profile?.isBarber == true
+              ? barberMenuSections
+              : customerMenuSections;
 
-          // Account section
-          const _SectionHeader(title: 'Account'),
-          _SettingsTile(
-            icon: Icons.lock_outline,
-            title: 'Change Password',
-            onTap: () => context.push('/settings/change-password'),
-          ),
-          _SettingsTile(
-            icon: Icons.credit_card_outlined,
-            title: 'Payment Methods',
-            onTap: () => context.push('/settings/payment-methods'),
-          ),
-          const Divider(color: DCTheme.border, height: 1),
+          return ListView(
+            children: [
+              // Profile header
+              _ProfileHeader(
+                fullName: profile?.fullName ?? 'User',
+                email: profile?.email ?? '',
+                role: profile?.role ?? 'customer',
+              ),
+              const Divider(color: DCTheme.border, height: 1),
 
-          // Notifications section
-          const _SectionHeader(title: 'Notifications'),
-          _SettingsTile(
-            icon: Icons.notifications_outlined,
-            title: 'Notification Settings',
-            onTap: () => context.push('/settings/notifications'),
-          ),
-          const Divider(color: DCTheme.border, height: 1),
+              // Dynamic menu sections based on role
+              ...menuSections.map((section) => _buildMenuSection(
+                    context,
+                    section,
+                  )),
 
-          // Preferences section
-          const _SectionHeader(title: 'Preferences'),
-          _SettingsTile(
-            icon: Icons.language_outlined,
-            title: 'Language',
-            subtitle: 'English',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Language settings coming soon')),
-              );
-            },
-          ),
-          _SettingsTile(
-            icon: Icons.dark_mode_outlined,
-            title: 'Appearance',
-            subtitle: 'Dark',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Theme settings coming soon')),
-              );
-            },
-          ),
-          const Divider(color: DCTheme.border, height: 1),
+              // Account Actions section
+              const _SectionHeader(title: 'Account Actions'),
+              _SettingsTile(
+                icon: Icons.logout,
+                title: 'Sign Out',
+                iconColor: DCTheme.warning,
+                onTap: () => _showSignOutDialog(context, ref),
+              ),
+              _SettingsTile(
+                icon: Icons.delete_forever,
+                title: 'Delete Account',
+                iconColor: DCTheme.error,
+                textColor: DCTheme.error,
+                onTap: () => context.push('/settings/delete-account'),
+              ),
+              const SizedBox(height: 32),
 
-          // Support section
-          const _SectionHeader(title: 'Support'),
-          _SettingsTile(
-            icon: Icons.help_outline,
-            title: 'Help Center',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Help center coming soon')),
-              );
-            },
-          ),
-          _SettingsTile(
-            icon: Icons.chat_bubble_outline,
-            title: 'Contact Support',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Support chat coming soon')),
-              );
-            },
-          ),
-          _SettingsTile(
-            icon: Icons.description_outlined,
-            title: 'Terms of Service',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Terms of service coming soon')),
-              );
-            },
-          ),
-          _SettingsTile(
-            icon: Icons.privacy_tip_outlined,
-            title: 'Privacy Policy',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Privacy policy coming soon')),
-              );
-            },
-          ),
-          const Divider(color: DCTheme.border, height: 1),
-
-          // Danger zone
-          const _SectionHeader(title: 'Account Actions'),
-          _SettingsTile(
-            icon: Icons.logout,
-            title: 'Sign Out',
-            iconColor: DCTheme.warning,
-            onTap: () => _showSignOutDialog(context, ref),
-          ),
-          _SettingsTile(
-            icon: Icons.delete_forever,
-            title: 'Delete Account',
-            iconColor: DCTheme.error,
-            textColor: DCTheme.error,
-            onTap: () => context.push('/settings/delete-account'),
-          ),
-          const SizedBox(height: 32),
-
-          // App info
-          Center(
-            child: Column(
-              children: [
-                Text(
-                  'Direct Cuts',
-                  style: TextStyle(
-                    color: DCTheme.textMuted.withValues(alpha: 0.5),
-                    fontSize: 14,
-                  ),
+              // App info
+              Center(
+                child: Column(
+                  children: [
+                    Text(
+                      'Direct Cuts',
+                      style: TextStyle(
+                        color: DCTheme.textMuted.withValues(alpha: 0.5),
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Version 2.0.2',
+                      style: TextStyle(
+                        color: DCTheme.textMuted.withValues(alpha: 0.3),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Version 2.0.0',
-                  style: TextStyle(
-                    color: DCTheme.textMuted.withValues(alpha: 0.3),
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-        ],
+              ),
+              const SizedBox(height: 32),
+            ],
+          );
+        },
       ),
+    );
+  }
+
+  Widget _buildMenuSection(BuildContext context, ProfileMenuSection section) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(title: section.title),
+        ...section.items.map((item) => _SettingsTile(
+              icon: item.icon,
+              title: item.title,
+              iconColor: item.iconColor ?? DCTheme.textMuted,
+              textColor: item.textColor ?? DCTheme.text,
+              showComingSoonBadge: item.comingSoon,
+              onTap: () {
+                if (item.comingSoon) {
+                  context.push(
+                    '/coming-soon',
+                    extra: item.title,
+                  );
+                } else {
+                  context.push(item.route);
+                }
+              },
+            )),
+        const Divider(color: DCTheme.border, height: 1),
+      ],
     );
   }
 
@@ -231,6 +196,90 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
+class _ProfileHeader extends StatelessWidget {
+  final String fullName;
+  final String email;
+  final String role;
+
+  const _ProfileHeader({
+    required this.fullName,
+    required this.email,
+    required this.role,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: DCTheme.primary.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(32),
+            ),
+            child: Center(
+              child: Text(
+                fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U',
+                style: const TextStyle(
+                  color: DCTheme.primary,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  fullName,
+                  style: const TextStyle(
+                    color: DCTheme.text,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  email,
+                  style: const TextStyle(
+                    color: DCTheme.textMuted,
+                    fontSize: 14,
+                  ),
+                ),
+                if (role == 'barber') ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: DCTheme.primary.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'Barber',
+                      style: TextStyle(
+                        color: DCTheme.primary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SettingsTile extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -238,6 +287,7 @@ class _SettingsTile extends StatelessWidget {
   final VoidCallback? onTap;
   final Color iconColor;
   final Color textColor;
+  final bool showComingSoonBadge;
 
   const _SettingsTile({
     required this.icon,
@@ -246,13 +296,36 @@ class _SettingsTile extends StatelessWidget {
     this.onTap,
     this.iconColor = DCTheme.textMuted,
     this.textColor = DCTheme.text,
+    this.showComingSoonBadge = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
       leading: Icon(icon, color: iconColor),
-      title: Text(title, style: TextStyle(color: textColor)),
+      title: Row(
+        children: [
+          Text(title, style: TextStyle(color: textColor)),
+          if (showComingSoonBadge) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: DCTheme.warning.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'SOON',
+                style: TextStyle(
+                  color: DCTheme.warning,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
       subtitle: subtitle != null
           ? Text(subtitle!, style: const TextStyle(color: DCTheme.textMuted))
           : null,

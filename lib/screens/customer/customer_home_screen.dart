@@ -132,15 +132,23 @@ final upcomingAppointmentsProvider =
 });
 
 class CustomerHomeScreen extends ConsumerStatefulWidget {
-  const CustomerHomeScreen({super.key});
+  final int initialTab;
+
+  const CustomerHomeScreen({super.key, this.initialTab = 0});
 
   @override
   ConsumerState<CustomerHomeScreen> createState() => _CustomerHomeScreenState();
 }
 
 class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
-  int _currentIndex = 0;
+  late int _currentIndex;
   final Map<int, Widget> _cachedTabs = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialTab;
+  }
 
   void _navigateToTab(int index) {
     setState(() => _currentIndex = index);
@@ -372,12 +380,7 @@ class _HomeTab extends ConsumerWidget {
                       color: Colors.white,
                       iconSize: 20,
                       padding: EdgeInsets.zero,
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Notifications coming soon')),
-                        );
-                      },
+                      onPressed: () => context.push('/notifications'),
                     ),
                   ),
                 ],

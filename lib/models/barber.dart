@@ -1,3 +1,32 @@
+/// Location type for barber coordinates
+/// - shop: Fixed business location (shop, salon, studio)
+/// - service_area: General service area center (for mobile barbers)
+enum LocationType {
+  shop,
+  serviceArea;
+
+  static LocationType? fromString(String? value) {
+    if (value == null) return null;
+    switch (value) {
+      case 'shop':
+        return LocationType.shop;
+      case 'service_area':
+        return LocationType.serviceArea;
+      default:
+        return null;
+    }
+  }
+
+  String toJson() {
+    switch (this) {
+      case LocationType.shop:
+        return 'shop';
+      case LocationType.serviceArea:
+        return 'service_area';
+    }
+  }
+}
+
 class Barber {
   final String id;
   final String?
@@ -10,6 +39,8 @@ class Barber {
   final String? location; // Legacy location field
   final double? latitude;
   final double? longitude;
+  final LocationType? locationType; // Required for public visibility
+  final DateTime? locationConfirmedAt;
   final int serviceRadiusMiles;
   final bool isMobile;
   final bool offersHomeService;
@@ -36,6 +67,8 @@ class Barber {
     this.location,
     this.latitude,
     this.longitude,
+    this.locationType,
+    this.locationConfirmedAt,
     this.serviceRadiusMiles = 10,
     this.isMobile = false,
     this.offersHomeService = false,
@@ -80,6 +113,10 @@ class Barber {
       location: json['location'] as String?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
+      locationType: LocationType.fromString(json['location_type'] as String?),
+      locationConfirmedAt: json['location_confirmed_at'] != null
+          ? DateTime.parse(json['location_confirmed_at'] as String)
+          : null,
       serviceRadiusMiles: json['service_radius_miles'] as int? ?? 10,
       isMobile: json['is_mobile'] as bool? ?? false,
       offersHomeService: json['offers_home_service'] as bool? ?? false,
@@ -111,6 +148,8 @@ class Barber {
       'location': location,
       'latitude': latitude,
       'longitude': longitude,
+      'location_type': locationType?.toJson(),
+      'location_confirmed_at': locationConfirmedAt?.toIso8601String(),
       'service_radius_miles': serviceRadiusMiles,
       'is_mobile': isMobile,
       'offers_home_service': offersHomeService,
@@ -129,6 +168,10 @@ class Barber {
   }
 
   bool get hasLocation => latitude != null && longitude != null;
+
+  /// Whether this barber's location is confirmed and safe for public display
+  bool get hasConfirmedLocation =>
+      hasLocation && locationType != null && locationConfirmedAt != null;
   bool get canAcceptPayments =>
       stripeOnboardingComplete && stripeAccountId != null;
 
@@ -148,6 +191,8 @@ class Barber {
     String? location,
     double? latitude,
     double? longitude,
+    LocationType? locationType,
+    DateTime? locationConfirmedAt,
     int? serviceRadiusMiles,
     bool? isMobile,
     bool? offersHomeService,
@@ -174,6 +219,8 @@ class Barber {
       location: location ?? this.location,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
+      locationType: locationType ?? this.locationType,
+      locationConfirmedAt: locationConfirmedAt ?? this.locationConfirmedAt,
       serviceRadiusMiles: serviceRadiusMiles ?? this.serviceRadiusMiles,
       isMobile: isMobile ?? this.isMobile,
       offersHomeService: offersHomeService ?? this.offersHomeService,

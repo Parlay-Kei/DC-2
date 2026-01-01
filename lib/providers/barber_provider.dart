@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -107,26 +109,106 @@ final searchLocationProvider = StateProvider<({double lat, double lng})>((ref) {
   return (lat: _lasVegasLat, lng: _lasVegasLng);
 });
 
-// Nearby barbers - uses searchLocationProvider for coordinates
-// This ensures we only search once per location change
+// RPC timeout - if exceeded, fall back to directory list
+const _rpcTimeoutSeconds = 5;
+const _rpcSlowThresholdMs = 2000;
+
+// Nearby barbers - uses PUBLIC RPC for anon + authed access
+// Uses searchLocationProvider for coordinates
+// Falls back to directory list (without distance) if RPC is slow/fails
 final nearbyBarbersProvider =
     FutureProvider.autoDispose<List<BarberWithDistance>>((ref) async {
   final location = ref.watch(searchLocationProvider);
+  final stopwatch = Stopwatch()..start();
 
-  Logger.debug('NearbyBarbersProvider: Searching for barbers');
+  Logger.debug(
+      'NearbyBarbersProvider: Starting PUBLIC search at (${location.lat}, ${location.lng})',
+  );
 
   try {
-    final results = await ref.read(barberServiceProvider).getNearbyBarbers(
+    // Use PUBLIC RPC method with timeout - works for both anon and authed users
+    final results = await ref
+        .read(barberServiceProvider)
+        .getPublicNearbyBarbers(
           latitude: location.lat,
           longitude: location.lng,
           radiusMiles: 100, // Wide radius to catch all Vegas barbers
+        )
+        .timeout(
+          const Duration(seconds: _rpcTimeoutSeconds),
+          onTimeout: () {
+            Logger.debug(
+                'NearbyBarbersProvider: RPC timeout after ${_rpcTimeoutSeconds}s, falling back to directory',
+            );
+            throw TimeoutException('RPC timeout');
+          },
         );
 
-    Logger.debug('NearbyBarbersProvider: Found ${results.length} barbers');
+    stopwatch.stop();
+    final elapsed = stopwatch.elapsedMilliseconds;
+
+    // Warn if slow but still succeeded
+    if (elapsed > _rpcSlowThresholdMs) {
+      Logger.debug(
+          'WARNING: NearbyBarbersProvider slow response: ${elapsed}ms (threshold: ${_rpcSlowThresholdMs}ms)',
+      );
+    }
+
+    Logger.debug(
+        'NearbyBarbersProvider: Found ${results.length} barbers in ${elapsed}ms',
+    );
+
+    if (results.isEmpty) {
+      Logger.debug(
+          'WARNING: Zero barbers returned - check database seeding and run migrations',
+      );
+    }
+
+    return results;
+  } on TimeoutException {
+    // Fallback: fetch directory list without distance sorting
+    stopwatch.stop();
+    Logger.debug(
+        'NearbyBarbersProvider: Timeout fallback - fetching directory list',
+    );
+    return _fetchDirectoryFallback(ref);
+  } catch (e, stack) {
+    stopwatch.stop();
+    Logger.error(
+        'NearbyBarbersProvider: Error fetching barbers (${stopwatch.elapsedMilliseconds}ms)',
+        e,
+        stack,
+    );
+    // Fallback to directory list on any error
+    return _fetchDirectoryFallback(ref);
+  }
+});
+
+/// Fallback when nearby RPC fails/times out - returns barbers without distance
+Future<List<BarberWithDistance>> _fetchDirectoryFallback(Ref ref) async {
+  try {
+    final barbers = await ref.read(barberServiceProvider).getPublicBarbers();
+    // Return with null-ish distance to indicate "distance unavailable"
+    return barbers
+        .map((b) => BarberWithDistance(barber: b, distanceMiles: -1))
+        .toList();
+  } catch (e) {
+    Logger.error('NearbyBarbersProvider: Fallback also failed', e);
+    return [];
+  }
+}
+
+// Public barbers list (no location required) - for directory view
+final publicBarbersProvider =
+    FutureProvider.autoDispose<List<Barber>>((ref) async {
+  Logger.debug('PublicBarbersProvider: Fetching all public barbers');
+
+  try {
+    final results = await ref.read(barberServiceProvider).getPublicBarbers();
+    Logger.debug('PublicBarbersProvider: Found ${results.length} barbers');
     return results;
   } catch (e, stack) {
-    Logger.error('NearbyBarbersProvider: Error fetching barbers', e, stack);
-    // Return empty list to prevent infinite loading
+    Logger.error('PublicBarbersProvider: Error', e, stack);
     return [];
   }
 });
@@ -162,11 +244,15 @@ final geoJsonNearbyBarbersProvider = FutureProvider.autoDispose.family<
     );
 
     Logger.debug(
-        'geoJsonNearbyBarbersProvider: Found ${result.features.length} barbers');
+        'geoJsonNearbyBarbersProvider: Found ${result.features.length} barbers',
+    );
     return result;
   } catch (e, stack) {
     Logger.error(
-        'geoJsonNearbyBarbersProvider: Error fetching GeoJSON', e, stack);
+        'geoJsonNearbyBarbersProvider: Error fetching GeoJSON',
+        e,
+        stack,
+    );
     return GeoJSONFeatureCollection.empty();
   }
 });

@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../screens/auth/splash_screen.dart';
+import '../screens/auth/welcome_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
+import '../screens/auth/role_select_screen.dart';
 import '../screens/customer/customer_home_screen.dart';
 import '../screens/customer/barber_list_screen.dart';
 import '../screens/customer/barber_profile_screen.dart';
@@ -29,10 +31,12 @@ import '../screens/profile/change_password_screen.dart';
 import '../screens/profile/payment_methods_screen.dart';
 import '../screens/profile/notification_settings_screen.dart';
 import '../screens/profile/delete_account_screen.dart';
+import '../screens/settings/build_info_screen.dart';
 import '../screens/notifications/notifications_screen.dart';
 import '../screens/legal/privacy_policy_screen.dart';
 import '../screens/legal/terms_of_service_screen.dart';
 import '../screens/legal/help_center_screen.dart';
+import '../screens/common/coming_soon_screen.dart';
 import '../models/booking.dart';
 import '../providers/auth_provider.dart';
 
@@ -46,18 +50,27 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isAuthenticated = authState.valueOrNull != null;
       final isAuthRoute = state.matchedLocation == '/login' ||
           state.matchedLocation == '/register' ||
+          state.matchedLocation == '/welcome' ||
           state.matchedLocation == '/splash';
+      final isRoleSelect = state.matchedLocation == '/role-select';
 
       if (authState.isLoading) return null;
 
+      // Unauthenticated users can only access auth routes
       if (!isAuthenticated && !isAuthRoute) {
         return '/login';
       }
 
+      // Authenticated users shouldn't access login/register
       if (isAuthenticated &&
           (state.matchedLocation == '/login' ||
               state.matchedLocation == '/register')) {
         return '/customer';
+      }
+
+      // Allow authenticated users to access role-select
+      if (isRoleSelect && !isAuthenticated) {
+        return '/login';
       }
 
       return null;
@@ -70,6 +83,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SplashScreen(),
       ),
       GoRoute(
+        path: '/welcome',
+        name: 'welcome',
+        builder: (context, state) => const WelcomeScreen(),
+      ),
+      GoRoute(
         path: '/login',
         name: 'login',
         builder: (context, state) => const LoginScreen(),
@@ -79,12 +97,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'register',
         builder: (context, state) => const RegisterScreen(),
       ),
+      GoRoute(
+        path: '/role-select',
+        name: 'roleSelect',
+        builder: (context, state) => const RoleSelectScreen(),
+      ),
 
       // ===== CUSTOMER ROUTES =====
       GoRoute(
         path: '/customer',
         name: 'customerHome',
         builder: (context, state) => const CustomerHomeScreen(),
+      ),
+      GoRoute(
+        path: '/customer/bookings',
+        name: 'customerBookings',
+        builder: (context, state) => const CustomerHomeScreen(initialTab: 2),
       ),
       GoRoute(
         path: '/barbers',
@@ -207,6 +235,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'deleteAccount',
         builder: (context, state) => const DeleteAccountScreen(),
       ),
+      GoRoute(
+        path: '/settings/build-info',
+        name: 'buildInfo',
+        builder: (context, state) => const BuildInfoScreen(),
+      ),
 
       // ===== LEGAL ROUTES =====
       GoRoute(
@@ -223,6 +256,34 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/help',
         name: 'helpCenter',
         builder: (context, state) => const HelpCenterScreen(),
+      ),
+
+      // ===== COMMON ROUTES =====
+      GoRoute(
+        path: '/coming-soon',
+        name: 'comingSoon',
+        builder: (context, state) {
+          final title = state.extra as String? ?? 'This Feature';
+          return ComingSoonScreen(title: title);
+        },
+      ),
+      GoRoute(
+        path: '/settings/booking-history',
+        name: 'bookingHistory',
+        builder: (context, state) =>
+            const ComingSoonScreen(title: 'Booking History'),
+      ),
+      GoRoute(
+        path: '/settings/favorites',
+        name: 'favorites',
+        builder: (context, state) =>
+            const ComingSoonScreen(title: 'Favorites'),
+      ),
+      GoRoute(
+        path: '/settings/contact-support',
+        name: 'contactSupport',
+        builder: (context, state) =>
+            const ComingSoonScreen(title: 'Contact Support'),
       ),
 
       // ===== BARBER ROUTES =====

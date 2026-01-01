@@ -13,6 +13,116 @@ final barberServiceProvider = Provider((ref) => BarberService());
 class BarberService {
   final SupabaseClient _client = Supabase.instance.client;
 
+  // ============================================================
+  // PUBLIC DISCOVERY METHODS (work for anon + authed users)
+  // Uses RPC functions with SECURITY DEFINER for safe public access
+  // ============================================================
+
+  /// Get all public barbers via RPC (safe for anon users)
+  /// Returns barbers sorted by rating DESC
+  Future<List<Barber>> getPublicBarbers({int limit = 50}) async {
+    final stopwatch = Stopwatch()..start();
+    try {
+      Logger.debug('Fetching public barbers via RPC (limit: $limit)');
+
+      final response = await _client.rpc('get_public_barbers');
+
+      final barbers = (response as List).take(limit).map((data) {
+        return _mapPublicBarberToBarber(data as Map<String, dynamic>);
+      }).toList();
+
+      stopwatch.stop();
+      Logger.debug(
+        'Public barbers fetch complete: ${barbers.length} barbers, '
+        '${stopwatch.elapsedMilliseconds}ms',
+      );
+
+      return barbers;
+    } catch (e) {
+      stopwatch.stop();
+      Logger.error(
+        'Failed to fetch public barbers (${stopwatch.elapsedMilliseconds}ms)',
+        e,
+      );
+      return [];
+    }
+  }
+
+  /// Get nearby barbers via RPC (safe for anon users)
+  /// Uses server-side Haversine calculation for efficiency
+  Future<List<BarberWithDistance>> getPublicNearbyBarbers({
+    required double latitude,
+    required double longitude,
+    double radiusMiles = 25,
+    int limit = 50,
+  }) async {
+    final stopwatch = Stopwatch()..start();
+    try {
+      Logger.debug(
+        'Fetching nearby public barbers via RPC: '
+        'lat=$latitude, lng=$longitude, radius=${radiusMiles}mi',
+      );
+
+      final response = await _client.rpc(
+        'get_nearby_barbers',
+        params: {
+          'user_lat': latitude,
+          'user_lng': longitude,
+          'radius_miles': radiusMiles.toInt(),
+        },
+      );
+
+      final barbers = (response as List).take(limit).map((data) {
+        final barberData = data as Map<String, dynamic>;
+        final barber = _mapPublicBarberToBarber(barberData);
+        final distance = (barberData['distance_miles'] as num).toDouble();
+        return BarberWithDistance(barber: barber, distanceMiles: distance);
+      }).toList();
+
+      stopwatch.stop();
+      Logger.debug(
+        'Nearby public barbers fetch complete: ${barbers.length} barbers, '
+        '${stopwatch.elapsedMilliseconds}ms',
+      );
+
+      return barbers;
+    } catch (e) {
+      stopwatch.stop();
+      Logger.error(
+        'Failed to fetch nearby public barbers '
+        '(${stopwatch.elapsedMilliseconds}ms)',
+        e,
+      );
+      return [];
+    }
+  }
+
+  /// Map public_barbers view data to Barber model
+  Barber _mapPublicBarberToBarber(Map<String, dynamic> data) {
+    return Barber(
+      id: data['id'] as String,
+      visibleName: data['display_name'] as String?,
+      profileImageUrl: data['avatar_url'] as String?,
+      shopName: data['shop_name'] as String?,
+      location: data['city_area'] as String?,
+      latitude: (data['latitude'] as num?)?.toDouble(),
+      longitude: (data['longitude'] as num?)?.toDouble(),
+      isMobile: data['is_mobile'] as bool? ?? false,
+      serviceRadiusMiles: data['service_radius_miles'] as int? ?? 10,
+      isVerified: data['is_verified'] as bool? ?? false,
+      isActive: true, // View only returns active barbers
+      rating: (data['rating'] as num?)?.toDouble() ?? 0,
+      totalReviews: data['review_count'] as int? ?? 0,
+      createdAt: data['updated_at'] != null
+          ? DateTime.parse(data['updated_at'] as String)
+          : DateTime.now(),
+    );
+  }
+
+  // ============================================================
+  // AUTHENTICATED METHODS (existing - require auth for full data)
+  // ============================================================
+
   /// Get a single barber by ID with user profile data
   Future<Barber?> getBarber(String barberId) async {
     try {
@@ -39,7 +149,10 @@ class BarberService {
 
   /// Get all active barbers with user names
   Future<List<Barber>> getActiveBarbers({int limit = 50}) async {
+    final stopwatch = Stopwatch()..start();
     try {
+      Logger.debug('Fetching active barbers (limit: $limit)');
+
       // 1. Fetch barbers
       final barbersResponse = await _client
           .from('barbers')
@@ -48,7 +161,12 @@ class BarberService {
           .limit(limit);
 
       final barbers = barbersResponse as List;
-      if (barbers.isEmpty) return [];
+      Logger.debug('Found ${barbers.length} active barbers in database');
+
+      if (barbers.isEmpty) {
+        Logger.debug('No active barbers found - returning empty list');
+        return [];
+      }
 
       // 2. Fetch user profiles for all barbers
       final userIds = barbers.map((b) => b['id'] as String).toList();
@@ -56,6 +174,8 @@ class BarberService {
           .from('users')
           .select('id, full_name, avatar_url')
           .inFilter('id', userIds);
+
+      Logger.debug('Fetched ${(usersResponse as List).length} user profiles');
 
       // 3. Fetch ratings for all barbers
       final ratingsMap = await _getBarbersRatings(userIds);
@@ -67,13 +187,22 @@ class BarberService {
       }
 
       // 5. Map and return
-      return barbers.map((barber) {
+      final results = barbers.map((barber) {
         final user = userMap[barber['id']];
         final rating = ratingsMap[barber['id']];
         return _mapToBarber(barber, user, rating);
       }).toList();
+
+      stopwatch.stop();
+      Logger.debug(
+          'Active barbers fetch complete: ${results.length} barbers, ${stopwatch.elapsedMilliseconds}ms');
+
+      return results;
     } catch (e) {
-      Logger.error('Failed to fetch active barbers', e);
+      stopwatch.stop();
+      Logger.error(
+          'Failed to fetch active barbers (${stopwatch.elapsedMilliseconds}ms)',
+          e);
       return [];
     }
   }
@@ -139,8 +268,10 @@ class BarberService {
     double radiusMiles = 25,
     int limit = 50,
   }) async {
+    final stopwatch = Stopwatch()..start();
     try {
-      Logger.debug('Searching for nearby barbers');
+      Logger.debug(
+          'Searching for nearby barbers: lat=$latitude, lng=$longitude, radius=${radiusMiles}mi');
 
       // Calculate bounding box for geographic query
       final latDelta = radiusMiles / 69;
@@ -151,7 +282,8 @@ class BarberService {
       final minLng = longitude - lngDelta;
       final maxLng = longitude + lngDelta;
 
-      Logger.debug('Calculated bounding box for barber search');
+      Logger.debug(
+          'Bounding box: lat[$minLat to $maxLat], lng[$minLng to $maxLng]');
 
       // 1. Fetch barbers within bounding box
       final barbersResponse = await _client
@@ -166,9 +298,12 @@ class BarberService {
           .lte('longitude', maxLng);
 
       final barbers = barbersResponse as List;
-      Logger.debug('Found barbers in search area');
+      Logger.debug('Found ${barbers.length} barbers in bounding box');
 
-      if (barbers.isEmpty) return [];
+      if (barbers.isEmpty) {
+        Logger.debug('No barbers found in search area - returning empty list');
+        return [];
+      }
 
       // 2. Fetch user profiles
       final userIds = barbers.map((b) => b['id'] as String).toList();
@@ -176,6 +311,8 @@ class BarberService {
           .from('users')
           .select('id, full_name, avatar_url')
           .inFilter('id', userIds);
+
+      Logger.debug('Fetched ${(usersResponse as List).length} user profiles');
 
       // 3. Create user lookup map
       final userMap = <String, Map<String, dynamic>>{};
@@ -208,10 +345,19 @@ class BarberService {
       // 6. Sort by distance
       results.sort((a, b) => a.distanceMiles.compareTo(b.distanceMiles));
 
-      Logger.debug('Returning nearby barbers within radius');
-      return results.take(limit).toList();
-    } catch (e) {
-      Logger.error('Failed to fetch nearby barbers', e);
+      final finalResults = results.take(limit).toList();
+
+      stopwatch.stop();
+      Logger.debug(
+          'Nearby barbers search complete: ${finalResults.length} barbers within ${radiusMiles}mi, ${stopwatch.elapsedMilliseconds}ms');
+
+      return finalResults;
+    } catch (e, stack) {
+      stopwatch.stop();
+      Logger.error(
+          'Failed to fetch nearby barbers (${stopwatch.elapsedMilliseconds}ms)',
+          e,
+          stack);
       return [];
     }
   }
@@ -483,7 +629,11 @@ class BarberWithDistance {
 
   BarberWithDistance({required this.barber, required this.distanceMiles});
 
+  /// Whether distance is available (fallback mode uses -1)
+  bool get hasDistance => distanceMiles >= 0;
+
   String get formattedDistance {
+    if (!hasDistance) return ''; // Fallback mode - distance unavailable
     if (distanceMiles < 0.1) return '< 0.1 mi';
     return '${distanceMiles.toStringAsFixed(1)} mi';
   }

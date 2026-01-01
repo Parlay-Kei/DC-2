@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -6,6 +7,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import '../../config/app_config.dart';
 import '../../models/geojson.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/barber_provider.dart';
 import '../../services/map_service.dart';
 import '../../utils/logger.dart';
@@ -50,6 +52,9 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
   GeoJSONFeatureCollection? _currentPins;
   bool _isLoadingPins = false;
 
+  // Debug metrics
+  int _lastQueryTimeMs = 0;
+
   @override
   void initState() {
     super.initState();
@@ -75,9 +80,14 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
       _isLoadingPins = true;
     });
 
+    final stopwatch = Stopwatch()..start();
+
     try {
       // Convert miles to meters
       final radiusMeters = _selectedRadius * 1609.34;
+
+      Logger.debug(
+          'Loading nearby barbers: center($_currentCenterLat, $_currentCenterLng), radius: ${_selectedRadius}mi');
 
       final pins = await MapService.instance.getPinsWithinRadius(
         centerLat: _currentCenterLat,
@@ -85,9 +95,16 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
         radiusMeters: radiusMeters,
       );
 
+      stopwatch.stop();
+      final queryTime = stopwatch.elapsedMilliseconds;
+
+      Logger.debug(
+          'Nearby barbers loaded: ${pins.features.length} barbers, ${queryTime}ms');
+
       setState(() {
         _currentPins = pins;
         _isLoadingPins = false;
+        _lastQueryTimeMs = queryTime;
       });
 
       // Update map markers
@@ -98,9 +115,11 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
         await _fitBoundsToAllPins();
       }
     } catch (e) {
+      stopwatch.stop();
       Logger.error('Error loading nearby barbers', e);
       setState(() {
         _isLoadingPins = false;
+        _lastQueryTimeMs = stopwatch.elapsedMilliseconds;
       });
     }
   }
@@ -278,6 +297,8 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
           right: 0,
           child: _buildHeader(),
         ),
+        // Debug strip (only in debug mode)
+        if (kDebugMode) _buildDebugStrip(),
         // Map controls (zoom buttons)
         _buildMapControls(),
         // Barber count badge
@@ -329,6 +350,36 @@ class _NearbyMapScreenState extends ConsumerState<NearbyMapScreen> {
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildDebugStrip() {
+    final isAuthed = ref.watch(currentUserProvider) != null;
+    final barberCount = _currentPins?.features.length ?? 0;
+
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 120,
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFEF4444), width: 1),
+          ),
+          child: Text(
+            'DEBUG: barbers=$barberCount | queryTime=${_lastQueryTimeMs}ms | auth=$isAuthed',
+            style: const TextStyle(
+              color: Color(0xFF10B981),
+              fontSize: 10,
+              fontFamily: 'monospace',
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
     );
   }
 

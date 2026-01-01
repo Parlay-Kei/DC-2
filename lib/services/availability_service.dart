@@ -44,27 +44,39 @@ class AvailabilityService {
 
       final availability = Availability.fromJson(availabilityResponse);
 
-      // Get existing bookings for this date
-      final dateStr = date.toIso8601String().split('T')[0];
+      // Get existing bookings for this date using start_time/end_time (actual DB schema)
+      // Query for appointments that overlap with this day
+      final startOfDay = DateTime(date.year, date.month, date.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
       final bookingsResponse = await _client
           .from('appointments')
-          .select('scheduled_time, id')
+          .select('start_time, end_time, id')
           .eq('barber_id', barberId)
-          .eq('scheduled_date', dateStr)
+          .gte('start_time', startOfDay.toUtc().toIso8601String())
+          .lt('start_time', endOfDay.toUtc().toIso8601String())
           .inFilter('status', ['pending', 'confirmed']);
 
-      final bookedTimes = <String, String>{};
+      // Build list of booked time ranges for overlap checking
+      final bookedRanges = <_BookedRange>[];
       for (final booking in bookingsResponse as List) {
-        bookedTimes[booking['scheduled_time'] as String] =
-            booking['id'] as String;
+        final startTime = DateTime.parse(booking['start_time'] as String).toLocal();
+        final endTime = DateTime.parse(booking['end_time'] as String).toLocal();
+        bookedRanges.add(
+          _BookedRange(
+            id: booking['id'] as String,
+            start: startTime,
+            end: endTime,
+          ),
+        );
       }
 
-      // Generate time slots
-      final slots = _generateTimeSlots(
+      // Generate time slots with overlap checking
+      final slots = _generateTimeSlotsWithOverlapCheck(
         availability.startTime,
         availability.endTime,
         slotDurationMinutes,
-        bookedTimes,
+        bookedRanges,
         date,
       );
 
@@ -182,12 +194,13 @@ class AvailabilityService {
     }
   }
 
-  /// Generate time slots between start and end time
-  List<TimeSlot> _generateTimeSlots(
+  /// Generate time slots with overlap checking against existing bookings
+  /// This ensures UI never shows slots that would conflict with DB constraint
+  List<TimeSlot> _generateTimeSlotsWithOverlapCheck(
     String startTime,
     String endTime,
     int slotDuration,
-    Map<String, String> bookedTimes,
+    List<_BookedRange> bookedRanges,
     DateTime date,
   ) {
     final slots = <TimeSlot>[];
@@ -195,35 +208,45 @@ class AvailabilityService {
     final startParts = startTime.split(':');
     final endParts = endTime.split(':');
 
-    var currentMinutes =
-        int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
+    var currentMinutes = int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
     final endMinutes = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
 
     final now = DateTime.now();
-    final isToday =
-        date.year == now.year && date.month == now.month && date.day == now.day;
+    final isToday = date.year == now.year && date.month == now.month && date.day == now.day;
 
     while (currentMinutes + slotDuration <= endMinutes) {
       final hour = currentMinutes ~/ 60;
       final minute = currentMinutes % 60;
-      final timeStr =
-          '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+      final timeStr = '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+
+      // Build proposed slot range
+      final slotStart = DateTime(date.year, date.month, date.day, hour, minute);
+      final slotEnd = slotStart.add(Duration(minutes: slotDuration));
 
       // Check if slot is in the past (for today)
       bool isPast = false;
       if (isToday) {
-        final slotTime =
-            DateTime(date.year, date.month, date.day, hour, minute);
-        isPast = slotTime.isBefore(now);
+        isPast = slotStart.isBefore(now);
       }
 
-      final isBooked = bookedTimes.containsKey(timeStr);
+      // Check for overlap with any existing booking using half-open interval [start, end)
+      // Same logic as DB constraint: tstzrange(start_time, end_time, '[)') && tstzrange(slot_start, slot_end, '[)')
+      String? conflictingBookingId;
+      for (final booked in bookedRanges) {
+        // Two half-open intervals [a, b) and [c, d) overlap if a < d AND c < b
+        if (slotStart.isBefore(booked.end) && booked.start.isBefore(slotEnd)) {
+          conflictingBookingId = booked.id;
+          break;
+        }
+      }
+
+      final isBooked = conflictingBookingId != null;
 
       slots.add(
         TimeSlot(
           time: timeStr,
           isAvailable: !isBooked && !isPast,
-          bookingId: bookedTimes[timeStr],
+          bookingId: conflictingBookingId,
         ),
       );
 
@@ -232,4 +255,17 @@ class AvailabilityService {
 
     return slots;
   }
+}
+
+/// Helper class for tracking booked time ranges
+class _BookedRange {
+  final String id;
+  final DateTime start;
+  final DateTime end;
+
+  _BookedRange({
+    required this.id,
+    required this.start,
+    required this.end,
+  });
 }

@@ -153,6 +153,35 @@ class ProfileService {
     }
   }
 
+  /// Update user role
+  Future<bool> updateRole(String role) async {
+    final userId = SupabaseConfig.currentUserId;
+    if (userId == null) return false;
+
+    // Validate role
+    if (role != 'customer' && role != 'barber' && role != 'admin') {
+      Logger.error('Update role failed', 'Invalid role: $role');
+      return false;
+    }
+
+    try {
+      await _client.from('profiles').update({
+        'role': role,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', userId);
+
+      // Also update user metadata
+      await _client.auth.updateUser(
+        UserAttributes(data: {'role': role}),
+      );
+
+      return true;
+    } catch (e) {
+      Logger.error('Update role error', e);
+      return false;
+    }
+  }
+
   /// Update notification preferences
   Future<bool> updateNotificationPreferences({
     bool? pushEnabled,

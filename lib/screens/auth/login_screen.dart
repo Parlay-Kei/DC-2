@@ -51,8 +51,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final profile = await ref.read(currentProfileProvider.future);
       if (!mounted) return;
 
-      if (profile?.isBarber == true) {
-        context.go('/barber');
+      // If profile is null or role is empty/default, send to role selection
+      if (profile == null || profile.role.isEmpty) {
+        context.go('/role-select');
+        return;
+      }
+
+      // Navigate based on role
+      if (profile.isBarber) {
+        context.go('/barber-dashboard');
       } else {
         context.go('/customer');
       }
@@ -116,12 +123,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   children: [
                     SizedBox(height: MediaQuery.of(context).size.height * 0.08),
 
-                    // Logo
+                    // Logo with explicit white color for visibility on dark background
                     Center(
                       child: SvgPicture.asset(
                         'assets/images/dc_logo.svg',
                         width: 100,
                         height: 100,
+                        colorFilter: const ColorFilter.mode(
+                          Colors.white,
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 32),

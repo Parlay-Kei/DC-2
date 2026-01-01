@@ -31,8 +31,7 @@ final barberAppointmentsProvider = FutureProvider<List<Booking>>((ref) {
 });
 
 // Single booking details
-final bookingDetailsProvider =
-    FutureProvider.family<BookingWithDetails?, String>((ref, bookingId) {
+final bookingDetailsProvider = FutureProvider.family<BookingWithDetails?, String>((ref, bookingId) {
   return ref.read(bookingServiceProvider).getBookingDetails(bookingId);
 });
 
@@ -71,8 +70,7 @@ class AvailabilityRequest {
 }
 
 // Week schedule
-final weekScheduleProvider =
-    FutureProvider.family<List<DaySchedule>, String>((ref, barberId) {
+final weekScheduleProvider = FutureProvider.family<List<DaySchedule>, String>((ref, barberId) {
   final startDate = DateTime.now();
   return ref.read(availabilityServiceProvider).getWeekSchedule(
         barberId,
@@ -154,35 +152,47 @@ class BookingFlowNotifier extends StateNotifier<BookingFlowState> {
         state.selectedTime != null;
   }
 
+  /// Create booking via atomic RPC
+  /// Returns the booking on success, null on failure
+  /// Sets state.error with user-friendly message on failure
+  /// Sets state.errorCode for UI to handle specific cases (e.g., SLOT_TAKEN)
   Future<Booking?> createBooking(String barberId) async {
     if (!canProceed) return null;
 
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true, error: null, errorCode: null);
 
     try {
+      final service = state.selectedService!;
       final booking = await _bookingService.createBooking(
         barberId: barberId,
-        serviceId: state.selectedService!.id,
+        serviceId: service.id,
         date: state.selectedDate!,
         time: state.selectedTime!,
         paymentMethod: state.paymentMethod,
         locationType: state.locationType,
+        durationMinutes: service.durationMinutes,
+        price: service.price,
         address: state.address,
         notes: state.notes.isEmpty ? null : state.notes,
       );
 
-      if (booking != null) {
-        state = state.copyWith(isLoading: false, createdBooking: booking);
-      } else {
-        state = state.copyWith(
-          isLoading: false,
-          error: 'Failed to create booking',
-        );
-      }
-
+      state = state.copyWith(isLoading: false, createdBooking: booking);
       return booking;
+    } on BookingException catch (e) {
+      // BookingException has user-friendly message
+      state = state.copyWith(
+        isLoading: false,
+        error: e.message,
+        errorCode: e.code,
+      );
+      return null;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      // Unexpected error
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Something went wrong. Please try again.',
+        errorCode: 'UNKNOWN',
+      );
       return null;
     }
   }
@@ -198,6 +208,7 @@ class BookingFlowState {
   final String notes;
   final bool isLoading;
   final String? error;
+  final String? errorCode; // SLOT_TAKEN, AUTH_REQUIRED, etc.
   final Booking? createdBooking;
 
   BookingFlowState({
@@ -210,10 +221,14 @@ class BookingFlowState {
     this.notes = '',
     this.isLoading = false,
     this.error,
+    this.errorCode,
     this.createdBooking,
   });
 
   factory BookingFlowState.initial() => BookingFlowState();
+
+  /// Check if error is SLOT_TAKEN (UI can offer to pick another time)
+  bool get isSlotTaken => errorCode == 'SLOT_TAKEN';
 
   BookingFlowState copyWith({
     Service? selectedService,
@@ -225,6 +240,7 @@ class BookingFlowState {
     String? notes,
     bool? isLoading,
     String? error,
+    String? errorCode,
     Booking? createdBooking,
   }) {
     return BookingFlowState(
@@ -237,12 +253,12 @@ class BookingFlowState {
       notes: notes ?? this.notes,
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      errorCode: errorCode,
       createdBooking: createdBooking ?? this.createdBooking,
     );
   }
 }
 
-final bookingFlowProvider =
-    StateNotifierProvider<BookingFlowNotifier, BookingFlowState>((ref) {
+final bookingFlowProvider = StateNotifierProvider<BookingFlowNotifier, BookingFlowState>((ref) {
   return BookingFlowNotifier(ref.read(bookingServiceProvider));
 });
