@@ -61,10 +61,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/login';
       }
 
-      // Authenticated users shouldn't access login/register
+      // Authenticated users shouldn't access login/register/welcome
+      // This prevents the welcome screen from reappearing after login
       if (isAuthenticated &&
           (state.matchedLocation == '/login' ||
-              state.matchedLocation == '/register')) {
+              state.matchedLocation == '/register' ||
+              state.matchedLocation == '/welcome')) {
         return '/customer';
       }
 

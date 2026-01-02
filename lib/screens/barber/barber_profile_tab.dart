@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../config/theme.dart';
+import '../../config/route_paths.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/barber_dashboard_provider.dart';
 import '../../providers/barber_crm_provider.dart';
@@ -395,19 +396,28 @@ class BarberProfileTab extends ConsumerWidget {
           icon: Icons.person_outline,
           label: 'Business Info',
           subtitle: 'Name, bio, contact details',
-          onTap: () => context.push('/barber/business-settings'),
+          onTap: () {
+            debugPrint('Profile: Navigating to Business Settings');
+            context.push(RoutePaths.barberBusinessSettings);
+          },
         ),
         _MenuItem(
           icon: Icons.content_cut,
           label: 'My Services',
           subtitle: 'Manage your service offerings',
-          onTap: () => context.push('/barber/services'),
+          onTap: () {
+            debugPrint('Profile: Navigating to Services');
+            context.push(RoutePaths.barberServices);
+          },
         ),
         _MenuItem(
           icon: Icons.schedule,
           label: 'Availability',
           subtitle: 'Set your working hours',
-          onTap: () => context.push('/barber/availability'),
+          onTap: () {
+            debugPrint('Profile: Navigating to Availability');
+            context.push(RoutePaths.barberAvailability);
+          },
         ),
       ],
     );
@@ -435,7 +445,10 @@ class BarberProfileTab extends ConsumerWidget {
                   color: DCTheme.warning.withValues(alpha: 0.8),
                   size: 20,
                 ),
-          onTap: () => context.push('/barber/location-settings'),
+          onTap: () {
+            debugPrint('Profile: Navigating to Location Settings');
+            context.push(RoutePaths.barberLocationSettings);
+          },
         ),
       ],
     );
@@ -451,7 +464,10 @@ class BarberProfileTab extends ConsumerWidget {
           icon: Icons.account_balance_wallet_outlined,
           label: 'Earnings & Payouts',
           subtitle: 'View earnings and manage payouts',
-          onTap: () => context.push('/barber/earnings'),
+          onTap: () {
+            debugPrint('Profile: Navigating to Earnings');
+            context.push(RoutePaths.barberEarnings);
+          },
         ),
       ],
     );
@@ -467,19 +483,28 @@ class BarberProfileTab extends ConsumerWidget {
           icon: Icons.edit,
           label: 'Edit Profile',
           subtitle: 'Update your personal info',
-          onTap: () => context.push('/barber/edit-profile'),
+          onTap: () {
+            debugPrint('Profile: Navigating to Edit Profile');
+            context.push(RoutePaths.barberEditProfile);
+          },
         ),
         _MenuItem(
           icon: Icons.notifications_outlined,
           label: 'Notifications',
           subtitle: 'Manage notification preferences',
-          onTap: () => context.push('/settings/notifications'),
+          onTap: () {
+            debugPrint('Profile: Navigating to Notification Settings');
+            context.push(RoutePaths.notificationSettings);
+          },
         ),
         _MenuItem(
           icon: Icons.lock_outline,
           label: 'Change Password',
           subtitle: 'Update your password',
-          onTap: () => context.push('/settings/change-password'),
+          onTap: () {
+            debugPrint('Profile: Navigating to Change Password');
+            context.push(RoutePaths.changePassword);
+          },
         ),
       ],
     );
@@ -495,17 +520,26 @@ class BarberProfileTab extends ConsumerWidget {
           icon: Icons.help_outline,
           label: 'Help & Support',
           subtitle: 'FAQs and contact support',
-          onTap: () => context.push('/help'),
+          onTap: () {
+            debugPrint('Profile: Navigating to Help Center');
+            context.push(RoutePaths.help);
+          },
         ),
         _MenuItem(
           icon: Icons.privacy_tip_outlined,
           label: 'Privacy Policy',
-          onTap: () => context.push('/privacy-policy'),
+          onTap: () {
+            debugPrint('Profile: Navigating to Privacy Policy');
+            context.push(RoutePaths.privacyPolicy);
+          },
         ),
         _MenuItem(
           icon: Icons.description_outlined,
           label: 'Terms of Service',
-          onTap: () => context.push('/terms-of-service'),
+          onTap: () {
+            debugPrint('Profile: Navigating to Terms of Service');
+            context.push(RoutePaths.termsOfService);
+          },
         ),
       ],
     );
