@@ -288,7 +288,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       width: isActive ? 24 : 8,
       height: 8,
       decoration: BoxDecoration(
-        color: isActive ? DCTheme.primary : DCTheme.textMuted.withValues(alpha: 0.3),
+        color: isActive
+            ? DCTheme.primary
+            : DCTheme.textMuted.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(4),
       ),
     );

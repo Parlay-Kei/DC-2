@@ -9,7 +9,9 @@ class RoleUpdateResult {
   final bool success;
   final String? errorMessage;
 
-  const RoleUpdateResult.success() : success = true, errorMessage = null;
+  const RoleUpdateResult.success()
+      : success = true,
+        errorMessage = null;
   const RoleUpdateResult.failure(this.errorMessage) : success = false;
 }
 
@@ -44,13 +46,10 @@ class RoleService {
 
       // Update the role in the profiles table
       // Note: Requires RLS policy "profiles_update_own" on profiles table
-      await _client
-          .from('profiles')
-          .update({
-            'role': role,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', userId);
+      await _client.from('profiles').update({
+        'role': role,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', userId);
 
       // CRITICAL: Re-fetch to verify the update actually persisted
       // RLS policies can silently block updates, so we must verify
@@ -69,7 +68,7 @@ class RoleService {
         );
         return const RoleUpdateResult.failure(
           'Role setup failed. The server rejected the update. '
-              'Please contact support if this persists.',
+          'Please contact support if this persists.',
         );
       }
 
@@ -93,7 +92,7 @@ class RoleService {
       if (e.code == '42501' || e.code == 'PGRST301') {
         return const RoleUpdateResult.failure(
           'Role setup failed. Permission denied by server. '
-              'Please contact support.',
+          'Please contact support.',
         );
       }
 

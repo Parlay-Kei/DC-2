@@ -31,7 +31,8 @@ final barberAppointmentsProvider = FutureProvider<List<Booking>>((ref) {
 });
 
 // Single booking details
-final bookingDetailsProvider = FutureProvider.family<BookingWithDetails?, String>((ref, bookingId) {
+final bookingDetailsProvider =
+    FutureProvider.family<BookingWithDetails?, String>((ref, bookingId) {
   return ref.read(bookingServiceProvider).getBookingDetails(bookingId);
 });
 
@@ -70,7 +71,8 @@ class AvailabilityRequest {
 }
 
 // Week schedule
-final weekScheduleProvider = FutureProvider.family<List<DaySchedule>, String>((ref, barberId) {
+final weekScheduleProvider =
+    FutureProvider.family<List<DaySchedule>, String>((ref, barberId) {
   final startDate = DateTime.now();
   return ref.read(availabilityServiceProvider).getWeekSchedule(
         barberId,
@@ -259,6 +261,7 @@ class BookingFlowState {
   }
 }
 
-final bookingFlowProvider = StateNotifierProvider<BookingFlowNotifier, BookingFlowState>((ref) {
+final bookingFlowProvider =
+    StateNotifierProvider<BookingFlowNotifier, BookingFlowState>((ref) {
   return BookingFlowNotifier(ref.read(bookingServiceProvider));
 });

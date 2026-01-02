@@ -13,7 +13,8 @@ class BookingConfirmScreen extends ConsumerStatefulWidget {
   const BookingConfirmScreen({super.key, required this.barberId});
 
   @override
-  ConsumerState<BookingConfirmScreen> createState() => _BookingConfirmScreenState();
+  ConsumerState<BookingConfirmScreen> createState() =>
+      _BookingConfirmScreenState();
 }
 
 class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
@@ -128,10 +129,12 @@ class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
                 ),
                 child: ClipOval(
                   child: barber.profileImageUrl != null
-                      ? Image.network(barber.profileImageUrl!, fit: BoxFit.cover)
+                      ? Image.network(barber.profileImageUrl!,
+                          fit: BoxFit.cover)
                       : Container(
                           color: DCTheme.surfaceSecondary,
-                          child: const Icon(Icons.person, color: DCTheme.textMuted),
+                          child: const Icon(Icons.person,
+                              color: DCTheme.textMuted),
                         ),
                 ),
               ),
@@ -169,7 +172,8 @@ class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
                     ),
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: DCTheme.info.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(4),
@@ -192,7 +196,8 @@ class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
                     const SizedBox(width: 4),
                     Text(
                       '${barber.rating.toStringAsFixed(1)} (${barber.totalReviews} reviews)',
-                      style: const TextStyle(color: DCTheme.textMuted, fontSize: 13),
+                      style: const TextStyle(
+                          color: DCTheme.textMuted, fontSize: 13),
                     ),
                   ],
                 ),
@@ -525,7 +530,8 @@ class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
                   color: DCTheme.info.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.info_outline, color: DCTheme.info, size: 20),
+                child: const Icon(Icons.info_outline,
+                    color: DCTheme.info, size: 20),
               ),
               const SizedBox(width: 12),
               const Text(
@@ -563,7 +569,8 @@ class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
     );
   }
 
-  Widget _buildExpectationItem(IconData icon, String title, String description) {
+  Widget _buildExpectationItem(
+      IconData icon, String title, String description) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -736,9 +743,12 @@ class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
         children: [
           Row(
             children: [
-              Expanded(child: _buildTrustBadge(Icons.shield, 'Booking\nProtection')),
+              Expanded(
+                  child: _buildTrustBadge(Icons.shield, 'Booking\nProtection')),
               Expanded(child: _buildTrustBadge(Icons.lock, 'Secure\nPayment')),
-              Expanded(child: _buildTrustBadge(Icons.support_agent, '24/7\nSupport')),
+              Expanded(
+                  child:
+                      _buildTrustBadge(Icons.support_agent, '24/7\nSupport')),
             ],
           ),
           const SizedBox(height: 16),
@@ -840,7 +850,8 @@ class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
                 ),
                 if (state.paymentMethod == 'card')
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: DCTheme.success.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(6),
@@ -871,7 +882,8 @@ class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
                 onPressed: canConfirm ? _handleConfirm : null,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: canConfirm ? DCTheme.primary : DCTheme.surfaceSecondary,
+                  backgroundColor:
+                      canConfirm ? DCTheme.primary : DCTheme.surfaceSecondary,
                   disabledBackgroundColor: DCTheme.surfaceSecondary,
                 ),
                 child: _isSubmitting
@@ -889,15 +901,19 @@ class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
                           Icon(
                             Icons.lock,
                             size: 18,
-                            color: canConfirm ? Colors.white : DCTheme.textMuted,
+                            color:
+                                canConfirm ? Colors.white : DCTheme.textMuted,
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            _agreedToPolicy ? 'Confirm Booking' : 'Agree to Policy First',
+                            _agreedToPolicy
+                                ? 'Confirm Booking'
+                                : 'Agree to Policy First',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: canConfirm ? Colors.white : DCTheme.textMuted,
+                              color:
+                                  canConfirm ? Colors.white : DCTheme.textMuted,
                             ),
                           ),
                         ],
@@ -921,7 +937,9 @@ class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      final booking = await ref.read(bookingFlowProvider.notifier).createBooking(widget.barberId);
+      final booking = await ref
+          .read(bookingFlowProvider.notifier)
+          .createBooking(widget.barberId);
 
       if (!mounted) return;
 
@@ -939,7 +957,8 @@ class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
           // Other error - show message
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.error ?? 'Failed to create booking. Please try again.'),
+              content: Text(
+                  state.error ?? 'Failed to create booking. Please try again.'),
               backgroundColor: DCTheme.error,
             ),
           );
@@ -998,7 +1017,15 @@ class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
       'November',
       'December',
     ];
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const days = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday'
+    ];
     return '${days[date.weekday % 7]}, ${months[date.month - 1]} ${date.day}';
   }
 
@@ -1042,7 +1069,9 @@ class _PaymentOption extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? DCTheme.primary.withValues(alpha: 0.1) : DCTheme.surfaceSecondary,
+          color: isSelected
+              ? DCTheme.primary.withValues(alpha: 0.1)
+              : DCTheme.surfaceSecondary,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? DCTheme.primary : Colors.transparent,
@@ -1080,7 +1109,8 @@ class _PaymentOption extends StatelessWidget {
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 15,
-                              color: isSelected ? DCTheme.text : DCTheme.textMuted,
+                              color:
+                                  isSelected ? DCTheme.text : DCTheme.textMuted,
                             ),
                           ),
                           if (isRecommended && !isSelected) ...[
@@ -1110,7 +1140,8 @@ class _PaymentOption extends StatelessWidget {
                       Text(
                         subtitle,
                         style: TextStyle(
-                          color: isSelected ? DCTheme.textMuted : DCTheme.textDark,
+                          color:
+                              isSelected ? DCTheme.textMuted : DCTheme.textDark,
                           fontSize: 12,
                         ),
                       ),
@@ -1165,13 +1196,16 @@ class _PaymentOption extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isSelected ? DCTheme.primary : DCTheme.textMuted,
+                          color:
+                              isSelected ? DCTheme.primary : DCTheme.textMuted,
                           width: 2,
                         ),
-                        color: isSelected ? DCTheme.primary : Colors.transparent,
+                        color:
+                            isSelected ? DCTheme.primary : Colors.transparent,
                       ),
                       child: isSelected
-                          ? const Icon(Icons.check, size: 14, color: Colors.white)
+                          ? const Icon(Icons.check,
+                              size: 14, color: Colors.white)
                           : null,
                     ),
                   ],
@@ -1190,7 +1224,9 @@ class _PaymentOption extends StatelessWidget {
                 child: Row(
                   children: [
                     Icon(
-                      icon == Icons.credit_card ? Icons.lock : Icons.attach_money,
+                      icon == Icons.credit_card
+                          ? Icons.lock
+                          : Icons.attach_money,
                       size: 14,
                       color: DCTheme.textMuted,
                     ),

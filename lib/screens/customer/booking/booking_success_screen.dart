@@ -133,7 +133,8 @@ class BookingSuccessScreen extends ConsumerWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: DCTheme.success.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
@@ -205,7 +206,8 @@ class BookingSuccessScreen extends ConsumerWidget {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: booking.isPaid
                       ? DCTheme.success.withValues(alpha: 0.15)
@@ -297,7 +299,8 @@ class BookingSuccessScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildNextStep(String number, String title, String description, Color color, bool isComplete) {
+  Widget _buildNextStep(String number, String title, String description,
+      Color color, bool isComplete) {
     return Row(
       children: [
         Container(

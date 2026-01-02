@@ -35,7 +35,8 @@ class StartupState {
 }
 
 // Shared preferences provider
-final sharedPreferencesProvider = FutureProvider<SharedPreferences>((ref) async {
+final sharedPreferencesProvider =
+    FutureProvider<SharedPreferences>((ref) async {
   return await SharedPreferences.getInstance();
 });
 
@@ -80,8 +81,8 @@ final appStartupProvider = FutureProvider<StartupState>((ref) async {
           id: user.id,
           fullName: fullName,
           email: user.email,
-          avatarUrl:
-              metadata['avatar_url'] as String? ?? metadata['picture'] as String?,
+          avatarUrl: metadata['avatar_url'] as String? ??
+              metadata['picture'] as String?,
           phone: metadata['phone'] as String?,
           role: metadata['role'] as String? ?? 'customer',
           createdAt: DateTime.parse(user.createdAt),

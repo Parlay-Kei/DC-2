@@ -122,7 +122,7 @@ final nearbyBarbersProvider =
   final stopwatch = Stopwatch()..start();
 
   Logger.debug(
-      'NearbyBarbersProvider: Starting PUBLIC search at (${location.lat}, ${location.lng})',
+    'NearbyBarbersProvider: Starting PUBLIC search at (${location.lat}, ${location.lng})',
   );
 
   try {
@@ -135,14 +135,14 @@ final nearbyBarbersProvider =
           radiusMiles: 100, // Wide radius to catch all Vegas barbers
         )
         .timeout(
-          const Duration(seconds: _rpcTimeoutSeconds),
-          onTimeout: () {
-            Logger.debug(
-                'NearbyBarbersProvider: RPC timeout after ${_rpcTimeoutSeconds}s, falling back to directory',
-            );
-            throw TimeoutException('RPC timeout');
-          },
+      const Duration(seconds: _rpcTimeoutSeconds),
+      onTimeout: () {
+        Logger.debug(
+          'NearbyBarbersProvider: RPC timeout after ${_rpcTimeoutSeconds}s, falling back to directory',
         );
+        throw TimeoutException('RPC timeout');
+      },
+    );
 
     stopwatch.stop();
     final elapsed = stopwatch.elapsedMilliseconds;
@@ -150,17 +150,17 @@ final nearbyBarbersProvider =
     // Warn if slow but still succeeded
     if (elapsed > _rpcSlowThresholdMs) {
       Logger.debug(
-          'WARNING: NearbyBarbersProvider slow response: ${elapsed}ms (threshold: ${_rpcSlowThresholdMs}ms)',
+        'WARNING: NearbyBarbersProvider slow response: ${elapsed}ms (threshold: ${_rpcSlowThresholdMs}ms)',
       );
     }
 
     Logger.debug(
-        'NearbyBarbersProvider: Found ${results.length} barbers in ${elapsed}ms',
+      'NearbyBarbersProvider: Found ${results.length} barbers in ${elapsed}ms',
     );
 
     if (results.isEmpty) {
       Logger.debug(
-          'WARNING: Zero barbers returned - check database seeding and run migrations',
+        'WARNING: Zero barbers returned - check database seeding and run migrations',
       );
     }
 
@@ -169,15 +169,15 @@ final nearbyBarbersProvider =
     // Fallback: fetch directory list without distance sorting
     stopwatch.stop();
     Logger.debug(
-        'NearbyBarbersProvider: Timeout fallback - fetching directory list',
+      'NearbyBarbersProvider: Timeout fallback - fetching directory list',
     );
     return _fetchDirectoryFallback(ref);
   } catch (e, stack) {
     stopwatch.stop();
     Logger.error(
-        'NearbyBarbersProvider: Error fetching barbers (${stopwatch.elapsedMilliseconds}ms)',
-        e,
-        stack,
+      'NearbyBarbersProvider: Error fetching barbers (${stopwatch.elapsedMilliseconds}ms)',
+      e,
+      stack,
     );
     // Fallback to directory list on any error
     return _fetchDirectoryFallback(ref);
@@ -244,14 +244,14 @@ final geoJsonNearbyBarbersProvider = FutureProvider.autoDispose.family<
     );
 
     Logger.debug(
-        'geoJsonNearbyBarbersProvider: Found ${result.features.length} barbers',
+      'geoJsonNearbyBarbersProvider: Found ${result.features.length} barbers',
     );
     return result;
   } catch (e, stack) {
     Logger.error(
-        'geoJsonNearbyBarbersProvider: Error fetching GeoJSON',
-        e,
-        stack,
+      'geoJsonNearbyBarbersProvider: Error fetching GeoJSON',
+      e,
+      stack,
     );
     return GeoJSONFeatureCollection.empty();
   }

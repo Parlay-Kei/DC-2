@@ -60,7 +60,8 @@ class AvailabilityService {
       // Build list of booked time ranges for overlap checking
       final bookedRanges = <_BookedRange>[];
       for (final booking in bookingsResponse as List) {
-        final startTime = DateTime.parse(booking['start_time'] as String).toLocal();
+        final startTime =
+            DateTime.parse(booking['start_time'] as String).toLocal();
         final endTime = DateTime.parse(booking['end_time'] as String).toLocal();
         bookedRanges.add(
           _BookedRange(
@@ -208,16 +209,19 @@ class AvailabilityService {
     final startParts = startTime.split(':');
     final endParts = endTime.split(':');
 
-    var currentMinutes = int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
+    var currentMinutes =
+        int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
     final endMinutes = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
 
     final now = DateTime.now();
-    final isToday = date.year == now.year && date.month == now.month && date.day == now.day;
+    final isToday =
+        date.year == now.year && date.month == now.month && date.day == now.day;
 
     while (currentMinutes + slotDuration <= endMinutes) {
       final hour = currentMinutes ~/ 60;
       final minute = currentMinutes % 60;
-      final timeStr = '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+      final timeStr =
+          '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
 
       // Build proposed slot range
       final slotStart = DateTime(date.year, date.month, date.day, hour, minute);

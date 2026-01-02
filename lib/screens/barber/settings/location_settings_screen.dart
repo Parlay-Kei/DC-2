@@ -223,7 +223,8 @@ class _LocationSettingsScreenState
           backgroundColor: DCTheme.surface,
           title: const Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: DCTheme.warning, size: 24),
+              Icon(Icons.warning_amber_rounded,
+                  color: DCTheme.warning, size: 24),
               SizedBox(width: 12),
               Text('Confirm Location Type',
                   style: TextStyle(color: DCTheme.text, fontSize: 18)),
@@ -563,7 +564,8 @@ class _LocationSettingsScreenState
         children: [
           const Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: DCTheme.warning, size: 20),
+              Icon(Icons.warning_amber_rounded,
+                  color: DCTheme.warning, size: 20),
               SizedBox(width: 8),
               Expanded(
                 child: Text(

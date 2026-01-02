@@ -278,8 +278,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings/favorites',
         name: 'favorites',
-        builder: (context, state) =>
-            const ComingSoonScreen(title: 'Favorites'),
+        builder: (context, state) => const ComingSoonScreen(title: 'Favorites'),
       ),
       GoRoute(
         path: '/settings/contact-support',

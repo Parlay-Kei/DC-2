@@ -68,7 +68,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       final role = startupState.role;
 
       // Debug log as requested
-      print('Startup: seenWelcome=$hasSeenWelcome, hasSession=$hasSession, role=$role');
+      print(
+          'Startup: seenWelcome=$hasSeenWelcome, hasSession=$hasSession, role=$role');
 
       // Routing rules:
       // 1. If hasn't seen welcome -> Welcome screen

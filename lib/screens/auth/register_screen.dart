@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/startup_provider.dart';
 import '../../widgets/common/dc_button.dart';
 import '../../widgets/forms/dc_text_field.dart';
 
@@ -52,6 +53,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         fullName: _nameController.text.trim(),
         role: _selectedRole,
       );
+
+      // Mark welcome as seen since user is registering (bypassed welcome flow)
+      await StartupService.markWelcomeSeen();
 
       if (!mounted) return;
 

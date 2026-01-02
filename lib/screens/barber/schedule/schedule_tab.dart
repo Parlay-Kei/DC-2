@@ -80,7 +80,8 @@ class _ScheduleTabState extends ConsumerState<ScheduleTab> {
                   style: TextButton.styleFrom(
                     foregroundColor: DCTheme.warning,
                     backgroundColor: DCTheme.warning.withValues(alpha: 0.1),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -124,8 +125,8 @@ class _ScheduleTabState extends ConsumerState<ScheduleTab> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(isAllDay
-                ? 'Blocked all day: ${reason ?? "Personal time"}'
-                : 'Blocked $startTime - $endTime: ${reason ?? "Personal time"}'),
+                  ? 'Blocked all day: ${reason ?? "Personal time"}'
+                  : 'Blocked $startTime - $endTime: ${reason ?? "Personal time"}'),
               backgroundColor: DCTheme.success,
             ),
           );
@@ -290,9 +291,7 @@ class _ScheduleTabState extends ConsumerState<ScheduleTab> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  isPast
-                      ? 'No appointments on this day'
-                      : 'All Clear!',
+                  isPast ? 'No appointments on this day' : 'All Clear!',
                   style: const TextStyle(
                     color: DCTheme.text,
                     fontSize: 18,
@@ -304,7 +303,8 @@ class _ScheduleTabState extends ConsumerState<ScheduleTab> {
                   isPast
                       ? _formatFullDate(_selectedDate)
                       : 'No appointments scheduled for ${_formatFullDate(_selectedDate)}',
-                  style: const TextStyle(color: DCTheme.textMuted, fontSize: 13),
+                  style:
+                      const TextStyle(color: DCTheme.textMuted, fontSize: 13),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -436,7 +436,8 @@ class _ScheduleTabState extends ConsumerState<ScheduleTab> {
     );
   }
 
-  Widget _buildQuickStat(String label, String value, Color color, IconData icon) {
+  Widget _buildQuickStat(
+      String label, String value, Color color, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -453,7 +454,8 @@ class _ScheduleTabState extends ConsumerState<ScheduleTab> {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(color: DCTheme.textMuted, fontSize: 11),
+                  style:
+                      const TextStyle(color: DCTheme.textMuted, fontSize: 11),
                 ),
                 Text(
                   value,
@@ -830,7 +832,8 @@ class _ScheduleAppointmentCard extends StatelessWidget {
 
 class _BlockTimeSheet extends StatefulWidget {
   final DateTime selectedDate;
-  final Function(String? reason, String startTime, String endTime, bool isAllDay) onSave;
+  final Function(
+      String? reason, String startTime, String endTime, bool isAllDay) onSave;
 
   const _BlockTimeSheet({
     required this.selectedDate,
@@ -932,7 +935,8 @@ class _BlockTimeSheetState extends State<_BlockTimeSheet> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.calendar_today, color: DCTheme.textMuted, size: 20),
+                  const Icon(Icons.calendar_today,
+                      color: DCTheme.textMuted, size: 20),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
@@ -1002,21 +1006,24 @@ class _BlockTimeSheetState extends State<_BlockTimeSheet> {
                     });
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? DCTheme.warning.withValues(alpha: 0.15)
                           : DCTheme.surfaceSecondary,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: isSelected ? DCTheme.warning : Colors.transparent,
+                        color:
+                            isSelected ? DCTheme.warning : Colors.transparent,
                       ),
                     ),
                     child: Text(
                       reason,
                       style: TextStyle(
                         color: isSelected ? DCTheme.warning : DCTheme.text,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.normal,
                       ),
                     ),
                   ),
@@ -1077,7 +1084,8 @@ class _BlockTimeSheetState extends State<_BlockTimeSheet> {
     );
   }
 
-  Widget _buildTimeSelector(String label, String time, Function(String) onChanged) {
+  Widget _buildTimeSelector(
+      String label, String time, Function(String) onChanged) {
     return GestureDetector(
       onTap: () async {
         final parts = time.split(':');
@@ -1144,8 +1152,29 @@ class _BlockTimeSheetState extends State<_BlockTimeSheet> {
   }
 
   String _formatDate(DateTime date) {
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday'
+    ];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     return '${days[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
   }
 }

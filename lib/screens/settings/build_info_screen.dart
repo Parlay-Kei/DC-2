@@ -368,10 +368,12 @@ class _BuildInfoScreenState extends State<BuildInfoScreen> {
         'Authenticated: ${SupabaseConfig.isAuthenticated ? "Yes" : "No"}');
     if (SupabaseConfig.isAuthenticated) {
       // Redact user ID to first 8 chars only
-      buffer.writeln('User ID: ${_redactId(SupabaseConfig.currentUserId ?? "")}');
+      buffer
+          .writeln('User ID: ${_redactId(SupabaseConfig.currentUserId ?? "")}');
     }
     buffer.writeln('');
-    buffer.writeln('Debug Mode: ${AppConfig.debugMode ? "ENABLED" : "disabled"}');
+    buffer
+        .writeln('Debug Mode: ${AppConfig.debugMode ? "ENABLED" : "disabled"}');
     buffer.writeln('');
     buffer.writeln('Generated: ${DateTime.now().toIso8601String()}');
 
@@ -414,7 +416,8 @@ class _BuildInfoScreenState extends State<BuildInfoScreen> {
       // Base64-ish patterns
       RegExp(r'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+'),
       // UUID patterns (keep first 8 chars)
-      RegExp(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', caseSensitive: false),
+      RegExp(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}',
+          caseSensitive: false),
     ];
 
     var result = input;

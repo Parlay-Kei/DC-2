@@ -22,31 +22,37 @@ class BookingException implements Exception {
         msg.contains('exclusion_violation') ||
         msg.contains('ux_appointments_barber_slot') ||
         msg.contains('no_overlapping_appointments')) {
-      return BookingException('SLOT_TAKEN', 'This time slot was just booked. Please pick another.');
+      return BookingException(
+          'SLOT_TAKEN', 'This time slot was just booked. Please pick another.');
     }
 
     // AUTH_REQUIRED
     if (msg.contains('auth_required')) {
-      return BookingException('AUTH_REQUIRED', 'Please log in to book an appointment.');
+      return BookingException(
+          'AUTH_REQUIRED', 'Please log in to book an appointment.');
     }
 
     // INVALID_SERVICE
     if (msg.contains('invalid_service')) {
-      return BookingException('INVALID_SERVICE', 'This service is no longer available.');
+      return BookingException(
+          'INVALID_SERVICE', 'This service is no longer available.');
     }
 
     // INVALID_PAYMENT
     if (msg.contains('invalid_payment')) {
-      return BookingException('INVALID_PAYMENT', 'Please select a valid payment method.');
+      return BookingException(
+          'INVALID_PAYMENT', 'Please select a valid payment method.');
     }
 
     // INVALID_LOCATION
     if (msg.contains('invalid_location')) {
-      return BookingException('INVALID_LOCATION', 'Please select shop or mobile booking.');
+      return BookingException(
+          'INVALID_LOCATION', 'Please select shop or mobile booking.');
     }
 
     // Generic fallback
-    return BookingException('UNKNOWN', 'Something went wrong. Please try again.');
+    return BookingException(
+        'UNKNOWN', 'Something went wrong. Please try again.');
   }
 }
 
@@ -73,7 +79,8 @@ class BookingService {
   }) async {
     final customerId = SupabaseConfig.currentUserId;
     if (customerId == null) {
-      throw BookingException('AUTH_REQUIRED', 'Please log in to book an appointment.');
+      throw BookingException(
+          'AUTH_REQUIRED', 'Please log in to book an appointment.');
     }
 
     try {
@@ -133,7 +140,8 @@ class BookingService {
     if (customerId == null) return [];
 
     try {
-      var query = _client.from('appointments').select().eq('customer_id', customerId);
+      var query =
+          _client.from('appointments').select().eq('customer_id', customerId);
 
       if (status != null) {
         query = query.eq('status', status);
@@ -142,7 +150,9 @@ class BookingService {
       if (upcoming) {
         // Use start_time (actual DB schema) instead of scheduled_date
         final now = DateTime.now().toUtc().toIso8601String();
-        query = query.gte('start_time', now).inFilter('status', ['pending', 'confirmed']);
+        query = query
+            .gte('start_time', now)
+            .inFilter('status', ['pending', 'confirmed']);
       }
 
       final response = await query.order('start_time', ascending: true);
@@ -163,7 +173,8 @@ class BookingService {
     if (barberId == null) return [];
 
     try {
-      var query = _client.from('appointments').select().eq('barber_id', barberId);
+      var query =
+          _client.from('appointments').select().eq('barber_id', barberId);
 
       if (status != null) {
         query = query.eq('status', status);
@@ -172,7 +183,8 @@ class BookingService {
       if (todayOnly || date != null) {
         // Use start_time range for date filtering
         final targetDate = date ?? DateTime.now();
-        final startOfDay = DateTime(targetDate.year, targetDate.month, targetDate.day);
+        final startOfDay =
+            DateTime(targetDate.year, targetDate.month, targetDate.day);
         final endOfDay = startOfDay.add(const Duration(days: 1));
         query = query
             .gte('start_time', startOfDay.toUtc().toIso8601String())
@@ -206,7 +218,9 @@ class BookingService {
   /// Update booking status
   Future<bool> updateBookingStatus(String bookingId, String status) async {
     try {
-      await _client.from('appointments').update({'status': status}).eq('id', bookingId);
+      await _client
+          .from('appointments')
+          .update({'status': status}).eq('id', bookingId);
       return true;
     } catch (e) {
       return false;
@@ -356,8 +370,10 @@ class BookingWithDetails {
     );
   }
 
-  String get barberName => barber?['display_name'] as String? ?? 'Unknown Barber';
-  String get customerName => customer?['full_name'] as String? ?? 'Unknown Customer';
+  String get barberName =>
+      barber?['display_name'] as String? ?? 'Unknown Barber';
+  String get customerName =>
+      customer?['full_name'] as String? ?? 'Unknown Customer';
   String get serviceName => service?['name'] as String? ?? 'Service';
   int get serviceDuration => service?['duration_minutes'] as int? ?? 30;
 }

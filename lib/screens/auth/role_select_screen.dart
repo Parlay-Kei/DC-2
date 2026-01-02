@@ -39,7 +39,8 @@ class _RoleSelectScreenState extends ConsumerState<RoleSelectScreen> {
       } else {
         // Show the specific error message from the service
         setState(() {
-          _errorMessage = result.errorMessage ?? 'Role setup failed. Please try again.';
+          _errorMessage =
+              result.errorMessage ?? 'Role setup failed. Please try again.';
           _isLoading = false;
         });
       }

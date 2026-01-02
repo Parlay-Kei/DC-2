@@ -72,7 +72,8 @@ class Booking {
     String? barberName;
     String? barberAvatar;
     if (json['barber'] != null && json['barber'] is Map) {
-      barberName = json['barber']['shop_name'] ?? json['barber']['full_name'] as String?;
+      barberName =
+          json['barber']['shop_name'] ?? json['barber']['full_name'] as String?;
       barberAvatar = json['barber']['avatar_url'] as String?;
     }
 
@@ -114,8 +115,8 @@ class Booking {
     final totalPrice = (json['total_price'] ?? json['price'] ?? 0) as num;
     final platformFee = (json['platform_fee'] ?? 0) as num;
     // barber_earnings might not exist in new schema, calculate it
-    final barberEarnings =
-        (json['barber_earnings'] ?? (totalPrice.toDouble() - platformFee.toDouble())) as num;
+    final barberEarnings = (json['barber_earnings'] ??
+        (totalPrice.toDouble() - platformFee.toDouble())) as num;
 
     // Handle address field naming
     final address = json['address'] ?? json['service_address'];

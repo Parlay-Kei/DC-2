@@ -12,16 +12,16 @@ class RoutePaths {
   static const String customer = '/customer';
   static const String customerBookings = '/customer/bookings';
   static const String barbers = '/barbers';
-  
+
   // Booking flow
   static String barberProfile(String barberId) => '/barber/$barberId';
   static String selectService(String barberId) => '/book/$barberId';
   static String selectDateTime(String barberId) => '/book/$barberId/datetime';
   static String bookingConfirm(String barberId) => '/book/$barberId/confirm';
   static const String bookingSuccess = '/book/success';
-  
+
   // Review
-  static String writeReview(String bookingId, String barberId) => 
+  static String writeReview(String bookingId, String barberId) =>
       '/review/$bookingId/$barberId';
 
   // Chat routes
@@ -55,7 +55,7 @@ class RoutePaths {
   static const String barberDashboard = '/barber-dashboard';
   static const String barberServices = '/barber/services';
   static const String barberServicesAdd = '/barber/services/add';
-  static String barberServicesEdit(String serviceId) => 
+  static String barberServicesEdit(String serviceId) =>
       '/barber/services/edit/$serviceId';
   static const String barberAvailability = '/barber/availability';
   static const String barberEarnings = '/barber/earnings';

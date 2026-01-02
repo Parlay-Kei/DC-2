@@ -53,9 +53,11 @@ final currentBarberActiveServicesProvider = FutureProvider<int>((ref) async {
 ///   - is_active = true
 ///   - latitude/longitude NOT NULL
 ///   - location_type NOT NULL (enforced by DB constraint)
-final barberOnboardingProvider = FutureProvider<List<OnboardingStep>>((ref) async {
+final barberOnboardingProvider =
+    FutureProvider<List<OnboardingStep>>((ref) async {
   final barberAsync = ref.watch(currentBarberProvider);
-  final activeServicesCount = await ref.watch(currentBarberActiveServicesProvider.future);
+  final activeServicesCount =
+      await ref.watch(currentBarberActiveServicesProvider.future);
 
   return barberAsync.when(
     data: (barber) {
@@ -63,7 +65,8 @@ final barberOnboardingProvider = FutureProvider<List<OnboardingStep>>((ref) asyn
 
       // Location is complete when coords + location_type are set
       // This matches the DB constraint and public_barbers view rules
-      final hasValidLocation = barber.hasLocation && barber.locationType != null;
+      final hasValidLocation =
+          barber.hasLocation && barber.locationType != null;
 
       return [
         OnboardingStep(
@@ -71,8 +74,8 @@ final barberOnboardingProvider = FutureProvider<List<OnboardingStep>>((ref) asyn
           title: 'Complete Profile',
           description: 'Add your name and photo',
           icon: Icons.person_outline,
-          isComplete: barber.displayName.isNotEmpty &&
-                      barber.profileImageUrl != null,
+          isComplete:
+              barber.displayName.isNotEmpty && barber.profileImageUrl != null,
           route: '/barber/settings/profile',
         ),
         OnboardingStep(
@@ -286,13 +289,10 @@ class OnboardingProgressCard extends ConsumerWidget {
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: step.isComplete
-                    ? DCTheme.success
-                    : DCTheme.surface,
+                color: step.isComplete ? DCTheme.success : DCTheme.surface,
                 shape: BoxShape.circle,
-                border: step.isComplete
-                    ? null
-                    : Border.all(color: DCTheme.border),
+                border:
+                    step.isComplete ? null : Border.all(color: DCTheme.border),
               ),
               child: Icon(
                 step.isComplete ? Icons.check : step.icon,
@@ -306,8 +306,10 @@ class OnboardingProgressCard extends ConsumerWidget {
                 step.title,
                 style: TextStyle(
                   color: step.isComplete ? DCTheme.textMuted : DCTheme.text,
-                  fontWeight: step.isComplete ? FontWeight.normal : FontWeight.w500,
-                  decoration: step.isComplete ? TextDecoration.lineThrough : null,
+                  fontWeight:
+                      step.isComplete ? FontWeight.normal : FontWeight.w500,
+                  decoration:
+                      step.isComplete ? TextDecoration.lineThrough : null,
                 ),
               ),
             ),
