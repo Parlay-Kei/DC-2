@@ -276,7 +276,7 @@ jobs:
           ls -lh artifacts/android/
 
       - name: Upload Android artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: android-release
           path: artifacts/android/
@@ -414,7 +414,7 @@ jobs:
           fi
 
       - name: Upload iOS artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ios-release
           path: artifacts/ios/
