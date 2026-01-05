@@ -80,7 +80,7 @@ dev_dependencies:
   riverpod_generator: ^2.3.9
 
   # App Icon Generation
-  flutter_launcher_icons: ^0.13.1
+  flutter_launcher_icons: ^0.14.4
 
 # App Icon Configuration
 flutter_launcher_icons:
