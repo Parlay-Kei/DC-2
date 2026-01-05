@@ -27,8 +27,8 @@ dependencies:
 
   # Maps & Location
   mapbox_maps_flutter: ^2.3.0
-  geolocator: ^11.0.0
-  geocoding: ^2.1.1
+  geolocator: ^12.0.0
+  geocoding: ^4.0.0
   http: ^1.1.0
 
   # UI Components
